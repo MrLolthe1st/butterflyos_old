@@ -1,0 +1,89 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}"
+	ProjectSection(SolutionItems) = preProject
+		source\boot.asm = source\boot.asm
+		source\bootloader.asm = source\bootloader.asm
+		source\ee.asm = source\ee.asm
+		source\elf.asm = source\elf.asm
+		source\ELF.c = source\ELF.c
+		source\globalVariables.c = source\globalVariables.c
+		source\IDT.c = source\IDT.c
+		source\kernel.c = source\kernel.c
+		source\kprin.c = source\kprin.c
+		source\Link.h = source\Link.h
+		source\mathf.c = source\mathf.c
+		source\memory structure.txt = source\memory structure.txt
+		source\memory.c = source\memory.c
+		source\shell.c = source\shell.c
+		source\stdarg.h = source\stdarg.h
+		source\string.c = source\string.c
+		source\structs.c = source\structs.c
+		source\time.c = source\time.c
+		source\video.c = source\video.c
+		source\windowsEventsCodes.c = source\windowsEventsCodes.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "usb", "usb", "{8859DB24-D70E-4263-B556-25AB92EEB379}"
+	ProjectSection(SolutionItems) = preProject
+		source\usb\ehci.c = source\usb\ehci.c
+		source\usb\hub.c = source\usb\hub.c
+		source\usb\keyboard.c = source\usb\keyboard.c
+		source\usb\mouse.c = source\usb\mouse.c
+		source\usb\storage.c = source\usb\storage.c
+		source\usb\uhci.c = source\usb\uhci.c
+		source\usb\usbd.c = source\usb\usbd.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Devices", "Devices", "{FE5FF5C3-66EB-4F7B-9F49-BD0DE8B3D2AE}"
+	ProjectSection(SolutionItems) = preProject
+		source\Devices\cpu.c = source\Devices\cpu.c
+		source\Devices\device.c = source\Devices\device.c
+		source\Devices\disk.c = source\Devices\disk.c
+		source\Devices\fpu.c = source\Devices\fpu.c
+		source\Devices\PCI.c = source\Devices\PCI.c
+		source\Devices\ports.c = source\Devices\ports.c
+		source\Devices\ps2mouse.c = source\Devices\ps2mouse.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FS", "FS", "{90091C43-704F-491A-AB43-100DDB3945C7}"
+	ProjectSection(SolutionItems) = preProject
+		source\FS\fat32.c = source\FS\fat32.c
+		source\FS\files.c = source\FS\files.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GUI", "GUI", "{3CFAA31B-E386-4D65-A054-CE7D2F055305}"
+	ProjectSection(SolutionItems) = preProject
+		source\GUI\Forms.c = source\GUI\Forms.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SVGA", "SVGA", "{6C4FC3D3-2C74-4A38-B45A-075056F9C9DC}"
+	ProjectSection(SolutionItems) = preProject
+		source\SVGA\svga.c = source\SVGA\svga.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "internet", "internet", "{D9CE8A36-BE4C-4589-86BC-3135B7716B26}"
+	ProjectSection(SolutionItems) = preProject
+		source\internet\internet.c = source\internet\internet.c
+		source\internet\rtl8139.c = source\internet\rtl8139.c
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8859DB24-D70E-4263-B556-25AB92EEB379} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{FE5FF5C3-66EB-4F7B-9F49-BD0DE8B3D2AE} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{90091C43-704F-491A-AB43-100DDB3945C7} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{3CFAA31B-E386-4D65-A054-CE7D2F055305} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{6C4FC3D3-2C74-4A38-B45A-075056F9C9DC} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{D9CE8A36-BE4C-4589-86BC-3135B7716B26} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F4CB408-3EA0-4854-8E28-15F23A83F7CF}
+	EndGlobalSection
+EndGlobal

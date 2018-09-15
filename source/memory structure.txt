@@ -1,0 +1,15 @@
+0x0 - 0x100000      - used
+{
+	0x09000 - 0x09800 - IDT
+	0x09800 - 0x09806 - LIDT
+	0x09810 - 0x09811 - Keys In Queue
+	0x09811 - 0x09812 - Queue Start(offset from 0x09813(first element in q))
+	0x09812 - 0x09813 - Queue Last
+	0x09813 - 0x09913 - Queue
+	0x09913 - 0x09916 - Current time from day start(next day after pc boot timer continues and won't be resetted.)
+	0x09917 - 0x09920 - Address of table with methods
+	0x09921 - 0x09924 - Address of table with processes
+	
+}
+0x100000 - 0x300000 - kernel
+0x300000 - 0x350000 - system resources
