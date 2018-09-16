@@ -90,16 +90,71 @@ uint readcapacity10(UsbStorage * s)
 	t->success = false;
 	dev->hcIntr(dev, t);
 	free(cbw);
-	//printMem(&res, 4);
+	t->endp = endpointIn;
+	t->req = 0;
+	t->data = cbw;
+	t->len = 13;
+	t->complete = false;
+	t->success = false;
+	dev->hcIntr(dev, t);
+
+	//printMem(cbw, 13);
 	//kprintf("!%x!", (res[0] << 24) + (res[1] << 16) + (res[2] << 8) + res[3]);
 	return (res[0] << 24) + (res[1] << 16) + (res[2] << 8) + res[3];
 }
-void read10(UsbStorage * s, void * buf)
+typedef struct _cmd_rw10_t {
+	uint8_t op;     // read=0x28
+	uint8_t flags;  // bits: 1=fua_nv, 3=fua, 4=dpo, 7:5=rdprotect
+	uint32_t lba;
+	uint8_t group;
+	uint16_t len;
+	uint8_t control;
+} cmd_rw10_t;
+uint bswap32(uint a)
+{
+	return ((a >> 24) & 0xFF) + (((a >> 16) & 0xFF) << 8) + (((a >> 8) & 0xFF) << 16) + (((a) & 0xFF) << 24);
+}
+void read10(UsbStorage * s, uint lba, uint count, void * buf)
 {
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-
+	cbw_t * cbw = malloc(sizeof(cbw_t) + 66);
+	cbw->lun = 0;
+	cbw->tag = 0x21;
+	cbw->sig = 0x43425355;
+	cbw->wcb_len = 10;
+	cbw->flags = 0x80;
+	cbw->xfer_len = count * 512;
+	cmd_rw10_t * cmd = (uint)cbw + 15;
+	cmd->op = 0x28;
+	cmd->lba = bswap32(lba + 1);
+	cmd->len = (count & 0xFF) << 8 + (count >> 8) & 0xff;
+	t->endp = endpointOut;
+	t->req = 0;
+	t->data = cbw;
+	t->len = 0x1F;
+	t->complete = false;
+	t->success = false;
+	dev->hcIntr(dev, t);
+	for (int i = 0; i < count; i++) {
+	//	kprintf("qq");
+		t->endp = endpointIn;
+		t->req = 0;
+		t->data = buf;
+		t->len = 512;
+		t->complete = false;
+		t->success = false;
+		dev->hcIntr(dev, t);
+		buf += 512;
+	}
+	t->endp = endpointIn;
+	t->req = 0;
+	t->data = cbw;
+	t->len = 13;
+	t->complete = false;
+	t->success = false;
+	dev->hcIntr(dev, t);
 }
 
 void _storageInit(UsbDevice * dev)
@@ -135,7 +190,7 @@ void _storageInit(UsbDevice * dev)
 		sectorCount = readcapacity10(storage);
 	};
 	kprintf("Sectors count: %d\n", sectorCount);
-	char *buf = malloc(512);
-	read10(storage, buf);
-	printMem(buf, 16);
+	char *buf = malloc(1024);
+	read10(storage, 0, 2, buf);
+	printMem((uint)buf, 512);
 }

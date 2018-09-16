@@ -940,7 +940,7 @@ void printMem(unsigned char * a, uint c)
 			kprintf("0%x", (int)a[i]);
 		else
 			kprintf("%x", (int)a[i]);
-		if ((i % 16) != 15)
+		if ((i % 24) != 23)
 			kprintf("-");
 		else if (i != c - 1)
 			kprintf("\n");
