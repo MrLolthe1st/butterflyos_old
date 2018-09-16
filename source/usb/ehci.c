@@ -444,7 +444,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 	// Reset the port
 	EhciPortSet(reg, PORT_RESET);
-	PitWait(5000);
+	PitWait(500);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
@@ -452,7 +452,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		PitWait(1000);
+		PitWait(100);
 
 		// Get current status
 		status = *reg;
@@ -506,7 +506,7 @@ static void EhciInitTD(EhciTD *td, EhciTD *prev,
 	//kprintf("###%x###", p);
 	td->buffer[0] = (u32)p;
 	td->extBuffer[0] = 0;
-//	kprintf("$!%x$!", p);
+	//	kprintf("$!%x$!", p);
 	return;
 	p &= ~0xfff;
 	// Remaining pages of buffer memory.
@@ -573,7 +573,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(100);
+	PitWait(1);
 	//printQh(qh);
 	if (qh->token & TD_TOK_HALTED)
 	{
@@ -732,7 +732,7 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	uint addr = dev->addr;
 	uint maxSize = dev->maxPacketSize;
 	uint endp = t->endp->desc->addr & 0xf;
-	kprintf("$%x$", endp);
+	//kprintf("$%x$", endp);
 	// Create queue of transfer descriptors
 	EhciTD *td = EhciAllocTD(hc);
 	if (!td)
@@ -748,6 +748,11 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Data in/out packets
 	uint toggle = t->endp->toggle;
 	uint packetType = USB_PACKET_IN;
+	if (t->endp->desc->addr & 0x80)
+		packetType = USB_PACKET_IN;
+	else
+		packetType = USB_PACKET_OUT;
+	//kprintf("$%x$", packetType);
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);
@@ -758,6 +763,8 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	//printQh(qh);
 	// Schedule queue
 	EhciInsertPeriodicQH(hc->periodicQH, qh);
+	if(t->w)
+	EhciWaitForQH(hc, qh);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -783,7 +790,7 @@ static void EhciProbe(EhciController *hc)
 				dev->port = port;
 				dev->speed = speed;
 				dev->maxPacketSize = 8;
-				
+
 				//kprintf("Status: %x\n", hc->opRegs->usbSts);
 
 				dev->hcControl = EhciDevControl;
@@ -803,7 +810,7 @@ void printQh(EhciQH * qh)
 {
 	uint q = attr;
 	attr = 0x04;
-	kprintf("Addr=%x, QueueHead info:\n",qh);
+	kprintf("Addr=%x, QueueHead info:\n", qh);
 	kprintf(" QHLP = 0x%x, EndpCh = 0x%x, EndpCap = 0x%x\n\
  NextLink = 0x%x, AltLink = 0x%x, Token = 0x%x\n", qh->qhlp, qh->ch, qh->caps, qh->nextLink, qh->altLink, qh->token);
 	kprintf(" Buffers:\n");
@@ -951,23 +958,23 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	//return;
 	// Setup frame list
 	//hc->opRegs->frameIndex = 0;
-	WOR( frameIndexO, 0);
+	WOR(frameIndexO, 0);
 	//hc->opRegs->periodicListBase = (u32)(uintptr_t)hc->frameList;
-	WOR( periodicListBaseO, (u32)(uintptr_t)hc->frameList);
+	WOR(periodicListBaseO, (u32)(uintptr_t)hc->frameList);
 	//hc->opRegs->asyncListAddr = (u32)(uintptr_t)hc->asyncQH;
-	WOR( asyncListAddrO, (u32)(uintptr_t)hc->asyncQH);
-//	kprintf("[%x,%x]", &hc->opRegs->asyncListAddr, (uintptr_t)(bar.u.address + hc->capRegs->capLength));
-//	moveee((uintptr_t)(bar.u.address + hc->capRegs->capLength)+0x14, 0x4, (u32)(uintptr_t)hc->asyncQH);
-	//hc->opRegs->ctrlDsSegment = 0;
-	WOR( ctrlDsSegmentO, 0);
+	WOR(asyncListAddrO, (u32)(uintptr_t)hc->asyncQH);
+	//	kprintf("[%x,%x]", &hc->opRegs->asyncListAddr, (uintptr_t)(bar.u.address + hc->capRegs->capLength));
+	//	moveee((uintptr_t)(bar.u.address + hc->capRegs->capLength)+0x14, 0x4, (u32)(uintptr_t)hc->asyncQH);
+		//hc->opRegs->ctrlDsSegment = 0;
+	WOR(ctrlDsSegmentO, 0);
 	//PitWait(100);
 	// Clear status
 	//hc->opRegs->usbSts = ~0;
-	WOR( usbStsO, ~0);
+	WOR(usbStsO, ~0);
 	// Enable controller
 	//hc->opRegs->usbCmd = (8 << CMD_ITC_SHIFT) | CMD_PSE | CMD_ASE | CMD_RS;
-	
-	WOR(usbCmdO, (8 << CMD_ITC_SHIFT) | CMD_PSE | CMD_ASE | CMD_RS );
+
+	WOR(usbCmdO, (8 << CMD_ITC_SHIFT) | CMD_PSE | CMD_ASE | CMD_RS);
 	while (ROR(usbStsO)&STS_HCHALTED);
 
 	// Configure all devices to be managed by the EHCI
@@ -975,7 +982,7 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	WOR(configFlagO, 1);
 	PitWait(50);    // TODO - remove after dynamic port detection
 	kprintf("Device configured. Probing ports...\n");
-				   // Probe devices
+	// Probe devices
 	EhciProbe(hc);
 
 	// Register controller

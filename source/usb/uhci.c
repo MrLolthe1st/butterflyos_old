@@ -508,6 +508,10 @@ static void UhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Data in/out packets
 	uint toggle = t->endp->toggle;//dev->endp.toggle;
 	uint packetType = TD_PACKET_IN;
+	if (t->endp->desc->addr&0x80)
+		packetType = TD_PACKET_IN;
+	else
+		packetType = TD_PACKET_OUT;
 	uint packetSize = t->len;
 
 	UhciInitTD(td, prev, speed, addr, endp, toggle, packetType, packetSize, t->data);
@@ -518,6 +522,8 @@ static void UhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 
 	// Schedule queue
 	UhciInsertQH(hc, qh);
+	if(t->w)
+		UhciWaitForQH(hc, qh);
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -350,6 +350,7 @@ typedef struct UsbTransfer
 	uint len;
 	bool complete;
 	bool success;
+	char w;
 } UsbTransfer;
 
 // ------------------------------------------------------------------------------------------------
@@ -562,12 +563,18 @@ bool UsbDevGetString(UsbDevice *dev, char *str, uint langId, uint strIndex)
 // ------------------------------------------------------------------------------------------------
 bool UsbDevClearHalt(UsbDevice *dev)
 {
-	return UsbDevRequest(dev,
-		RT_DEV_TO_HOST | RT_STANDARD | RT_ENDP,
-		REQ_CLEAR_FEATURE,
-		F_ENDPOINT_HALT,
-		0,
-		0, 0);
+
+	UsbEndpDesc * z = dev->intfDesc->endpoints;
+
+	while (z) {
+		UsbDevRequest(dev,
+			RT_DEV_TO_HOST | RT_STANDARD | RT_ENDP,
+			REQ_CLEAR_FEATURE,
+			F_ENDPOINT_HALT,
+			z->addr & 0x0f,
+			0, 0);
+		z = z->next;
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
