@@ -91,6 +91,7 @@ IDT_HANDLERM(multitasking) {
 		movb $0x20, %al \n\
 		outb %al, $0x20\n\
 		pop %ax");
+	UsbPoll();
 	*sec100 = (*sec100) + 1; // % 100;
 	__asm__("\
 	call _multiHandler");

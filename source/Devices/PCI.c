@@ -625,15 +625,16 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	p.dev = dev;
 	p.func = func;
 
-	 kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
+	 /*kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
 		 (int)bus, (int)dev, (int)func,
 		 (int)info.vendorId, (int)info.deviceId,
 		 (uint)PciClassName(info.classCode, info.subclass, info.progIntf)
-		 );
+		 );*/
 	_ehci_init(id, &info);
 	_uhci_init(id, &info);
 	_rtl39_init(id, &info);
-	PitWait(100000);
+	//while (!getKey());
+	//PitWait(100000);
 	//__pci_ata(id, &info);
 	/*
 	const PciDriver *driver = g_pciDriverTable;

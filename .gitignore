@@ -1,6 +1,7 @@
 qemu/
 utils/
 temp/
+.vs/
 images/
 compilers/
 ButterflyOS.zip

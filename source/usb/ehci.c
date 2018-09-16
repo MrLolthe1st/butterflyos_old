@@ -444,7 +444,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 	// Reset the port
 	EhciPortSet(reg, PORT_RESET);
-	PitWait(500);
+	PitWait(5000);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
@@ -452,7 +452,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		PitWait(100);
+		PitWait(1000);
 
 		// Get current status
 		status = *reg;
@@ -748,9 +748,6 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Data in/out packets
 	uint toggle = t->endp->toggle;
 	uint packetType = USB_PACKET_IN;
-	if (t->endp->desc->addr&0x80!=0)
-		packetType = USB_PACKET_OUT;
-	kprintf("$#%x#$", packetType);
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);
@@ -761,7 +758,6 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	//printQh(qh);
 	// Schedule queue
 	EhciInsertPeriodicQH(hc->periodicQH, qh);
-	EhciWaitForQH(hc, qh);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -795,6 +791,8 @@ static void EhciProbe(EhciController *hc)
 
 				if (!UsbDevInit(dev))
 				{
+					attr = 0x4E;
+					kprintf("Some FUKIN BAD!");
 					// TODO - cleanup
 				}
 			}

@@ -395,9 +395,10 @@ static void UsbKbdPoll(UsbDevice *dev)
     UsbKbd *kbd = dev->drv;
 
     UsbTransfer *t = &kbd->dataTransfer;
-
+	
     if (t->complete)
     {
+		kprintf("q");
         if (t->success)
         {
             UsbKbdProcess(kbd);
@@ -417,22 +418,23 @@ void _UsbKbdInit(UsbDevice *dev)
     {
         printTextToWindow(2, mywin, "      Initializing Keyboard\n");
 
-        UsbKbd *kbd = VMAlloc(sizeof(UsbKbd));
+        UsbKbd *kbd = malloc(sizeof(UsbKbd));
         memset(kbd->lastData, 0, 8);
 
         dev->drv = kbd;
         dev->drvPoll = UsbKbdPoll;
 
         uint intfIndex = dev->intfDesc->intfIndex;
-
+		kprintf("IntfIndex: %x", intfIndex);
         // Only send interrupt report when data changes
         UsbDevRequest(dev,
             RT_HOST_TO_DEV | RT_CLASS | RT_INTF,
             REQ_SET_IDLE, 0, intfIndex,
             0, 0);
 		UsbEndpoint * endp = malloc(sizeof(UsbEndpoint));
-		endp->toggle=1;
+		endp->toggle=0;
 		endp->desc = dev->intfDesc->endpoints;
+		
         // Prepare transfer
         UsbTransfer *t = &kbd->dataTransfer;
         t->endp = endp;
@@ -443,6 +445,8 @@ void _UsbKbdInit(UsbDevice *dev)
         t->success = false;
 
         dev->hcIntr(dev, t);
+		kprintf("Keyboard ENDPOINT = %x", endp->desc->addr);
+		
         return true;
     }
 
