@@ -813,6 +813,7 @@ static bool UsbDevInit(UsbDevice *dev)
 
 void UsbPoll()
 {
+	//////////if (!pcidone) return;
 	for (UsbController *c = g_usbControllerList; c; c = c->next)
 	{
 		if (c->poll)

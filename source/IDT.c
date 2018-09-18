@@ -486,14 +486,12 @@ IRQ_HANDLER(irq_time) {
 unsigned int qwx = 0;
 IRQ_HANDLER(irq_time81) {
 
-	//kprintf("nirq1");
 	qwx++;
 	*sec100 = (*sec100) + 1; // % 100;
 
 }
 
 IRQ_HANDLER1(irq_time8) {
-	//kprintf("nirq1");
 	qwx++;
 	*sec100 = (*sec100) + 1; // % 100;
 

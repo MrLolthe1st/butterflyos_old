@@ -4,6 +4,7 @@
 #define VMAlloc malloc
 #define KeysQueue 0x09810
 //Достает символ из очереди
+char pcidone = 0;
 char getKey()
 {
 	unsigned char * keysInQueue = KeysQueue;

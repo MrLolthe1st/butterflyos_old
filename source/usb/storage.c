@@ -82,6 +82,7 @@ uint readcapacity10(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	dev->hcIntr(dev, t);
+	kprintf("readCapacity10 sent\n");
 	unsigned char res[8];
 	t->endp = endpointIn;
 	t->req = 0;
@@ -91,6 +92,7 @@ uint readcapacity10(UsbStorage * s)
 	t->success = false;
 	dev->hcIntr(dev, t);
 	free(cbw);
+	printMem(&res, 8);
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -185,6 +187,7 @@ void _storageInit(UsbDevice * dev)
 	UsbDevClearHalt(dev); dev->drvPoll = poll;
 	u8 lunCnt = 0;
 	UsbDevRequest(dev, 0b10100001, 0xfe, 0, dev->intfDesc->intfIndex, 1, &lunCnt);
+	kprintf("LUN count:%x\n", lunCnt);
 	UsbEndpoint * endpointIn, *endpointOut;
 	endpointIn = malloc(sizeof(UsbEndpoint));
 	endpointIn->toggle = 0;

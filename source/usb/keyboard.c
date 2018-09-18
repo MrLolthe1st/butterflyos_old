@@ -427,10 +427,10 @@ void _UsbKbdInit(UsbDevice *dev)
         uint intfIndex = dev->intfDesc->intfIndex;
 		kprintf("IntfIndex: %x", intfIndex);
         // Only send interrupt report when data changes
-        UsbDevRequest(dev,
+        /*UsbDevRequest(dev,
             RT_HOST_TO_DEV | RT_CLASS | RT_INTF,
             REQ_SET_IDLE, 0, intfIndex,
-            0, 0);
+            0, 0);*/
 		UsbEndpoint * endp = malloc(sizeof(UsbEndpoint));
 		endp->toggle=0;
 		endp->desc = dev->intfDesc->endpoints;
@@ -443,7 +443,7 @@ void _UsbKbdInit(UsbDevice *dev)
         t->len = 8;
         t->complete = false;
         t->success = false;
-
+		t->w = 0;
         dev->hcIntr(dev, t);
 		kprintf("Keyboard ENDPOINT = %x", endp->desc->addr);
 		

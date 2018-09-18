@@ -22,23 +22,32 @@ typedef struct UsbHub
 // ------------------------------------------------------------------------------------------------
 static uint UsbHubResetPort(UsbHub *hub, uint port)
 {
+	u32 status = 0;
 	UsbDevice *dev = hub->dev;
-
+	// Get current status
+	if (!UsbDevRequest(dev,
+		RT_DEV_TO_HOST | RT_CLASS | RT_OTHER,
+		REQ_GET_STATUS, 0, port + 1,
+		sizeof(status), &status))
+	{
+		return 0;
+	}
+	kprintf(".Status: %x\n", status);
 	// Reset the port
 	if (!UsbDevRequest(dev,
-		RT_HOST_TO_DEV | RT_CLASS | RT_OTHER,
+		0x23,
 		REQ_SET_FEATURE, F_PORT_RESET, port + 1,
 		0, 0))
 	{
 		return 0;
 	}
-
+	Wait(100);
 	// Wait 100ms for port to enable (TODO - remove after dynamic port detection)
-	u32 status = 0;
+	
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		PitWait(10);
+		Wait(150);
 
 		// Get current status
 		if (!UsbDevRequest(dev,
@@ -48,7 +57,6 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 		{
 			return 0;
 		}
-
 		// Check if device is attached to port
 		if (~status & PORT_CONNECTION)
 		{
@@ -70,6 +78,7 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 		}
 	}
 
+	kprintf("!Status: %x\n", status);
 	return status;
 }
 
@@ -78,28 +87,27 @@ static void UsbHubProbe(UsbHub *hub)
 {
 	UsbDevice *dev = hub->dev;
 	uint portCount = hub->desc.portCount;
-
 	// Enable power if needed
-	if ((hub->desc.chars & HUB_POWER_MASK) == HUB_POWER_INDIVIDUAL)
-	{
+	
 		for (uint port = 0; port < portCount; ++port)
 		{
 			if (!UsbDevRequest(dev,
-				RT_HOST_TO_DEV | RT_CLASS | RT_OTHER,
+				0x23,
 				REQ_SET_FEATURE, F_PORT_POWER, port + 1,
 				0, 0))
 			{
-				return;
+				//////return;
 			}
 
+			Wait(hub->desc.portPowerTime * 20);
 		}
 
-		PitWait(hub->desc.portPowerTime * 2);
-	}
-	kprintf("[%x]", ((EhciController*)dev->hc)->capRegs->hcsParams);
+		PitWait(50);
+	kprintf("[%x]", hub->desc.chars);
 	// Reset ports
 	for (uint port = 0; port < portCount; ++port)
 	{
+		Wait(30);
 		uint status = UsbHubResetPort(hub, port);
 
 		if (status & PORT_ENABLE)
@@ -124,6 +132,7 @@ static void UsbHubProbe(UsbHub *hub)
 				}
 			}
 		}
+		
 	}
 }
 
@@ -142,6 +151,7 @@ void _usbhubinit(UsbDevice *dev)
 		// Get Hub Descriptor
 		UsbHubDesc desc;
 
+		//return;
 		if (!UsbDevRequest(dev,
 			RT_DEV_TO_HOST | RT_CLASS | RT_DEV,
 			REQ_GET_DESC, (USB_DESC_HUB << 8) | 0, 0,
@@ -160,6 +170,7 @@ void _usbhubinit(UsbDevice *dev)
 		dev->drvPoll = UsbHubPoll;
 
 		UsbHubProbe(hub);
+		kprintf("ok.");
 		return true;
 	}
 

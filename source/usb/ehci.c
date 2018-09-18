@@ -444,16 +444,16 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 	// Reset the port
 	EhciPortSet(reg, PORT_RESET|(1<<12));
-	PitWait(500);
+	Wait(500);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
 	uint status = 0;
-	*reg |=  (1 << 12);
+///	*reg |=  (1 << 12);
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		PitWait(100);
+		Wait(100);
 
 		// Get current status
 		status = *reg;
@@ -774,6 +774,7 @@ static void EhciProbe(EhciController *hc)
 	// Port setup
 	//kprintf("%x", hc->capRegs->hcsParams);
 	uint portCount = RCR(hcsParamsO) & HCSPARAMS_N_PORTS_MASK;
+	
 	for (uint port = 0; port < portCount; ++port)
 	{
 		// Reset port
