@@ -443,12 +443,13 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	volatile u32 *reg = &hc->opRegs->ports[port];
 
 	// Reset the port
-	EhciPortSet(reg, PORT_RESET);
+	EhciPortSet(reg, PORT_RESET|(1<<12));
 	PitWait(500);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
 	uint status = 0;
+	*reg |=  (1 << 12);
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
@@ -857,6 +858,7 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	//return;
 	//MWIR(ehcibase, usbStsO, 0x0);
 	// Read the Command register
+	kprintf("!!%x!", hc->capRegs->hcsParams);
 	uint cmd = ROR(usbCmdO);
 	// Write it back, setting bit 2 (the Reset bit) 
 	//  and making sure the two schedule Enable bits are clear.
