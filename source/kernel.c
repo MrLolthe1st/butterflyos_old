@@ -40,7 +40,6 @@ Window * mywin = 0;
 #include "video.c"
 #include "Devices/ports.c"
 #include "memory.c"
-#pragma GCC optimize ("Ofast")
 #include "globalVariables.c"
 #include "kprin.c"
 #include "Devices\PCI.c"
@@ -49,10 +48,12 @@ Window * mywin = 0;
 #include "FS/fat32.c"
 #include "FS\files.c"
 #include "Devices/cpu.c"
+#pragma GCC optimize ("O0")
 #include "SVGA/svga.c"
 #include "Devices/ps2mouse.c"
 #include "idt.c"
 #include "GUI\Forms.c"
+#pragma GCC pop_options
 #include "usb\usbd.c"
 #include "usb\ehci.c"
 #include "usb\uhci.c"
@@ -62,7 +63,6 @@ Window * mywin = 0;
 #include "usb\hub.c"
 #include "internet\internet.c"
 #include "internet\rtl8139.c"
-#pragma GCC pop_options
 void Win1Handler(void * ev)
 {
 

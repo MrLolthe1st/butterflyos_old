@@ -43,6 +43,7 @@ unsigned int AHCI_BASE = 0;
 #define DISK_TYPE_SATA 	0x00
 #define DISK_TYPE_SATAPI 0x01
 #define DISK_TYPE_SATA_AHCI	0x02
+#define DISK_TYPE_USB	0x3
 
 
 typedef enum
@@ -340,6 +341,7 @@ typedef struct __attribute__((packed)) tDiskDev {
 	unsigned long long sectorsCount;
 	unsigned char type;
 	unsigned char structNo;
+	void * link;
 }
 DiskDev;
 typedef struct __attribute__((packed)) tATA {
@@ -787,8 +789,7 @@ int write_port(HBA_PORT *port, unsigned long long starth, unsigned int count,
 	{
 		// In some longer duration reads, it may be helpful to spin on the DPS bit 
 		// in the PxIS port field as well (1 << 5)
-		PitWait(1000);
-		kprintf("[%x,%x]", port->ci, port->is);
+		PitWait(1);
 		if ((port->ci & (1 << slot)) == 0)
 			break;
 		if (port->is & HBA_PxIS_TFES)	// Task file error
@@ -907,6 +908,12 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	{
 		return _read(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
 	}
+	else if (diskDevices[param].type == DISK_TYPE_USB)
+	{
+		uint z = LBA & 0xFFFFFFFF;
+		_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		return 0;
+	}
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
@@ -1011,6 +1018,9 @@ void makeLogicDrives()
 		//kprintf("!%d, %d!", ll, lastLetter);
 
 		ReadController(1, 1, &bootSect, i);
+		//_read10usb(diskDevices[0].link, (uint)0, (uint)1, &bootSect);
+		printMem(bootSect, 10);
+		kprintf("^^^^^^\n");
 
 		//kprintf("\n");
 		if (*((unsigned long long *)&bootSect) == 0x5452415020494645ULL)
@@ -1048,7 +1058,6 @@ void makeLogicDrives()
 			drives[lastLetter].diskOffset = 0;
 			drives[lastLetter].size = 0xff; drives[lastLetter].type = 0;
 			ReadController(0, 1, &bootSect, i);
-
 			if (bootSect[512 - 13] == 'S')
 				if (bootSect[512 - 12] == 'T')
 					if (bootSect[512 - 11] == 'A')

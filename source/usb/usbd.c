@@ -785,8 +785,6 @@ static bool UsbDevInit(UsbDevice *dev)
 		//printTextToWindow(1, mywin, "Class=%x.%x\n", (int)cur->intfClass, (int)cur->intfSubClass);
 		while (cur)
 		{
-			if (cur->intfClass == 8 && cur->intfSubClass == 4)
-				_storageInit(dev);
 			UsbPrintIntfDesc(cur);
 			UsbEndpDesc * cd = cur->endpoints;
 			while (cd)
