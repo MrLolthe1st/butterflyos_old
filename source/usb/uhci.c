@@ -294,7 +294,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 
 		if (td->cs & TD_CS_STALLED)
 		{
-			printTextToWindow(1, mywin, "TD is stalled\n");
+		//	printTextToWindow(1, mywin, "TD is stalled\n");
 			t->success = false;
 			t->complete = true;
 		}

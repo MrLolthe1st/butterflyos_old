@@ -634,8 +634,8 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	_ehci_init(id, &info);
 	_uhci_init(id, &info);
 	_rtl39_init(id, &info);
-	//while (!getKey());
-	PitWait(10000);
+	/////while (!getKey());
+	PitWait(1000);
 	//__pci_ata(id, &info);
 	/*
 	const PciDriver *driver = g_pciDriverTable;
