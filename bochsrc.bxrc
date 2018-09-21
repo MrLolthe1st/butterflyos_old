@@ -10,7 +10,7 @@ floppy_bootsig_check: disabled=0
 # no floppya
 # no floppyb
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=disk, path="E:\BOS\Images\boot.img", mode=flat, cylinders=0, heads=16, spt=63, model="Generic 1234", biosdetect=auto, translation=auto
+ata0-master: type=disk, path="D:\BOS\Images\boot.img", mode=flat, cylinders=0, heads=16, spt=63, model="Generic 1234", biosdetect=auto, translation=auto
 ata0-slave: type=none
 ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
 ata1-master: type=none
@@ -50,5 +50,5 @@ com1: enabled=1, mode=null
 com2: enabled=0
 com3: enabled=0
 com4: enabled=0
-usb_uhci: enabled=1, port1="mouse", options1=none, port2="disk:E:\BOS\Images\d.img", options2=none
-usb_ehci: enabled=1, port1="disk:E:\BOS\Images\d.img", options1=none, port2=none, options2=none, port3=none, options3=none, port4=none, options4=none, port5=none, options5=none, port6=none, options6=none
+usb_uhci: enabled=1, port1="mouse", options1=none, port2="disk:D:\BOS\Images\d.img", options2=none
+usb_ehci: enabled=1, port1="disk:D:\BOS\Images\d.img", options1=none, port2=none, options2=none, port3=none, options3=none, port4=none, options4=none, port5=none, options5=none, port6=none, options6=none

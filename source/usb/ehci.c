@@ -574,8 +574,14 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(1);
+	PitWait(1000);
 	//printQh(qh);
+	kprintf("[%x,%x,%x]", qh->token, hc->opRegs->usbSts,hc->opRegs->usbCmd);
+	if (qh->token & TD_TOK_XACT)
+	{
+		t->success = true;
+		t->complete = true;
+	}
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -585,10 +591,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	{
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
-			if (qh->token & TD_TOK_DATABUFFER)
-			{
-				kprintf(" Data Buffer Error\n");
-			}
+			
 			if (qh->token & TD_TOK_BABBLE)
 			{
 				kprintf(" Babble Detected\n");
@@ -753,7 +756,8 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 		packetType = USB_PACKET_IN;
 	else
 		packetType = USB_PACKET_OUT;
-	//kprintf("$%x$", packetType);
+
+	//kprintf("$$$%x$$$", t->len);
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);

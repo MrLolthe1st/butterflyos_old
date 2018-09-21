@@ -567,12 +567,17 @@ bool UsbDevClearHalt(UsbDevice *dev)
 	UsbEndpDesc * z = dev->intfDesc->endpoints;
 
 	while (z) {
-		UsbDevRequest(dev,
-			RT_DEV_TO_HOST | RT_STANDARD | RT_ENDP,
-			REQ_CLEAR_FEATURE,
-			F_ENDPOINT_HALT,
-			z->addr & 0x0f,
-			0, 0);
+		
+			if(!UsbDevRequest(dev,
+				0x2,
+				0x01,
+				0x2,
+				 0xf,
+				0, 0)
+			)
+			kprintf("&&&&%x!!!!", z->addr);
+			//Wait(10000);
+		
 		z = z->next;
 	}
 }
