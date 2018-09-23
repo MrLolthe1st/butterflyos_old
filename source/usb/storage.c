@@ -411,7 +411,7 @@ void startUnit(UsbStorage * s)
 	cbw->xfer_len = 0;
 	startStop_cmd * cmd = (uint)cbw + 15;
 	cmd->op = 0x1b;
-	cmd->pow2 = 1 ;
+	cmd->pow2 = 1 |(3<<4) ;
 	
 	t->endp = endpointOut;
 	t->req = 0;
@@ -519,6 +519,9 @@ void reqSense(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
+	kprintf("Sense:");
+	printMem(&z, sizeof(z));
+	kprintf("\n");
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -535,9 +538,9 @@ void _storageInit(UsbDevice * dev)
 {
 	printTextToWindow(1, mywin, "Initializing mass storage device....\n");
 	//UsbDevClearHalt(dev);
+	//UsbDevClearHalt(dev);
 	if (!UsbDevRequest(dev, RT_HOST_TO_DEV | RT_CLASS | RT_INTF, 0xff, 0, dev->intfDesc->intfIndex, 0, 0))
 		kprintf("NoReset.");
-	//UsbDevClearHalt(dev);
 
 	
 	u8 lunCnt = 0;
@@ -545,6 +548,7 @@ void _storageInit(UsbDevice * dev)
 		kprintf("Nolun.");
 	//UsbDevClearHalt(dev);
 	 dev->drvPoll = &poll;
+	 Wait(10000);
 	kprintf("LUN count:%x\n", lunCnt);
 	UsbEndpoint * endpointIn, *endpointOut;
 	endpointIn = malloc(sizeof(UsbEndpoint));
@@ -554,7 +558,7 @@ void _storageInit(UsbDevice * dev)
 	else
 		endpointIn->desc = dev->intfDesc->endpoints->next;
 	endpointOut = malloc(sizeof(UsbEndpoint));
-	endpointOut->toggle = 1;
+	endpointOut->toggle = 0;
 	if (dev->intfDesc->endpoints->addr & 0x80)
 		endpointOut->desc = dev->intfDesc->endpoints->next;
 	else
@@ -572,12 +576,14 @@ void _storageInit(UsbDevice * dev)
 	uint sectorCount = 0;
 	//identifyRequest(storage);
 	for (int lun = 0; lun <= lunCnt; ++lun) {
-			startUnit(storage); kprintf("@@@@@@");
-		inquiryRequest(storage);
+		//	startUnit(storage); 
+			//Wait(10000);
 		if (testUnitReady(storage)) {
-			//reqSense(storage);
+			reqSense(storage);
 			//startUnit(storage); kprintf("@@@@@@");
 		}
+		inquiryRequest(storage);
+		
 	//	Wait(10000);
 		sectorCount = readcapacity10(storage);
 	};

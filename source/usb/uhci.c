@@ -325,7 +325,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 		// Update endpoint toggle state
 		if (t->success && t->endp)
 		{
-			t->endp->toggle ^= 1;
+			//t->endp->toggle ^= 1;
 		}
 
 		// Remove queue from schedule

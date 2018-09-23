@@ -526,7 +526,7 @@ static void EhciInitQH(EhciQH *qh, UsbTransfer *t, EhciTD *td, UsbDevice *parent
 
 	uint ch =
 		(maxSize << QH_CH_MPL_SHIFT) |
-		QH_CH_DTC |
+		QH_CH_DTC|
 		(speed << QH_CH_EPS_SHIFT) |
 		(endp << QH_CH_ENDP_SHIFT) |
 		addr;
@@ -576,7 +576,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	//hc->opRegs->frameIndex = 0;
 	PitWait(1000);
 	//printQh(qh);
-	kprintf("[%x,%x,%x]", qh->token, hc->opRegs->usbSts,hc->opRegs->usbCmd);
+	kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
 	if (qh->token & TD_TOK_XACT)
 	{
 		t->success = true;
@@ -608,6 +608,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 			t->success = true;
 			t->complete = true;
 		}
+		else
+		{
+
+		}
 	}
 
 	if (t->complete)
@@ -617,8 +621,8 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 
 		// Update endpoint toggle state
 		if (t->success && t->endp)
-		{
-			t->endp->toggle ^= 1;
+		{//
+		//	t->endp->toggle ^= 1;
 		}
 
 		// Remove queue from schedule
@@ -757,11 +761,11 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	else
 		packetType = USB_PACKET_OUT;
 
-	//kprintf("$$$%x$$$", t->len);
+	
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);
-
+	kprintf("$$$%x$$$", td->token);
 	// Initialize queue head
 	EhciQH *qh = EhciAllocQH(hc);
 	EhciInitQH(qh, t, head, dev->parent, true, speed, addr, endp, maxSize);
