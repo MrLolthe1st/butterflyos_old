@@ -14,5 +14,5 @@ chcp 65001
 utils\dd.exe if=images\boot.img of=E:\butterflyOs\images\dq.vhd
 
 #$ping 127.0.0.1 -n 16 > nul
-qemu\qemu-system-x86_64.exe -m 32 -net nic,model=rtl8139  -d trace:usb_mtp_command -drive if=none,id=usbstick,file=images\boot.img -usb -device usb-ehci,id=ehci -device usb-storage,bus=ehci.0,drive=usbstick -no-reboot -vga std -D aa.txt -monitor stdio
+qemu\qemu-system-x86_64.exe -m 32 -net nic,model=rtl8139  -d trace:usb_mtp_command -drive if=none,id=usbstick,file=images\boot.img -usb -device usb-ehci,id=ehci -device usb-storage,bus=ehci.0,drive=usbstick -no-reboot -vga std -D aa.txt -monitor stdio -device usb-mouse
 pause

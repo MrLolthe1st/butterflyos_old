@@ -574,14 +574,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(1000);
+	PitWait(1);
 	//printQh(qh);
-	kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
-	if (qh->token & TD_TOK_XACT)
-	{
-		t->success = true;
-		t->complete = true;
-	}
+	//kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
+	
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -622,7 +618,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 		// Update endpoint toggle state
 		if (t->success && t->endp)
 		{//
-		//	t->endp->toggle ^= 1;
+			t->endp->toggle ^= 1;
 		}
 
 		// Remove queue from schedule
@@ -738,7 +734,7 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Determine transfer properties
 	uint speed = dev->speed;
 	uint addr = dev->addr;
-	uint maxSize = dev->maxPacketSize;
+	uint maxSize = 512;
 	uint endp = t->endp->desc->addr & 0xf;
 	//kprintf("$%x$", endp);
 	// Create queue of transfer descriptors
@@ -765,7 +761,6 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);
-	kprintf("$$$%x$$$", td->token);
 	// Initialize queue head
 	EhciQH *qh = EhciAllocQH(hc);
 	EhciInitQH(qh, t, head, dev->parent, true, speed, addr, endp, maxSize);
@@ -831,7 +826,27 @@ void printQh(EhciQH * qh)
 	kprintf("\n");
 	attr = q;
 }
+static void EhciControllerPollList(EhciController *hc, Link *list)
+{
+	EhciQH *qh;
+	EhciQH *next;
+	ListForEachSafe(qh, next, *list, qhLink)
+	{
+		if (qh->transfer)
+		{
+			EhciProcessQH(hc, qh);
+		}
+	}
+}
 
+// ------------------------------------------------------------------------------------------------
+static void EhciControllerPoll(UsbController *controller)
+{
+	EhciController *hc = (EhciController *)controller->hc;
+
+	EhciControllerPollList(hc, &hc->asyncQH->qhLink);
+	EhciControllerPollList(hc, &hc->periodicQH->qhLink);
+}
 // ------------------------------------------------------------------------------------------------
 void _ehci_init(uint id, PciDeviceInfo *info)
 {
@@ -997,10 +1012,11 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	EhciProbe(hc);
 
 	// Register controller
-	UsbController *controller = (UsbController *)VMAlloc(sizeof(UsbController));
+	UsbController *controller = (UsbController *)malloc(sizeof(UsbController));
 	controller->next = g_usbControllerList;
 	controller->hc = hc;
-	//controller->poll = EhciControllerPoll;
+	//controller->poll = &epoll;
+	controller->poll = &EhciControllerPoll;
 
-	//g_usbControllerList = controller;
+	g_usbControllerList = controller;
 }

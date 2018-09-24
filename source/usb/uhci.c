@@ -325,7 +325,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 		// Update endpoint toggle state
 		if (t->success && t->endp)
 		{
-			//t->endp->toggle ^= 1;
+			t->endp->toggle ^= 1;
 		}
 
 		// Remove queue from schedule
@@ -670,10 +670,10 @@ void _uhci_init(unsigned int id, PciDeviceInfo *info)
 	// Probe devices
 	UhciProbe(hc, size);
 	// Register controller
-	UsbController *controller = (UsbController *)VMAlloc(sizeof(UsbController));
+	UsbController *controller = (UsbController *)malloc(sizeof(UsbController));
 	controller->next = g_usbControllerList;
 	controller->hc = hc;
-	controller->poll = UhciControllerPoll;
+	//controller->poll = UhciControllerPoll;
 
 	g_usbControllerList = controller;
 }

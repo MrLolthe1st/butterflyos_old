@@ -49,7 +49,7 @@ void _UsbMouseInit(UsbDevice *dev)
         dev->drv = mouse;
         dev->drvPoll = UsbMousePoll;
 		UsbEndpoint * endp = malloc(sizeof(UsbEndpoint));
-		endp->toggle=0;
+		endp->toggle=1;
 		endp->desc = dev->intfDesc->endpoints;
         // Prepare transfer
         UsbTransfer *t = &mouse->dataTransfer;
@@ -59,7 +59,7 @@ void _UsbMouseInit(UsbDevice *dev)
         t->len = 4;
         t->complete = false;
         t->success = false;
-
+		t->w = 0;
         dev->hcIntr(dev, t);
         return true;
     }

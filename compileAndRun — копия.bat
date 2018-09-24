@@ -11,5 +11,5 @@ copy images\disk.img images\boot.img
 chcp 65001
 utils\dd.exe if=images\boot.img of=images\dq.vhd
 #$ping 127.0.0.1 -n 16 > nul
-qemu\qemu-system-x86_64.exe -trace usb_host   -m 33 -drive id=disk,file=images\boot.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0  -no-reboot -vga std -D aa.txt -monitor stdio
+qemu\qemu-system-x86_64.exe -trace usb_host   -m 33 -drive id=disk,file=images\boot.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0  -no-reboot -vga std -D aa.txt -monitor stdio -usbdevice mouse
 pause

@@ -113,7 +113,7 @@ static void UsbHubProbe(UsbHub *hub)
 		if (status & PORT_ENABLE)
 		{
 			uint speed = (status & PORT_SPEED_MASK) >> PORT_SPEED_SHIFT;
-
+			
 			UsbDevice *dev = UsbDevCreate();
 			if (dev)
 			{

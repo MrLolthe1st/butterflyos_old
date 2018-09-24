@@ -398,8 +398,7 @@ static void UsbKbdPoll(UsbDevice *dev)
 	
     if (t->complete)
     {
-		kprintf("q");
-        if (t->success)
+		if (t->success)
         {
             UsbKbdProcess(kbd);
         }

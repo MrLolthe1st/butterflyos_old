@@ -564,22 +564,6 @@ bool UsbDevGetString(UsbDevice *dev, char *str, uint langId, uint strIndex)
 bool UsbDevClearHalt(UsbDevice *dev)
 {
 
-	UsbEndpDesc * z = dev->intfDesc->endpoints;
-
-	while (z) {
-		
-			if(!UsbDevRequest(dev,
-				0x2,
-				0x01,
-				0x2,
-				 0xf,
-				0, 0)
-			)
-			kprintf("&&&&%x!!!!", z->addr);
-			//Wait(10000);
-		
-		z = z->next;
-	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -622,7 +606,7 @@ static bool UsbDevInit(UsbDevice *dev)
 	//return;
 	//UsbPrintDeviceDesc(&devDesc);
 	dev->maxPacketSize = devDesc.maxPacketSize;
-
+	kprintf("mxpcktsize=%x", devDesc.maxPacketSize);
 	// Set address
 	uint addr = ++s_nextUsbAddr;
 	if (!UsbDevRequest(dev,
@@ -815,10 +799,17 @@ static bool UsbDevInit(UsbDevice *dev)
 
 	return true;
 }
-
+void UsbService()
+{
+	while (1)
+	{
+		UsbPoll();
+	}
+}
 void UsbPoll()
 {
-	//////////if (!pcidone) return;
+	//if (!pcidone) return;
+
 	for (UsbController *c = g_usbControllerList; c; c = c->next)
 	{
 		if (c->poll)
