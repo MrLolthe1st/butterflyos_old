@@ -158,6 +158,7 @@ void k_main()
 	for (int i = 0; i < dcount; i++)
 		kprintf(" Device #%d, structNo = %x, type = %x\n", i, diskDevices[i].structNo, diskDevices[i].type);
 	makeLogicDrives();
+	for (;;);
 	char * path = "A:\\AA.TXT";
 	path[0] = 'A' + bootedFrom;
 	FILE * f = fopen(path, "r");

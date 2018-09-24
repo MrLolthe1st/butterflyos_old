@@ -725,7 +725,22 @@ static void EhciDevControl(UsbDevice *dev, UsbTransfer *t)
 	EhciInsertAsyncQH(hc->asyncQH, qh);
 	EhciWaitForQH(hc, qh);
 }
-
+uint ehciInterval(UsbDevice * d, uint i)
+{
+	if (d->speed == 0)
+	{
+		uint z = 0;
+		while (i > 0) {
+			z++;
+			i /= 2;
+		}
+		return z+3;
+	}
+	else
+	{
+		return i+1;
+	}
+}
 // ------------------------------------------------------------------------------------------------
 static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 {

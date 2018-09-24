@@ -53,7 +53,7 @@ loadermain:
 	int 0x10
 	mov ax,0x4F02
 	mov bx,0x4118
-	int 10h
+	;int 10h
     mov ax, cs
     mov ds, ax
     mov es, ax

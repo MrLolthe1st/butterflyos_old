@@ -540,7 +540,8 @@ void _storageInit(UsbDevice * dev)
 	kprintf("Sectors count: %x\n", sectorCount);
 	char * b = malloc(1024);
 //	_read10usb(storage, 0x0, 2, b);
-	_read10usb(storage, 0x1, 2, b);
+	_read10usb(storage, 0x0, 2, b);
+	printMem(b, 16);
 	free(b);
 	diskDevices[dcount].structNo = 0;
 	diskDevices[dcount].type = DISK_TYPE_USB;
