@@ -372,8 +372,8 @@ typedef struct UsbDevice
 
 	void(*hcControl)(struct UsbDevice *dev, UsbTransfer *t);
 	void(*hcIntr)(struct UsbDevice *dev, UsbTransfer *t);
-
 	void(*drvPoll)(struct UsbDevice *dev);
+	void(*onDisconnect)(struct UsbDevice *dev);
 } UsbDevice;
 typedef struct UsbDriver
 {
@@ -387,7 +387,7 @@ UsbDevice *g_usbDeviceList;
 UsbDevice *UsbDevCreate()
 {
 	// Initialize structure
-	UsbDevice *dev = VMAlloc(sizeof(UsbDevice));
+	UsbDevice *dev = malloc(sizeof(UsbDevice));
 	if (dev)
 	{
 		dev->parent = 0;

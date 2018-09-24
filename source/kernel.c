@@ -96,6 +96,7 @@ void Win1Handler(void * ev)
 void k_main()
 {
 	//hubinit=&_usbHubInit;
+	memset(&drives, 0, sizeof(LogicDrive) * 26);
 	initCoProc();
 	setCursor(0);
 	clearScreen();
@@ -116,7 +117,7 @@ void k_main()
 	procTable[0].priorityL = 20;
 	currentRunning = 0;
 	procCount = 1;
-	
+
 	//nextS = &nnn;
 	//initSVGA1(0;
 	iint();
@@ -154,17 +155,18 @@ void k_main()
 	//
 	updateWindows();
 	PciInit();
-	kprintf("List of connected disk devices:\n");
-	for (int i = 0; i < dcount; i++)
-		kprintf(" Device #%d, structNo = %x, type = %x\n", i, diskDevices[i].structNo, diskDevices[i].type);
-	makeLogicDrives();
-	for (;;);
+
+	makeLogicDrives();/*
 	char * path = "A:\\AA.TXT";
 	path[0] = 'A' + bootedFrom;
 	FILE * f = fopen(path, "r");
 	uchar * tq = malloc(2500);
 	fread(tq, 1, 2500, f);
-	printTextToWindow(1,mywin,"Result: %s", (uint)tq);
+	printTextToWindow(1,mywin,"Result: %s", (uint)tq);*/
+	for (;;)
+	{
+		UsbPoll();
+	}
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
 	/*

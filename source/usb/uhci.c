@@ -309,7 +309,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 		}
 		if (td->cs & TD_CS_CRC_TIMEOUT)
 		{
-			printTextToWindow(1, mywin, "TD timeout error\n");
+			//printTextToWindow(1, mywin, "TD timeout error\n");
 		}
 		if (td->cs & TD_CS_BITSTUFF)
 		{

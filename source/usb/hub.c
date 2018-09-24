@@ -25,14 +25,6 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 	u32 status = 0;
 	UsbDevice *dev = hub->dev;
 	// Get current status
-	if (!UsbDevRequest(dev,
-		RT_DEV_TO_HOST | RT_CLASS | RT_OTHER,
-		REQ_GET_STATUS, 0, port + 1,
-		sizeof(status), &status))
-	{
-		return 0;
-	}
-	kprintf(".Status: %x\n", status);
 	// Reset the port
 	if (!UsbDevRequest(dev,
 		0x23,
@@ -43,7 +35,7 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 	}
 	Wait(100);
 	// Wait 100ms for port to enable (TODO - remove after dynamic port detection)
-	
+
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
@@ -63,14 +55,16 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 			break;
 		}
 
-		/*
+		
 		// Acknowledge change in status
-		if (status & (PORT_ENABLE_CHANGE | PORT_CONNECTION_CHANGE))
+		if(status&PORT_CONNECTION_CHANGE)
+		if (!UsbDevRequest(dev,
+			0x23,
+			REQ_CLEAR_FEATURE, F_C_PORT_CONNECTION, port + 1,
+			0, 0))
 		{
-		port_clr(reg, PORT_ENABLE_CHANGE | PORT_CONNECTION_CHANGE);
-		continue;
-		}*/
 
+		}
 		// Check if device is enabled
 		if (status & PORT_ENABLE)
 		{
@@ -78,7 +72,6 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 		}
 	}
 
-	kprintf("!Status: %x\n", status);
 	return status;
 }
 
@@ -88,32 +81,31 @@ static void UsbHubProbe(UsbHub *hub)
 	UsbDevice *dev = hub->dev;
 	uint portCount = hub->desc.portCount;
 	// Enable power if needed
-	
-		for (uint port = 0; port < portCount; ++port)
-		{
-			if (!UsbDevRequest(dev,
-				0x23,
-				REQ_SET_FEATURE, F_PORT_POWER, port + 1,
-				0, 0))
-			{
-				//////return;
-			}
 
-			Wait(hub->desc.portPowerTime * 20);
+	for (uint port = 0; port < portCount; ++port)
+	{
+		if (!UsbDevRequest(dev,
+			0x23,
+			REQ_SET_FEATURE, F_PORT_POWER, port + 1,
+			0, 0))
+		{
+			//////return;
 		}
 
-		PitWait(50);
-	kprintf("[%x]", hub->desc.chars);
+		Wait(hub->desc.portPowerTime * 20);
+	}
+
+	PitWait(150);
 	// Reset ports
 	for (uint port = 0; port < portCount; ++port)
 	{
-		Wait(30);
+		Wait(5);
 		uint status = UsbHubResetPort(hub, port);
 
 		if (status & PORT_ENABLE)
 		{
 			uint speed = (status & PORT_SPEED_MASK) >> PORT_SPEED_SHIFT;
-			
+
 			UsbDevice *dev = UsbDevCreate();
 			if (dev)
 			{
@@ -132,13 +124,96 @@ static void UsbHubProbe(UsbHub *hub)
 				}
 			}
 		}
-		
+
 	}
 }
 
 // ------------------------------------------------------------------------------------------------
 static void UsbHubPoll(UsbDevice *dev)
 {
+	UsbHub * hub = dev->drv;
+	uint portCount = hub->desc.portCount;
+	for (uint port = 0; port < portCount; ++port)
+	{
+
+		uint status = 0;
+		if (!UsbDevRequest(dev,
+			RT_DEV_TO_HOST | RT_CLASS | RT_OTHER,
+			REQ_GET_STATUS, 0, port + 1,
+			sizeof(status), &status))
+		{
+			return 0;
+		}
+		if (status&PORT_CONNECTION_CHANGE && !(status&PORT_CONNECTION))
+		{
+			kprintf("USB Hub device disconnected!\n");
+			//Clear Connection change bit
+			if (!UsbDevRequest(dev,
+				0x23,
+				REQ_CLEAR_FEATURE, F_C_PORT_CONNECTION, port + 1,
+				0, 0))
+			{
+				
+			}
+			UsbDevice * cur = g_usbDeviceList, *ls = 0;
+			while (cur)
+			{
+				if (cur->port == port && (uint)cur->hc == (uint)hub->dev->hc)
+				{
+					if (cur->onDisconnect)
+						cur->onDisconnect(cur);
+					if (ls)
+					{						
+						ls->next = cur->next;
+						free(cur); break;
+					}
+					else
+					{
+						g_usbDeviceList = cur->next;
+						free(cur); break;
+					}
+				}
+				ls = cur;
+				cur = cur->next;
+			}
+		}
+		else if (status&PORT_CONNECTION_CHANGE && (status&PORT_CONNECTION))
+		{
+			kprintf("USB Hub device connected!\n");
+			if (!UsbDevRequest(dev,
+				0x23,
+				REQ_SET_FEATURE, F_PORT_POWER, port + 1,
+				0, 0))
+			{
+			}
+
+			Wait(hub->desc.portPowerTime * 20 + 150);
+			uint status = UsbHubResetPort(hub, port);
+			if (status & PORT_ENABLE)
+			{
+				uint speed = (status & PORT_SPEED_MASK) >> PORT_SPEED_SHIFT;
+
+				UsbDevice *dev = UsbDevCreate();
+				if (dev)
+				{
+					dev->parent = hub->dev;
+					dev->hc = hub->dev->hc;
+					dev->port = port;
+					dev->speed = speed;
+					dev->maxPacketSize = 8;
+
+					dev->hcControl = hub->dev->hcControl;
+					dev->hcIntr = hub->dev->hcIntr;
+
+					if (!UsbDevInit(dev))
+					{
+						kprintf("Fail");
+					}
+				}
+			}
+		}
+	}
+
 }
 
 // ------------------------------------------------------------------------------------------------
