@@ -4,7 +4,7 @@
 #define FILE_RIGHTS_APPEND 4
 typedef struct __attribute__((packed)) _FHandler {
 	char * name;
-	ulon currentByte;
+	long long currentByte;
 	uint add1;
 	uint add2;
 	uint fsType;
@@ -57,10 +57,24 @@ FILE *fopen(const char *fname, const char *mode)
 	free(q);
 	return n;
 }
-uint ftell(FILE * f)
+uint fseek(FILE *stream, long offset, int origin) {
+	long long z = stream->currentByte;
+	if (origin == 0)
+		stream->currentByte = 0 + offset;
+	else if (origin == 1)
+		stream->currentByte += offset;
+	else if (origin == 2)
+		stream->currentByte = stream->size + offset;
+	if (stream->currentByte < 0 || stream->currentByte > stream->size) {
+		stream->currentByte = z;
+		return 1;
+	}
+	return 0;
+}
+long ftell(FILE * f)
 {
 	if (!f)
-		return 0;
+		return -1;
 	return f->currentByte;
 }
 void rewind(FILE * f)
@@ -71,6 +85,7 @@ void rewind(FILE * f)
 }
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
+
 	if (drives[f->name[0] - 'A'].type == 0)
 		FAT32ReadFileB(f->name[0] - 'A', f->add1, from, cnt, addr);
 

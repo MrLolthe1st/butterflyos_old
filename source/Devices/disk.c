@@ -719,6 +719,8 @@ bool _read(HBA_PORT *port, unsigned long long starth, unsigned long long count, 
 
 	return true;
 }
+
+
 int write_port(HBA_PORT *port, unsigned long long starth, unsigned int count,
 	uint buf)
 {

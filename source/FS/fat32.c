@@ -259,7 +259,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 	{
 		if ((lastCluster >> 7) != (currentCluster >> 7))
 			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
-		
+
 		if ((ofs + 1) * 512 * sectorsPerCluster > st && ofs * 512 * sectorsPerCluster <= st)
 		{
 			ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
@@ -277,8 +277,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 			else if ((ofs + 1) * 512 * sectorsPerCluster > st)
 			{
 				ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
-				uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st  - ((uint)buf - (uint)qf);
-				//printTextToWindow(4, mywin, "%x %x\n", (uint)buf-(uint)qf, countR);
+				uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st - ((uint)buf - (uint)qf);
 				memcpy(cluster, buf, countR);
 				buf += countR;
 			}
