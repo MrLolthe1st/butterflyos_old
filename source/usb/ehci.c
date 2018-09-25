@@ -443,8 +443,12 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	volatile u32 *reg = &hc->opRegs->ports[port];
 
 	// Reset the port
-	EhciPortSet(reg, PORT_RESET | (1 << 12));
-	Wait(500);
+	
+	*reg|=(1<<12)|(1<<20);
+	Wait(1000);
+	kprintf("!Status: %x\n",*reg);
+	EhciPortSet(reg, PORT_RESET | (1<<12) | (1<<20) | (1<<6));
+	Wait(700);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
@@ -453,11 +457,11 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		Wait(100);
+		Wait(300);
 
 		// Get current status
 		status = *reg;
-		//kprintf("%x",status);
+		kprintf("Status: %x\n",status);
 		// Check if device is attached to port
 		if (~status & PORT_CONNECTION)
 		{

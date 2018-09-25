@@ -45,6 +45,7 @@ Window * mywin = 0;
 #include "kprin.c"
 #include "Devices\PCI.c"
 #include "Devices/device.c"
+#include "Devices/pci_ide.c"
 #include "Devices/disk.c"
 #include "FS/fat32.c"
 #include "FS\files.c"
