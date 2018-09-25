@@ -1066,24 +1066,21 @@ void printMem(unsigned char * a, uint c)
 }
 int checkPatrition(uint startSec, uint did)
 {
-	char * bootSect = malloc(512);
-	uint res = ReadController(startSec, 1, bootSect, did);
-	if (res != 0)
-		return 0;
+	uchar * bootSect = malloc(512);
+	uint res = ReadController(startSec, 1, bootSect, did); //printMem(bootSect, 512);
+	if (!res)
+		return;
+
 	uint * q = bootSect;
-	//printMem(&bootSect, 512);
-	//kprintf("\n");
+	//kprintf("%x\n", bootSect[0]);
 	uint found = 0;
 	for (int j = 0; j < 4; j++)
 	{
 
-		if ((bootSect[446 + j * 16] & 0x80))
+		if(!((uchar)bootSect[0]==0xEB))
 		{
 			if (*((uint*)((uint)q + 454 + j * 16)) > 0) {
-				//		printMem((uint)&bootSect + 446 + j * 16, 16);
-				//kprintf("Check patrition: LBA:%x, Index=%d\n", startSec, j);
-				//kprintf("OFFS:%x\n", (*((uint*)bootSect[446 + j * 16 + 8])));
-				if (!checkPatrition((*((uint*)bootSect[446 + j * 16 + 8])), did))
+				if (!checkPatrition((*((uint*)&bootSect[446 + j * 16 + 8])), did))
 				{
 					int uy = 0;
 					for (int lt = 0; lt < 26; lt++)
@@ -1092,12 +1089,12 @@ int checkPatrition(uint startSec, uint did)
 							break;
 						}
 					
-					kprintf("Found patrition. Letter: %c:\n, size 1%dMBytes", 'A' + uy, (*((uint*)bootSect[446 + j * 16 + 12])));
+					kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (*((uint*)&bootSect[446 + j * 16 + 12]))>>11);
 					found = 1;
 					drives[uy].avaliable = 1;
 					drives[uy].diskId = did;
-					drives[uy].diskOffset = (*((uint*)bootSect[446 + j * 16 + 8]));
-					drives[uy].size = (*((uint*)bootSect[446 + j * 16 + 12]));
+					drives[uy].diskOffset = (*((uint*)&bootSect[446 + j * 16 + 8]));
+					drives[uy].size = (*((uint*)&bootSect[446 + j * 16 + 12]));
 					drives[uy].type = 0;
 					if(uy==lastLetter)
 						lastLetter++;
