@@ -44,6 +44,7 @@ unsigned int AHCI_BASE = 0;
 #define DISK_TYPE_SATAPI 0x01
 #define DISK_TYPE_SATA_AHCI	0x02
 #define DISK_TYPE_USB	0x3
+#define DISK_TYPE_PCI_IDE	0x4
 
 
 typedef enum
@@ -1015,6 +1016,10 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 			_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
 		return 0;
 	}
+	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
+	{
+		ide_read_sectors(diskDevices[param].structNo, cnt, LBA, 0x8, addr);
+	}
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
@@ -1037,6 +1042,10 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 		else
 			_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
 		return 0;
+	}
+	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
+	{
+		ide_write_sectors(diskDevices[param].structNo, cnt, LBA, 0x8, addr);
 	}
 }
 #define ulon unsigned long long

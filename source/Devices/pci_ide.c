@@ -94,35 +94,62 @@ unsigned char ide_read(unsigned char channel, unsigned char reg) {
    if (reg > 0x07 && reg < 0x0C)
       ide_write(channel, ATA_REG_CONTROL, 0x80 | channels[channel].nIEN);
    if (reg < 0x08)
-      result = inb(channels[channel].base + reg - 0x00);
+      result = inportb(channels[channel].base + reg - 0x00);
    else if (reg < 0x0C)
-      result = inb(channels[channel].base  + reg - 0x06);
+      result = inportb(channels[channel].base  + reg - 0x06);
    else if (reg < 0x0E)
-      result = inb(channels[channel].ctrl  + reg - 0x0A);
+      result = inportb(channels[channel].ctrl  + reg - 0x0A);
    else if (reg < 0x16)
-      result = inb(channels[channel].bmide + reg - 0x0E);
+      result = inportb(channels[channel].bmide + reg - 0x0E);
    if (reg > 0x07 && reg < 0x0C)
       ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
    return result;
 }
+void ide_write(unsigned char channel, unsigned char reg, unsigned char data) {
+	if (reg > 0x07 && reg < 0x0C)
+		ide_write(channel, ATA_REG_CONTROL, 0x80 | channels[channel].nIEN);
+	if (reg < 0x08)
+		outportb(channels[channel].base + reg - 0x00, data);
+	else if (reg < 0x0C)
+		outportb(channels[channel].base + reg - 0x06, data);
+	else if (reg < 0x0E)
+		outportb(channels[channel].ctrl + reg - 0x0A, data);
+	else if (reg < 0x16)
+		outportb(channels[channel].bmide + reg - 0x0E, data);
+	if (reg > 0x07 && reg < 0x0C)
+		ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
+}
+void insl(uint b, uint * buf, uint cnt)
+{
+	for (int i = 0; i < cnt; i++)
+		buf[i] = inportd(b);
+}
+
+void ide_wait_irq() {
+	while (!ide_irq_invoked)
+		;
+	ide_irq_invoked = 0;
+}
+void _ide_irq() {
+	ide_irq_invoked = 1;
+}
+
 void ide_read_buffer(unsigned char channel, unsigned char reg, unsigned int buffer,
                      unsigned int quads) {
-   /* WARNING: This code contains a serious bug. The inline assembly trashes ES and
-    *           ESP for all of the code the compiler generates between the inline
+   /* WARNING: This code contains a serious bug. The inportdine assembly trashes ES and
+    *           ESP for all of the code the compiler generates between the inportdine
     *           assembly blocks.
     */
    if (reg > 0x07 && reg < 0x0C)
       ide_write(channel, ATA_REG_CONTROL, 0x80 | channels[channel].nIEN);
-   __asm__("pushw %es; movw %ds, %ax; movw %ax, %es");
    if (reg < 0x08)
       insl(channels[channel].base  + reg - 0x00, buffer, quads);
    else if (reg < 0x0C)
-      insl(channels[channel].base  + reg - 0x06, buffer, quads);
+	   insl(channels[channel].base  + reg - 0x06, buffer, quads);
    else if (reg < 0x0E)
-      insl(channels[channel].ctrl  + reg - 0x0A, buffer, quads);
+	   insl(channels[channel].ctrl  + reg - 0x0A, buffer, quads);
    else if (reg < 0x16)
-      insl(channels[channel].bmide + reg - 0x0E, buffer, quads);
-   __asm__("popw %es;");
+	   insl(channels[channel].bmide + reg - 0x0E, buffer, quads);
    if (reg > 0x07 && reg < 0x0C)
       ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
 }
@@ -187,10 +214,18 @@ unsigned char ide_print_error(unsigned int drive, unsigned char err) {
  
    return err;
 }
+char memcmp(uchar *z, uchar* d)
+{
+	for (int zzz = 0; zzz < 512; zzz++)
+		if (z[zzz] != d[zzz]) {
+			return 0;
+		}
+	return 1;
+}
 void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3,
 unsigned int BAR4) {
  
-   int j, k, count = 0;
+   int  k, count = 0;
  
    // 1- Detect I/O Ports which interface IDE Controller:
    channels[ATA_PRIMARY  ].base  = (BAR0 & 0xFFFFFFFC) + 0x1F0 * (!BAR0);
@@ -211,12 +246,11 @@ unsigned int BAR4) {
  
          // (I) Select Drive:
          ide_write(i, ATA_REG_HDDEVSEL, 0xA0 | (j << 4)); // Select Drive.
-         sleep(1); // Wait 1ms for drive select to work.
+         Wait(10); // Wait 1ms for drive select to work.
  
          // (II) Send ATA Identify Command:
          ide_write(i, ATA_REG_COMMAND, ATA_CMD_IDENTIFY);
-         sleep(1); // This function should be implemented in your OS. which waits for 1 ms.
-                   // it is based on System Timer Device Driver.
+         Wait(10);
  
          // (III) Polling:
          if (ide_read(i, ATA_REG_STATUS) == 0) continue; // If Status = 0, No Device.
@@ -239,9 +273,9 @@ unsigned int BAR4) {
                type = IDE_ATAPI;
             else
                continue; // Unknown Type (may not be a device).
- 
+
             ide_write(i, ATA_REG_COMMAND, ATA_CMD_IDENTIFY_PACKET);
-            sleep(1);
+            Wait(10);
          }
  
          // (V) Read Identification Space of the Device:
@@ -263,7 +297,7 @@ unsigned int BAR4) {
          else
             // Device uses CHS or 28-bit Addressing:
             ide_devices[count].Size   = *((unsigned int *)(ide_buf + ATA_IDENT_MAX_LBA));
- 
+
          // (VIII) String indicates model of device (like Western Digital HDD and SONY DVD-RW...):
          for(k = 0; k < 40; k += 2) {
             ide_devices[count].Model[k] = ide_buf[ATA_IDENT_MODEL + k + 1];
@@ -276,10 +310,41 @@ unsigned int BAR4) {
    // 4- Print Summary:
    for (int i = 0; i < 4; i++)
       if (ide_devices[i].Reserved == 1) {
-         kprintf(" Found %s Drive %dGB - %s\n",
+         kprintf(" Found %s Drive %dMB - %s\n",
             (const char *[]){"ATA", "ATAPI"}[ide_devices[i].Type],         /* Type */
-            ide_devices[i].Size / 1024 / 1024 / 2,               /* Size */
+            ide_devices[i].Size>>11,               /* Size */
             ide_devices[i].Model);
+		 char *buf=malloc(8192),*buf2 =malloc(8192); ide_read_sectors(i, 16, 0, 0x8, buf);
+		 uint zz = 1;
+		 for (int j = 0; j < dcount; j++)
+		 {
+			 uchar op = (long long)diskDevices[j].sectorsCount == (long long)ide_devices[i].Size;
+			 
+			 if (op)
+			 {
+				 ReadController(0, 16, buf2, j);
+				 char copy = memcmp(buf,buf2);
+				 if (copy)
+				 {
+					 zz = 0;
+					 break;
+				 }
+			 }
+		 }
+		 if (zz)
+		 {
+			 diskDevices[dcount].sectorsCount = ide_devices[i].Size;
+			 diskDevices[dcount].structNo = i;
+			 diskDevices[dcount].type = DISK_TYPE_PCI_IDE;
+			 checkDiskPatritions(dcount);
+			 dcount++;
+		 }
+		 else
+		 {
+			 kprintf("Copy of some other disk!\n");
+		 }
+		 
+
       }
 }
 unsigned char ide_ata_access(unsigned char direction, unsigned char drive, unsigned int lba, 

@@ -3,6 +3,15 @@
 
 #define VMAlloc malloc
 #define KeysQueue 0x09810
+//PIC#0; port 0x20
+#define IRQ_HANDLER(func) char func = 0x90;\
+__asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
+void _## func()
+
+//PIC#1; port 0xA0
+#define IRQ_HANDLER1(func) char func = 0x90;\
+__asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
+void _## func()
 //Достает символ из очереди
 char pcidone = 0;
 char getKey()
@@ -45,7 +54,6 @@ Window * mywin = 0;
 #include "kprin.c"
 #include "Devices\PCI.c"
 #include "Devices/device.c"
-#include "Devices/pci_ide.c"
 #include "Devices/disk.c"
 #include "FS/fat32.c"
 #include "FS\files.c"
@@ -56,6 +64,7 @@ Window * mywin = 0;
 #include "idt.c"
 #include "GUI\Forms.c"
 #pragma GCC pop_options
+#include "Devices/pci_ide.c"
 #include "usb\usbd.c"
 #include "usb\ehci.c"
 #include "usb\uhci.c"
