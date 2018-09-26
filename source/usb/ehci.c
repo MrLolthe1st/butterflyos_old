@@ -797,6 +797,7 @@ void probeEhciPort(EhciController *hc, uint port)
 	{
 		uint speed = USB_HIGH_SPEED;
 		kprintf("Detected device on port #%x\n", port);
+		Wait(1000);
 		UsbDevice *dev = UsbDevCreate();
 		if (dev)
 		{

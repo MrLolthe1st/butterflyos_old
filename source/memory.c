@@ -111,7 +111,7 @@ unsigned int count_memory(void) {
 		//kprintf("Testing Mem: 0x%x",mem);
 
 		//for(int i=0;i<1000;i++) i = i;
-	} while (memkb < 64 && mem_count != 0);
+	} while (memkb < 128 && mem_count != 0);
 
 	//if(mem/1024>=1024
 	//__asm__("movl %%eax, %%cr0" :: "g" (cr0) : "eax");
@@ -121,7 +121,7 @@ unsigned int count_memory(void) {
 	//unsigned int bse_end= (*mem & 0xFFFF) <<6;
 	outportb(0x21, irq1);
 	outportb(0xA1, irq2);
-	return mem;
+	return mem_end;
 }
 
 char * malloc(size_t size) {

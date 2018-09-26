@@ -147,7 +147,6 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 						}
 					}
 					//File/Folder name parsed.
-
 					if ((!(e[i].attributes & 0x10)) && lastDir) {
 						int j = 0;
 						curChar = fileName;
@@ -199,14 +198,6 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 		}
 		curChar = fileName;
 		lastDir = 1;
-		while (*curChar) {
-			if ((*curChar) == '\\')
-			{
-				lastDir = 0;
-				break;
-			};
-			++curChar;
-		}
 		if (locF) {
 			lastCluster = currentCluster;
 
@@ -218,8 +209,17 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 		else if (!uu)
 			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
 
+		while (*curChar) {
+			if ((*curChar) == '\\')
+			{
+				lastDir = 0;
+				break;
+			};
+			++curChar;
+		}
 		if (currentCluster == 0xFFFFFFF)
 			break;
+		Wait(10000);
 	}
 	if (!found)
 	{
@@ -232,7 +232,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 	q->nool = lastCluster;
 	q->nool1 = found;
 	free(cluster);
-	free(lastCluster);
+	free(lastcluster);
 	return q;
 }
 
@@ -504,9 +504,9 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 }
 uint findFreeFATEntry(uint diskId, uint reserved)
 {
-	uint currentCluster = 0;
+	uint currentCluster = 4;
 	uchar found = 0;
-	uint FATTablePart[128]; uint z = 0;
+	uint FATTablePart[128]; uint z = 4*128;
 	while (!found) {
 		ReadFromDisk(reserved + (currentCluster), 1, &FATTablePart, diskId);
 		for (int i = 0; i < 128; i++)

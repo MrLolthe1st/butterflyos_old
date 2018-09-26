@@ -68,6 +68,7 @@ FILE *fopen(const char *fname, const char *mode)
 
 	FileInfo * q = FileSeek(fname[0] - 'A', (uint)fname + 3);
 	if (!q) {
+		kprintf("q");
 		free(n);
 		return 0;
 	}
@@ -77,11 +78,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->size = q->size;
 	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
 	uint bts = 0x65666768;
-	FileClear(n);
-	FileAppendBytes(n, &bts, 4);
-	FileAppendBytes(n, &bts, 4);
-	FileAppendBytes(n, &bts, 4);
-	FileAppendBytes(n, &bts, 4);
+	FileAppendBytes(n, "ADI One love!", 13);
 	free(q);
 	return n;
 }
