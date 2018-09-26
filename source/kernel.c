@@ -130,9 +130,9 @@ void k_main()
 
 	//nextS = &nnn;
 	//initSVGA1(0;
+	rtc();
 	iint();
 	//unsigned char nnn = 0x90;
-	rtc();
 	//while(getKey()!=0);
 	initDevices();
 	//ATAInit();
@@ -170,11 +170,11 @@ void k_main()
 	PciInit();
 
 	makeLogicDrives();
-	char * path = "A:\\AA.TXT";
+	mkdir("A:\\ZZ", 0);
+	char * path = "A:\\ZZ\\AAA.TXT";
 	path[0] = 'A' + bootedFrom;
-	FILE * f = fopen(path, "r");
-	uchar * tq = malloc(2500);
-	fread(tq, 1, 2500, f);
+	FILE * f = fopen(path, "w");
+	fwrite("Some text from own kernel!", 26, 1, f);
 	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
 	for (;;)
 	{

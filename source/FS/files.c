@@ -44,6 +44,11 @@ uint FileClear(FILE * f)
 		return FAT32ClearChain(f->diskId, f->add2, f->add3);
 	}
 }
+void FileCreate(uint diskId, void * f)
+{
+	if (drives[diskId].type == 0)
+		FAT32CreateFile(diskId, f);
+}
 FILE *fopen(const char *fname, const char *mode)
 {
 	if (!drives[fname[0] - 'A'].avaliable)
@@ -66,23 +71,25 @@ FILE *fopen(const char *fname, const char *mode)
 
 	n->currentByte = 0;
 
-	if (n->rights & 2)
-	{
-		//Create file
-	} 
 
 	FileInfo * q = FileSeek(fname[0] - 'A', (uint)fname + 3);
-	if (!q) {
-		kprintf("q");
+	uint ut = 0;
+	if (!q&&!(n->rights&2)) {
 		free(n);
 		return 0;
 	}
+	else if ((n->rights & 2) && !q) {
+		FileCreate(n->diskId, (uint)fname + 3);
+		q = FileSeek(fname[0] - 'A', (uint)fname + 3);
+		ut = 1;
+	}
+
 	n->add1 = q->add1;
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
 	//kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
-	if (n->rights & 2)
+	if (n->rights & 2&&!ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);
 	return n;
@@ -118,11 +125,12 @@ void FileWrite(FILE * f, void * addr, uint cnt)
 {
 
 	if (drives[f->diskId].type == 0)
-		FAT32Append(f->diskId, f->add1, f->add2, addr, cnt);
+		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
 }
 uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
 {
+	kprintf("%x %x", stream->add2, stream->add3);
 	FileWrite(stream, buf, size*count);
 }
 uchar fgetc(FILE * f)
@@ -148,4 +156,10 @@ void fclose(FILE * f)
 	if (!f)
 		return 0;
 	free(f);
+}
+
+void mkdir(char *p, uint mode)
+{
+	if (drives[p[0] - 'A'].type == 0)
+		FAT32CreateDirectory(p[0] - 'A', (uint)p + 3);
 }

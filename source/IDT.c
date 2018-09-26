@@ -36,7 +36,6 @@ movl %esp,%esi\n\
 void _## func()
 Process * procTable = 0;
 int currentRunning = 0, procCount = 0;
-#define tiksPerSecond 10026
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
 	__asm__("movl %%esp,%0\n\ movl %%esi,%1": "=r" (stack), "=r" (s2) : );
@@ -542,9 +541,9 @@ void rtc() {
 
 	//*sec100 = 0;
 	//BDC режим, а-ля 0x23: 0x56: 0x43 ;)
-	* sec100 = ((((u[0] / 16) * 10) + (u[0] & 0xf) % 60) * tiksPerSecond) +
-		(((u[2] / 16) * 10) + (u[2] & 0xf) % 60) * tiksPerSecond * 60 +
-		(((u[4] / 16) * 10) + (u[4] & 0xf) % 24) * tiksPerSecond * 60 * 60;
+	* sec100 = ((((u[0] / 16) * 10) + (u[0] & 0xf) % 60) * ticksPerSecond) +
+		(((u[2] / 16) * 10) + (u[2] & 0xf) % 60) * ticksPerSecond * 60 +
+		(((u[4] / 16) * 10) + (u[4] & 0xf) % 24) * ticksPerSecond * 60 * 60;
 }
 
 IRQ_HANDLER(irq_keyboard) {

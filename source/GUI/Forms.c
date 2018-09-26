@@ -287,7 +287,7 @@ void updateWindows()
 	drawDesktop();
 	char time[9];
 	//Current time calculation
-	int sec = (*sec100 / tiksPerSecond) % 60, min = (*sec100 / (60* tiksPerSecond)) % 60, hour = (*sec100 / (3600* tiksPerSecond)) % 24;
+	int sec = (*sec100 / ticksPerSecond) % 60, min = (*sec100 / (60* ticksPerSecond)) % 60, hour = (*sec100 / (3600* ticksPerSecond)) % 24;
 	time[0] = (hour / 10 % 10) + 48;
 	time[3] = (min / 10 % 10) + 48;
 	time[6] = (sec / 10 % 10) + 48;

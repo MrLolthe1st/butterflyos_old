@@ -655,11 +655,11 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 			}
 		}
 	}
-	 kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
-		 (int)bus, (int)dev, (int)func,
-		 (int)info.vendorId, (int)info.deviceId,
-		 (uint)PciClassName(info.classCode, info.subclass, info.progIntf)
-		 );
+	kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
+		(int)bus, (int)dev, (int)func,
+		(int)info.vendorId, (int)info.deviceId,
+		(uint)PciClassName(info.classCode, info.subclass, info.progIntf)
+	);
 
 	_ehci_init(id, &info);
 	_uhci_init(id, &info);
