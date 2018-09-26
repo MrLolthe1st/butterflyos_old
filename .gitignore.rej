@@ -1,0 +1,9 @@
+diff a/.gitignore b/.gitignore	(rejected hunks)
+@@ -5,4 +5,5 @@
+ images/
+ compilers/
+ ButterflyOS.zip
+-binaries/
+\ No newline at end of file
++binaries/
++source.zip
