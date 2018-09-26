@@ -443,21 +443,25 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	volatile u32 *reg = &hc->opRegs->ports[port];
 
 	// Reset the port
-	EhciPortSet(reg, PORT_RESET|(1<<12));
-	Wait(500);
+	
+	*reg|=(1<<12)|(1<<20);
+	Wait(1000);
+	kprintf("!Status: %x\n",*reg);
+	EhciPortSet(reg, PORT_RESET | (1<<12) | (1<<20) | (1<<6));
+	Wait(700);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
 	uint status = 0;
-///	*reg |=  (1 << 12);
+	///	*reg |=  (1 << 12);
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		Wait(100);
+		Wait(300);
 
 		// Get current status
 		status = *reg;
-		//kprintf("%x",status);
+		kprintf("Status: %x\n",status);
 		// Check if device is attached to port
 		if (~status & PORT_CONNECTION)
 		{
@@ -574,14 +578,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(1000);
+	PitWait(1);
 	//printQh(qh);
-	kprintf("[%x,%x,%x]", qh->token, hc->opRegs->usbSts,hc->opRegs->usbCmd);
-	if (qh->token & TD_TOK_XACT)
-	{
-		t->success = true;
-		t->complete = true;
-	}
+	//kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
+
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -591,7 +591,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	{
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
-			
+
 			if (qh->token & TD_TOK_BABBLE)
 			{
 				kprintf(" Babble Detected\n");
@@ -608,6 +608,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 			t->success = true;
 			t->complete = true;
 		}
+		else
+		{
+
+		}
 	}
 
 	if (t->complete)
@@ -617,7 +621,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 
 		// Update endpoint toggle state
 		if (t->success && t->endp)
-		{
+		{//
 			t->endp->toggle ^= 1;
 		}
 
@@ -725,7 +729,22 @@ static void EhciDevControl(UsbDevice *dev, UsbTransfer *t)
 	EhciInsertAsyncQH(hc->asyncQH, qh);
 	EhciWaitForQH(hc, qh);
 }
-
+uint ehciInterval(UsbDevice * d, uint i)
+{
+	if (d->speed == 0)
+	{
+		uint z = 0;
+		while (i > 0) {
+			z++;
+			i /= 2;
+		}
+		return z + 3;
+	}
+	else
+	{
+		return i + 1;
+	}
+}
 // ------------------------------------------------------------------------------------------------
 static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 {
@@ -734,7 +753,7 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Determine transfer properties
 	uint speed = dev->speed;
 	uint addr = dev->addr;
-	uint maxSize = dev->maxPacketSize;
+	uint maxSize = 512;
 	uint endp = t->endp->desc->addr & 0xf;
 	//kprintf("$%x$", endp);
 	// Create queue of transfer descriptors
@@ -757,59 +776,62 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	else
 		packetType = USB_PACKET_OUT;
 
-	//kprintf("$$$%x$$$", t->len);
+
 	uint packetSize = t->len;
 
 	EhciInitTD(td, prev, toggle, packetType, packetSize, t->data);
-
 	// Initialize queue head
 	EhciQH *qh = EhciAllocQH(hc);
 	EhciInitQH(qh, t, head, dev->parent, true, speed, addr, endp, maxSize);
 	//printQh(qh);
 	// Schedule queue
 	EhciInsertPeriodicQH(hc->periodicQH, qh);
-	if(t->w)
-	EhciWaitForQH(hc, qh);
+	if (t->w)
+		EhciWaitForQH(hc, qh);
 }
+void probeEhciPort(EhciController *hc, uint port)
+{
+	uint status = EhciResetPort(hc, port);
+	//kprintf("Port probe status: %x\n", status);
+	if (status & PORT_ENABLE)
+	{
+		uint speed = USB_HIGH_SPEED;
+		kprintf("Detected device on port #%x\n", port);
+		UsbDevice *dev = UsbDevCreate();
+		if (dev)
+		{
+			dev->parent = 0;
+			dev->hc = hc;
+			dev->port = port;
+			dev->speed = speed;
+			dev->maxPacketSize = 8;
 
+			//kprintf("Status: %x\n", hc->opRegs->usbSts);
+
+			dev->hcControl = EhciDevControl;
+			dev->hcIntr = EhciDevIntr;
+
+			if (!UsbDevInit(dev))
+			{
+				attr = 0x4E;
+				kprintf("Some FUKIN BAD!");
+				// TODO - cleanup
+			}
+		}
+	}
+}
 // ------------------------------------------------------------------------------------------------
 static void EhciProbe(EhciController *hc)
 {
 	// Port setup
 	//kprintf("%x", hc->capRegs->hcsParams);
 	uint portCount = RCR(hcsParamsO) & HCSPARAMS_N_PORTS_MASK;
-	
+
 	for (uint port = 0; port < portCount; ++port)
 	{
 		// Reset port
-		uint status = EhciResetPort(hc, port);
-		//kprintf("Port probe status: %x\n", status);
-		if (status & PORT_ENABLE)
-		{
-			uint speed = USB_HIGH_SPEED;
-			kprintf("Detected device on port #%x\n", port);
-			UsbDevice *dev = UsbDevCreate();
-			if (dev)
-			{
-				dev->parent = 0;
-				dev->hc = hc;
-				dev->port = port;
-				dev->speed = speed;
-				dev->maxPacketSize = 8;
-
-				//kprintf("Status: %x\n", hc->opRegs->usbSts);
-
-				dev->hcControl = EhciDevControl;
-				dev->hcIntr = EhciDevIntr;
-
-				if (!UsbDevInit(dev))
-				{
-					attr = 0x4E;
-					kprintf("Some FUKIN BAD!");
-					// TODO - cleanup
-				}
-			}
-		}
+		
+		probeEhciPort(hc, port);
 	}
 }
 void printQh(EhciQH * qh)
@@ -827,7 +849,68 @@ void printQh(EhciQH * qh)
 	kprintf("\n");
 	attr = q;
 }
+static void EhciControllerPollList(EhciController *hc, Link *list)
+{
+	EhciQH *qh;
+	EhciQH *next;
+	ListForEachSafe(qh, next, *list, qhLink)
+	{
+		if (qh->transfer)
+		{
+			EhciProcessQH(hc, qh);
+		}
+	}
+}
 
+// ------------------------------------------------------------------------------------------------
+static void EhciControllerPoll(UsbController *controller)
+{
+	EhciController *hc = (EhciController *)controller->hc;
+
+	EhciControllerPollList(hc, &hc->asyncQH->qhLink);
+	EhciControllerPollList(hc, &hc->periodicQH->qhLink);
+	uint portCount = RCR(hcsParamsO) & HCSPARAMS_N_PORTS_MASK;
+	for (uint port = 0; port < portCount; ++port)
+	{
+		volatile u32 *reg = &hc->opRegs->ports[port];
+		uint status = *reg;
+		if (status & 2 && !(status & 1))
+		{
+			//Device disconnected
+			kprintf("USB device has disconnected from EHCI!\n");
+			UsbDevice * cur = g_usbDeviceList, *ls=0;
+			//Clear Connection change bit
+			EhciPortClr(reg, PORT_CONNECTION_CHANGE);
+			while (cur)
+			{
+				if (cur->port == port && (uint)cur->hc == (uint)hc)
+				{
+					if (cur->onDisconnect)
+						cur->onDisconnect(cur);
+					if (ls)
+					{
+						ls->next = cur->next;
+						free(cur); break;
+					}
+					else
+					{
+						g_usbDeviceList = cur->next;
+						free(cur); break;
+						
+					}
+				}
+				ls = cur;
+				cur = cur->next;
+			}
+		}
+		else if (status & 2 && (status & 1))  {
+			kprintf("USB device connected to EHCI!\n");
+			EhciPortClr(reg, PORT_CONNECTION_CHANGE);
+			probeEhciPort(hc, port);
+		}
+	}
+
+}
 // ------------------------------------------------------------------------------------------------
 void _ehci_init(uint id, PciDeviceInfo *info)
 {
@@ -993,10 +1076,11 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	EhciProbe(hc);
 
 	// Register controller
-	UsbController *controller = (UsbController *)VMAlloc(sizeof(UsbController));
+	UsbController *controller = (UsbController *)malloc(sizeof(UsbController));
 	controller->next = g_usbControllerList;
 	controller->hc = hc;
-	//controller->poll = EhciControllerPoll;
+	//controller->poll = &epoll;
+	controller->poll = &EhciControllerPoll;
 
-	//g_usbControllerList = controller;
+	g_usbControllerList = controller;
 }

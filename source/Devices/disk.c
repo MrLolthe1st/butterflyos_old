@@ -44,6 +44,7 @@ unsigned int AHCI_BASE = 0;
 #define DISK_TYPE_SATAPI 0x01
 #define DISK_TYPE_SATA_AHCI	0x02
 #define DISK_TYPE_USB	0x3
+#define DISK_TYPE_PCI_IDE	0x4
 
 
 typedef enum
@@ -519,10 +520,11 @@ int detect_devtype(int port, int slavebit) {
 	}
 	ATADevices[deviceCount].port = port;
 	ATADevices[deviceCount].slavebit = slavebit;
-	if (returned[83] & 1 << 10 != 0) {
+	if (returned[83] & (1 << 10) ) {
 		ATADevices[deviceCount].isLBA48Supported = 1;
 		ATADevices[deviceCount].LBA48 = (returned[103] << 48) + (returned[102] << 32) + (returned[101] << 16) + returned[100];
 		diskDevices[dcount].sectorsCount = ATADevices[deviceCount].LBA48;
+		
 		//	diskDevices[dcount].readSectors = &ReadController;
 		//	diskDevices[dcount].writeSectors = &WriteController;
 		diskDevices[dcount].structNo = deviceCount;
@@ -532,7 +534,7 @@ int detect_devtype(int port, int slavebit) {
 	}
 	else {
 		ATADevices[deviceCount].isLBA48Supported = 0;
-		ATADevices[deviceCount].LBA28 = returned[61] << 16 + returned[60];
+		ATADevices[deviceCount].LBA28 = (returned[61] << 16) + returned[60];
 		diskDevices[dcount].sectorsCount = ATADevices[deviceCount].LBA28;
 		//	diskDevices[dcount].readSectors = &ReadController;
 			//diskDevices[dcount].writeSectors = &WriteController;
@@ -541,6 +543,8 @@ int detect_devtype(int port, int slavebit) {
 		if (ATADevices[deviceCount].LBA28 == 0)
 			return;
 	}
+
+	checkDiskPatritions(dcount);
 	dcount++;
 	deviceCount++;
 }
@@ -719,6 +723,73 @@ bool _read(HBA_PORT *port, unsigned long long starth, unsigned long long count, 
 
 	return true;
 }
+
+bool _rread(HBA_PORT *port, uint16_t *buf)
+{
+	port->is = (uint32_t)-1;		// Clear pending interrupt bits
+	int spin = 0; // Spin lock timeout counter
+	int slot = find_cmdslot(port);
+	if (slot == -1)
+		return false;
+
+	HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER*)port->clb;
+	cmdheader += slot;
+	cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t);	// Command FIS size
+	cmdheader->w = 0;		// Read from device
+	cmdheader->prdtl = 1;	// PRDT entries count
+
+	HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL*)(cmdheader->ctba);
+	memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) +
+		(cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
+	int i = 0;
+	cmdtbl->prdt_entry[0].dba = (uint32_t)buf;
+	cmdtbl->prdt_entry[0].dbc = 511;	// 512 u8s per sector
+	cmdtbl->prdt_entry[0].i = 1;
+	// Setup command
+	FIS_REG_H2D *cmdfis = (FIS_REG_H2D*)(&cmdtbl->cfis);
+	memset(cmdfis, 0, sizeof(FIS_REG_H2D));
+	cmdfis->fis_type = FIS_TYPE_REG_H2D;
+	cmdfis->c = 1;	// Command
+	cmdfis->command = 0xEC;
+
+	// The below loop waits until the port is no longer busy before issuing a new command
+	while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000)
+	{
+		spin++;
+	}
+	if (spin == 1000000)
+	{
+		kprintf("Port is hung\n");
+		return 0;
+	}
+
+	port->ci = 1 << slot;	// Issue command
+
+							// Wait for completion
+	while (1)
+	{
+		// In some longer duration reads, it may be helpful to spin on the DPS bit 
+		// in the PxIS port field as well (1 << 5)
+		if ((port->ci & (1 << slot)) == 0)
+			break;
+		if (port->is & HBA_PxIS_TFES)	// Task file error
+		{
+			kprintf("Read disk error\n");
+			return 0;
+		}
+	}
+
+	// Check again
+	if (port->is & HBA_PxIS_TFES)
+	{
+		kprintf("Read disk error\n");
+		return 0;
+	}
+
+	return true;
+}
+
+
 int write_port(HBA_PORT *port, unsigned long long starth, unsigned int count,
 	uint buf)
 {
@@ -824,7 +895,30 @@ int find_cmdslot(HBA_PORT *m_port)
 	kprintf("Cannot find free command list entry\n");
 	return -1;
 }
-
+typedef struct PACKED identify_data
+{
+	uint16_t flags; // 0
+	uint16_t unused1[9]; // 9
+	char     serial[20]; // 19
+	uint16_t unused2[3]; // 22
+	char     firmware[8]; // 26
+	char    model[40]; // 46
+	uint16_t sectors_per_int; // 47
+	uint16_t unused3; // 48
+	uint16_t capabilities[2]; // 50
+	uint16_t unused4[2]; // 52
+	uint16_t valid_ext_data; // 53
+	uint16_t unused5[5]; // 58
+	uint16_t size_of_rw_mult; // 59
+	uint32_t sectors_28; // 61
+	uint16_t unused6[38]; // 99
+	uint64_t sectors_48; // 103
+	uint16_t unused7[2]; // 105
+	uint16_t phys_log_size; // 106
+	uint16_t unused8[10]; // 116
+	uint32_t sector_size; // 118
+	uint16_t unused9[137];
+} identify_data;
 
 void _probe_port(HBA_MEM *abar_temp)
 {
@@ -858,13 +952,18 @@ void _probe_port(HBA_MEM *abar_temp)
 
 				res = _read(&abar->ports[i], 0, 16, buf);
 				if (res != 0) {
-
+					_rread(&abar->ports[i], buf);
 					kprintf(" Read test passed.\n");
 					//					diskDevices[dcount].ReadController = &ReadController;
 					diskDevices[dcount].structNo = AHCICount;
+					diskDevices[dcount].sectorsCount = ((identify_data*)buf)->sectors_48;
 					AHCIDevices[AHCICount].port = &abar_temp->ports[i];
+					
 					diskDevices[dcount].type = DISK_TYPE_SATA_AHCI;
 					AHCICount++;
+
+					kprintf("Added disk device #%d, structNo = %x, type = %x, size %dMBytes\n", dcount, diskDevices[dcount].structNo, diskDevices[dcount].type, diskDevices[dcount].sectorsCount >> 11);
+					checkDiskPatritions(dcount);
 					dcount++;
 
 				}
@@ -894,9 +993,12 @@ void _probe_port(HBA_MEM *abar_temp)
 	kprintf("AHCI probing complete\n");
 }
 
+uint readingInProcess = 0, writingInProcess = 0;
 //Чтение
 uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//kprintf("qq");
+	///////////////while (readingInProcess) { Wait(2); };
+	readingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
 		if (ATADevices[drive_id].isLBA48Supported == 1)
@@ -911,12 +1013,22 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		if(*((u8*)((uint)diskDevices[param].link)+0))
+			_read16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
+		else
+			_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
 		return 0;
 	}
+	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
+	{
+		ide_read_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
+	}
+	readingInProcess = 0;
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
+	//////while (writingInProcess) { Wait(2); };
+	writingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
 		if (ATADevices[drive_id].isLBA48Supported == 1)
@@ -928,6 +1040,20 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	{
 		write_port(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
 	}
+	else if (diskDevices[param].type == DISK_TYPE_USB)
+	{
+		uint z = LBA & 0xFFFFFFFF;
+		if (*((u8*)((uint)diskDevices[param].link) + 0))
+			_write16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
+		else
+			_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		return 0;
+	}
+	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
+	{
+		ide_write_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
+	}
+	writingInProcess = 0;
 }
 #define ulon unsigned long long
 typedef struct __attribute((packed)) _LogicDrive {
@@ -956,33 +1082,38 @@ void printMem(unsigned char * a, uint c)
 }
 int checkPatrition(uint startSec, uint did)
 {
-	char * bootSect = malloc(512);
-	uint res = ReadController(startSec, 1, bootSect, did);
-	if (res != 0)
-		return 0;
+	uchar * bootSect = malloc(512);
+	uint res = ReadController(startSec, 1, bootSect, did); //printMem(bootSect, 512);
+	if (!res)
+		return;
+
 	uint * q = bootSect;
-	//printMem(&bootSect, 512);
-	//kprintf("\n");
+	//kprintf("%x\n", bootSect[0]);
 	uint found = 0;
 	for (int j = 0; j < 4; j++)
 	{
 
-		if ((bootSect[446 + j * 16] & 0x80))
+		if(!((uchar)bootSect[0]==0xEB))
 		{
 			if (*((uint*)((uint)q + 454 + j * 16)) > 0) {
-				//		printMem((uint)&bootSect + 446 + j * 16, 16);
-				kprintf("Check patrition: LBA:%x, Index=%d\n", startSec, j);
-				kprintf("OFFS:%x\n", (*((uint*)bootSect[446 + j * 16 + 8])));
-				if (!checkPatrition((*((uint*)bootSect[446 + j * 16 + 8])), did))
+				if (!checkPatrition((*((uint*)&bootSect[446 + j * 16 + 8])), did))
 				{
-					kprintf("Found patrition. Letter: %c:\n", 'A' + lastLetter);
+					int uy = 0;
+					for (int lt = 0; lt < 26; lt++)
+						if (!drives[lt].avaliable) {
+							uy = lt;
+							break;
+						}
+					
+					kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (*((uint*)&bootSect[446 + j * 16 + 12]))>>11);
 					found = 1;
-					drives[lastLetter].avaliable = 1;
-					drives[lastLetter].diskId = did;
-					drives[lastLetter].diskOffset = (*((uint*)bootSect[446 + j * 16 + 8]));
-					drives[lastLetter].size = (*((uint*)bootSect[446 + j * 16 + 12]));
-					drives[lastLetter].type = 0;
-					lastLetter++;
+					drives[uy].avaliable = 1;
+					drives[uy].diskId = did;
+					drives[uy].diskOffset = (*((uint*)&bootSect[446 + j * 16 + 8]));
+					drives[uy].size = (*((uint*)&bootSect[446 + j * 16 + 12]));
+					drives[uy].type = 0;
+					if(uy==lastLetter)
+						lastLetter++;
 				}
 			}
 		}
@@ -1005,81 +1136,91 @@ void WriteToDisk(ulon LBA, uint count, void * buf, uint letter)
 	else
 		kprintf("No drive!");
 }
-void makeLogicDrives()
+void checkDiskPatritions(uint i)
 {
-	memset(&drives, 0, sizeof(LogicDrive) * 26);
-	for (int i = 0; i < dcount; i++)
+	int uty = 0;
+	for (int ltt = 0; ltt < 26; ltt++)
+		if (!drives[ltt].avaliable) {
+			uty = ltt; break;
+		}
+
+	char bootSect[512];
+	uint *q = &bootSect;
+	checkPatrition(0, i);
+	//kprintf("!%d, %d!", ll, lastLetter);
+
+	ReadController(1, 1, &bootSect, i);
+
+	if (*((unsigned long long *)&bootSect) == 0x5452415020494645ULL)
 	{
-		uint ll = lastLetter;
-
-		char bootSect[512];
-		uint *q = &bootSect;
-		checkPatrition(0, i);
-		//kprintf("!%d, %d!", ll, lastLetter);
-
-		ReadController(1, 1, &bootSect, i);
-		//_read10usb(diskDevices[0].link, (uint)0, (uint)1, &bootSect);
-		printMem(bootSect, 10);
-		kprintf("^^^^^^\n");
-
-		//kprintf("\n");
-		if (*((unsigned long long *)&bootSect) == 0x5452415020494645ULL)
-		{
-			q = &bootSect;;
-			unsigned long long sect = *((unsigned long long*)((uint)q + 0x48));
-			uint count = *((uint*)((uint)&bootSect + 0x50));
-			for (int j = 0; j < count; j++) {
-				ReadController(sect + (j + 1) >> 1, 1, &bootSect, i);
-				ulon startLBA = *((ulon*)((uint)&bootSect + 0x20));
-				ulon  endLBA = *((ulon*)((uint)&bootSect + 0x28));
-				ulon  attrs = *((ulon*)((uint)&bootSect + 0x30));
-				uint copy = 0;
-				for (int o = 0; o < lastLetter; o++)
-				{
-					if (drives[o].diskId == i && drives[o].diskOffset == (uint)startLBA)
-						copy = 1;
+		q = &bootSect;;
+		unsigned long long sect = *((unsigned long long*)((uint)q + 0x48));
+		uint count = *((uint*)((uint)&bootSect + 0x50));
+		for (int j = 0; j < count; j++) {
+			ReadController(sect + ((j) >> 2), 1, &bootSect, i);
+			ulon startLBA = *((ulon*)((uint)&bootSect + 0x20 + (j<<7)));
+			ulon  endLBA = *((ulon*)((uint)&bootSect + 0x28 + (j << 7)));
+			//kprintf("%x %x\n", (uint)startLBA, (uint)endLBA);
+			ulon  attrs = *((ulon*)((uint)&bootSect + 0x30 + (j << 7)));
+			uint copy = 0;
+			for (int o = 0; o < 26; o++)
+			{
+				if (drives[o].diskId == i && drives[o].diskOffset == (uint)startLBA)
+					copy = 1;
+			}
+			if (copy)
+				continue;
+			int uy = 0;
+			for (int lt = 0; lt < 26; lt++)
+				if (!drives[lt].avaliable) {
+					uy = lt;
+					break;
 				}
-				if (copy)
-					continue;
-				kprintf("Found patrition. Letter: %c:\n", 'A' + lastLetter);
-				drives[lastLetter].avaliable = 1;
-				drives[lastLetter].diskId = i;
-				drives[lastLetter].diskOffset = startLBA;
-				drives[lastLetter].size = endLBA - startLBA + 1; drives[lastLetter].type = 0;
+			kprintf("%x", drives[0].avaliable);	
+			kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (endLBA - startLBA + 1)>>11);
+			drives[uy].avaliable = 1;
+			drives[uy].diskId = i;
+			drives[uy].diskOffset = startLBA;
+			drives[uy].size = endLBA - startLBA + 1; drives[uy].type = 0;
+			if(uy==lastLetter)
 				lastLetter++;
 
-			}
-		}
-		else if (ll == lastLetter)
-		{
-			kprintf("Found patrition. Letter: %c:\n", 'A' + lastLetter);
-			drives[lastLetter].avaliable = 1;
-			drives[lastLetter].diskId = i;
-			drives[lastLetter].diskOffset = 0;
-			drives[lastLetter].size = 0xff; drives[lastLetter].type = 0;
-			ReadController(0, 1, &bootSect, i);
-			if (bootSect[512 - 13] == 'S')
-				if (bootSect[512 - 12] == 'T')
-					if (bootSect[512 - 11] == 'A')
-						if (bootSect[512 - 10] == 'R')
-							if (bootSect[512 - 9] == 'T')
-								if (bootSect[512 - 8] == 'U')
-									if (bootSect[512 - 7] == 'P')
-										if (bootSect[512 - 6] == ' ')
-											if (bootSect[512 - 5] == ' ')
-												if (bootSect[512 - 4] == ' ')
-													if (bootSect[512 - 3] == ' ')
-													{
-														kprintf("We are booted from that patrition!\n");
-														bootedFrom = lastLetter;
-													}
-
-			lastLetter++;
 		}
 	}
-	attr = 0x09;
-	if (bootedFrom == 999)
-		kprintf("Warning: no device booted from found, some functions may not work! Check BIOS setup!\n");
-	attr = 0x0a;
+	else if(!drives[uty].avaliable)
+	{
+		int uy = 0;
+		for (int lt = 0; lt < 26; lt++)
+			if (!drives[lt].avaliable) {
+				uy = lt; break;
+			}
+
+		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, diskDevices[i].sectorsCount>>11);
+		drives[uy].avaliable = 1;
+		drives[uy].diskId = i;
+		drives[uy].diskOffset = 0;
+		drives[uy].size = diskDevices[i].sectorsCount; drives[uy].type = 0;
+		ReadController(0, 1, &bootSect, i);
+		if (bootSect[512 - 13] == 'S')
+			if (bootSect[512 - 12] == 'T')
+				if (bootSect[512 - 11] == 'A')
+					if (bootSect[512 - 10] == 'R')
+						if (bootSect[512 - 9] == 'T')
+							if (bootSect[512 - 8] == 'U')
+								if (bootSect[512 - 7] == 'P')
+									if (bootSect[512 - 6] == ' ')
+										if (bootSect[512 - 5] == ' ')
+											if (bootSect[512 - 4] == ' ')
+												if (bootSect[512 - 3] == ' ')
+												{
+													kprintf("We are booted from that patrition!\n");
+													bootedFrom = uy;
+												}
+		if(uy==lastLetter)
+			lastLetter++;
+	}
+}
+void makeLogicDrives()
+{
 
 }

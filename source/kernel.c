@@ -3,6 +3,15 @@
 
 #define VMAlloc malloc
 #define KeysQueue 0x09810
+//PIC#0; port 0x20
+#define IRQ_HANDLER(func) char func = 0x90;\
+__asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
+void _## func()
+
+//PIC#1; port 0xA0
+#define IRQ_HANDLER1(func) char func = 0x90;\
+__asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
+void _## func()
 //Достает символ из очереди
 char pcidone = 0;
 char getKey()
@@ -49,12 +58,13 @@ Window * mywin = 0;
 #include "FS/fat32.c"
 #include "FS\files.c"
 #include "Devices/cpu.c"
-#pragma GCC optimize ("O0")
+#pragma GCC optimize ("Ofast")
 #include "SVGA/svga.c"
 #include "Devices/ps2mouse.c"
 #include "idt.c"
 #include "GUI\Forms.c"
 #pragma GCC pop_options
+#include "Devices/pci_ide.c"
 #include "usb\usbd.c"
 #include "usb\ehci.c"
 #include "usb\uhci.c"
@@ -96,13 +106,14 @@ void Win1Handler(void * ev)
 void k_main()
 {
 	//hubinit=&_usbHubInit;
+	memset(&drives, 0, sizeof(LogicDrive) * 26);
 	initCoProc();
 	setCursor(0);
 	clearScreen();
 	setCursor(0);
 	enableFPU();
 	printString("Counting memory...\n");
-
+	g_usbControllerList = 0;
 	mm_init(0x400000);
 	kprintf("Memory count: 0x%x bytes\n", pheap_end);
 	initGlobals();
@@ -114,9 +125,9 @@ void k_main()
 	procTable[0].state = 1;
 	procTable[0].priority = 20;
 	procTable[0].priorityL = 20;
-
 	currentRunning = 0;
 	procCount = 1;
+
 	//nextS = &nnn;
 	//initSVGA1(0;
 	iint();
@@ -124,11 +135,11 @@ void k_main()
 	rtc();
 	//while(getKey()!=0);
 	initDevices();
-	ATAInit();
+	//ATAInit();
 	initSVGA();
 	kprintf("ButterflyOS started. Build from 8th august 2018.\n");
 	char b[512];
-
+	Wait(50);
 	initGlobals();
 	addGlobalVariable("malloc", &malloc);
 	addGlobalVariable("free", &free);
@@ -154,20 +165,25 @@ void k_main()
 	//
 	updateWindows();
 	PciInit();
-	kprintf("List of connected disk devices:\n");
-	for (int i = 0; i < dcount; i++)
-		kprintf(" Device #%d, structNo = %x, type = %x\n", i, diskDevices[i].structNo, diskDevices[i].type);
+
 	makeLogicDrives();
-	FILE * f = fopen("A:\\BINARIES\\QQ.O", "r");
-	uchar * tq = malloc(1026);
-	fread(tq, 1, 512, f);
-	fread(tq, 1, 510, f);
-	fread(tq, 1, 3, f);
-	kprintf("\nResult %x", tq[2]);
+	char * path = "A:\\AA.TXT";
+	path[0] = 'A' + bootedFrom;
+	FILE * f = fopen(path, "r");
+	uchar * tq = malloc(2500);
+	fread(tq, 1, 2500, f);
+	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
+	for (;;)
+	{
+		UsbPoll();
+	}
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
-	for (;;);
-	//for (;;);
+	/*
+	for (;;)
+	{
+		UsbPoll();
+	}*/
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
 	//kprintf("qq");
 
@@ -188,7 +204,7 @@ void k_main()
 	{
 		tttt++;
 		//printTextToWindow(1, mywin, "!@#$%x&&&",&_UsbMouseInit);
-		//UsbPoll();
+		UsbPoll();
 		unsigned int x = *sec100;
 		char key = 0;
 		Window * currentActive = windows;
@@ -210,7 +226,7 @@ void k_main()
 			}
 		}
 		drawed = 0;
-		draw3D(640, 680, tttt, mywin->video);
+		//draw3D(640, 680, tttt, mywin->video);
 		updateWindows();
 		int a = mouseX, b = mouseY;
 		lastX = a; lastY = b;

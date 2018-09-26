@@ -589,8 +589,19 @@ int pci_scan_bus(struct pci_func *pci_device)
 	return 0;
 }
 uint iddd = 0;
+IRQ_HANDLER1(irq_ideMast)
+{
+	_ide_irq();
+}
+IRQ_HANDLER1(irq_ideSlave)
+{
+	_ide_irq();
+}
+
 static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 {
+
+
 	unsigned int id = PCI_MAKE_ID(bus, dev, func);
 
 	PciDeviceInfo info;
@@ -624,7 +635,26 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	p.vendorid = info.vendorId;
 	p.dev = dev;
 	p.func = func;
+	if (info.classCode == 0x01 && info.subclass == 0x01 && (info.progIntf == 0x8A || info.progIntf == 0x80)) {
 
+		outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 8, 0xCF8); // Send the parameters.
+		if ((inportd(0xCFC) >> 16) != 0xFFFF) { // If device exists (class isn't 0xFFFF)
+												// Check if this device needs an IRQ assignment:
+			outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
+			outportb(0xCFC, 0xFE); // Change the IRQ field to 0xFE
+			outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
+			if ((inportd(0xCFC) & 0xFF) == 0xFE) {
+				// This device needs an IRQ assignment.
+			}
+			else {
+				// The device doesn't use IRQs, check if this is an Parallel IDE:
+					// This is a Parallel IDE Controller which uses IRQs 14 and 15.
+				inst(0x3E, &irq_ideMast, 0x8e);
+				inst(0x3E, &irq_ideSlave, 0x8e);
+				ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+			}
+		}
+	}
 	 kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
 		 (int)bus, (int)dev, (int)func,
 		 (int)info.vendorId, (int)info.deviceId,
@@ -635,7 +665,7 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	_uhci_init(id, &info);
 	_rtl39_init(id, &info);
 	/////while (!getKey());
-	PitWait(1000);
+	//PitWait(1000);
 	//__pci_ata(id, &info);
 	/*
 	const PciDriver *driver = g_pciDriverTable;

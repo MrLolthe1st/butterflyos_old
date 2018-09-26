@@ -14,15 +14,7 @@ void _## func()
 
 
 
-//PIC#0; port 0x20
-#define IRQ_HANDLER(func) char func = 0x90;\
-__asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
-void _## func()
 
-//PIC#1; port 0xA0
-#define IRQ_HANDLER1(func) char func = 0x90;\
-__asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
-void _## func()
 
 #define IT 0x09000
 # define IR 0x09800
@@ -91,7 +83,6 @@ IDT_HANDLERM(multitasking) {
 		movb $0x20, %al \n\
 		outb %al, $0x20\n\
 		pop %ax");
-	UsbPoll();
 	*sec100 = (*sec100) + 1; // % 100;
 	__asm__("\
 	call _multiHandler");
@@ -190,6 +181,7 @@ IDT_HANDLER(irq_ex) {
 	OutTextXYV(10, 10, "Dividing by zero", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
+
 unsigned char * mouse_cur;
 unsigned char updatingW = 0;
 unsigned char buttons = 0;

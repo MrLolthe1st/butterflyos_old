@@ -6,3 +6,5 @@ images/
 compilers/
 ButterflyOS.zip
 binaries/
+binaries/BOOT
+binaries/kernel.o

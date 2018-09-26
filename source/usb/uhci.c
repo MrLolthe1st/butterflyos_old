@@ -309,7 +309,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 		}
 		if (td->cs & TD_CS_CRC_TIMEOUT)
 		{
-			printTextToWindow(1, mywin, "TD timeout error\n");
+			//printTextToWindow(1, mywin, "TD timeout error\n");
 		}
 		if (td->cs & TD_CS_BITSTUFF)
 		{
@@ -670,10 +670,10 @@ void _uhci_init(unsigned int id, PciDeviceInfo *info)
 	// Probe devices
 	UhciProbe(hc, size);
 	// Register controller
-	UsbController *controller = (UsbController *)VMAlloc(sizeof(UsbController));
+	UsbController *controller = (UsbController *)malloc(sizeof(UsbController));
 	controller->next = g_usbControllerList;
 	controller->hc = hc;
-	controller->poll = UhciControllerPoll;
+	//controller->poll = UhciControllerPoll;
 
 	g_usbControllerList = controller;
 }
