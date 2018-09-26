@@ -5,8 +5,12 @@
 typedef struct __attribute__((packed)) _FHandler {
 	char * name;
 	long long currentByte;
+	long long currentByteAppend;
+
 	uint add1;
 	uint add2;
+	uint add3;
+	uint diskId;
 	uint fsType;
 	uint rights;
 	uint size;
@@ -14,8 +18,9 @@ typedef struct __attribute__((packed)) _FHandler {
 typedef __attribute__((packed)) struct _feil
 {
 	uint add1;
-	uint size;
 	uint add2;
+	uint add3;
+	uint size;
 } FileInfo;
 FileInfo * FileSeek(uint diskId, char * f)
 {
@@ -25,6 +30,20 @@ FileInfo * FileSeek(uint diskId, char * f)
 		return FAT32Seek(diskId, f);
 	}
 }
+uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
+{
+	if (drives[f->diskId].type == 0)
+	{
+		return FAT32Append(f->diskId, f->add2,f->add3,bytes,cnt);
+	}
+}
+uint FileClear(FILE * f)
+{
+	if (drives[f->diskId].type == 0)
+	{
+		return FAT32ClearChain(f->diskId, f->add2, f->add3);
+	}
+}
 FILE *fopen(const char *fname, const char *mode)
 {
 	if (!drives[fname[0] - 'A'].avaliable)
@@ -32,6 +51,7 @@ FILE *fopen(const char *fname, const char *mode)
 	FILE * n = malloc(sizeof(FILE));
 	n->name = fname;
 	n->rights = 0;
+	n->diskId = fname[0] - 'A';
 	if (mode[0] == 'r')
 		n->rights |= 1;
 	else
@@ -41,11 +61,11 @@ FILE *fopen(const char *fname, const char *mode)
 			n->rights |= 4;
 	if (mode[1] == 'b')
 		n->rights |= 8;
-	else if (mode[1] == '+')
-		n->rights |= 3;
 	if (mode[2] == 'b')
 		n->rights |= 8;
+
 	n->currentByte = 0;
+
 	FileInfo * q = FileSeek(fname[0] - 'A', (uint)fname + 3);
 	if (!q) {
 		free(n);
@@ -53,7 +73,15 @@ FILE *fopen(const char *fname, const char *mode)
 	}
 	n->add1 = q->add1;
 	n->add2 = q->add2;
+	n->add3 = q->add3;
 	n->size = q->size;
+	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+	uint bts = 0x65666768;
+	FileClear(n);
+	FileAppendBytes(n, &bts, 4);
+	FileAppendBytes(n, &bts, 4);
+	FileAppendBytes(n, &bts, 4);
+	FileAppendBytes(n, &bts, 4);
 	free(q);
 	return n;
 }
@@ -86,8 +114,8 @@ void rewind(FILE * f)
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
 
-	if (drives[f->name[0] - 'A'].type == 0)
-		FAT32ReadFileB(f->name[0] - 'A', f->add1, from, cnt, addr);
+	if (drives[f->diskId].type == 0)
+		FAT32ReadFileB(f->diskId, f->add1, from, cnt, addr);
 
 }
 uint fread(void * addr, uint size, uint count, FILE *f)

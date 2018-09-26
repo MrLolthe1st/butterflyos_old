@@ -135,7 +135,7 @@ void k_main()
 	rtc();
 	//while(getKey()!=0);
 	initDevices();
-	ATAInit();
+	//ATAInit();
 	initSVGA();
 	kprintf("ButterflyOS started. Build from 8th august 2018.\n");
 	char b[512];
@@ -166,13 +166,13 @@ void k_main()
 	updateWindows();
 	PciInit();
 
-	makeLogicDrives();/*
+	makeLogicDrives();
 	char * path = "A:\\AA.TXT";
 	path[0] = 'A' + bootedFrom;
 	FILE * f = fopen(path, "r");
 	uchar * tq = malloc(2500);
 	fread(tq, 1, 2500, f);
-	printTextToWindow(1,mywin,"Result: %s", (uint)tq);*/
+	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
 	for (;;)
 	{
 		UsbPoll();

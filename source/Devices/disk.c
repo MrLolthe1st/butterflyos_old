@@ -993,9 +993,12 @@ void _probe_port(HBA_MEM *abar_temp)
 	kprintf("AHCI probing complete\n");
 }
 
+uint readingInProcess = 0, writingInProcess = 0;
 //Чтение
 uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//kprintf("qq");
+	///////////////while (readingInProcess) { Wait(2); };
+	readingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
 		if (ATADevices[drive_id].isLBA48Supported == 1)
@@ -1018,11 +1021,14 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		ide_read_sectors(diskDevices[param].structNo, cnt, LBA, 0x8, addr);
+		ide_read_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
 	}
+	readingInProcess = 0;
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
+	//////while (writingInProcess) { Wait(2); };
+	writingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
 		if (ATADevices[drive_id].isLBA48Supported == 1)
@@ -1045,8 +1051,9 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		ide_write_sectors(diskDevices[param].structNo, cnt, LBA, 0x8, addr);
+		ide_write_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
 	}
+	writingInProcess = 0;
 }
 #define ulon unsigned long long
 typedef struct __attribute((packed)) _LogicDrive {
@@ -1187,12 +1194,12 @@ void checkDiskPatritions(uint i)
 			if (!drives[lt].avaliable) {
 				uy = lt; break;
 			}
+
 		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, diskDevices[i].sectorsCount>>11);
 		drives[uy].avaliable = 1;
 		drives[uy].diskId = i;
 		drives[uy].diskOffset = 0;
 		drives[uy].size = diskDevices[i].sectorsCount; drives[uy].type = 0;
-		kprintf("%x", drives[0].avaliable);
 		ReadController(0, 1, &bootSect, i);
 		if (bootSect[512 - 13] == 'S')
 			if (bootSect[512 - 12] == 'T')
