@@ -66,6 +66,11 @@ FILE *fopen(const char *fname, const char *mode)
 
 	n->currentByte = 0;
 
+	if (n->rights & 2)
+	{
+		//Create file
+	} 
+
 	FileInfo * q = FileSeek(fname[0] - 'A', (uint)fname + 3);
 	if (!q) {
 		kprintf("q");
@@ -76,9 +81,9 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
-	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
-	uint bts = 0x65666768;
-	FileAppendBytes(n, "ADI One love!", 13);
+	//kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+	if (n->rights & 2)
+		FileClear(n);//Clear file if W mode used
 	free(q);
 	return n;
 }
@@ -108,14 +113,30 @@ void rewind(FILE * f)
 		return 0;
 	f->currentByte = 0;
 }
-void FileRead(FILE * f, void * addr, uint from, uint cnt)
+
+void FileWrite(FILE * f, void * addr, uint cnt)
 {
 
+	if (drives[f->diskId].type == 0)
+		FAT32Append(f->diskId, f->add1, f->add2, addr, cnt);
+
+}
+uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
+{
+	FileWrite(stream, buf, size*count);
+}
+uchar fgetc(FILE * f)
+{
+
+}
+void FileRead(FILE * f, void * addr, uint from, uint cnt)
+{
+	
 	if (drives[f->diskId].type == 0)
 		FAT32ReadFileB(f->diskId, f->add1, from, cnt, addr);
 
 }
-uint fread(void * addr, uint size, uint count, FILE *f)
+uchar fread(void * addr, uint size, uint count, FILE *f)
 {
 	if (!f)
 		return 0;

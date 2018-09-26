@@ -150,6 +150,9 @@ void k_main()
 	addGlobalVariable("fclose", &fclose);
 	addGlobalVariable("fread", &fread);
 	addGlobalVariable("ftell", &ftell);
+	addGlobalVariable("fwrite", &fwrite);
+	addGlobalVariable("fseek", &fseek);
+	addGlobalVariable("rewind", &rewind);
 	//addGlobalVariable("fseek", &fseek);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
