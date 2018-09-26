@@ -8,3 +8,4 @@ ButterflyOS.zip
 binaries/
 binaries/BOOT
 binaries/kernel.o
+gcc/
