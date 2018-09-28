@@ -1,6 +1,6 @@
 #define uint unsigned int
 
-
+int kprintf(const char* str, ...);
 
 //Memory functions
 

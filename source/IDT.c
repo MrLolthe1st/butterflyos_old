@@ -95,7 +95,14 @@ IDT_HANDLERM(multitasking2) {
 
 void processEnd() {
 	free(procTable[currentRunning].startAddr);
-	free(procTable[currentRunning].stack);
+	//free(procTable[currentRunning].stack);
+	ELF_Process * z = procTable[currentRunning];
+	processAlloc * p = z->allocs;
+	while (p)
+	{
+		free(p->addr);
+		p = p->next;
+	}
 	memcpy(&procTable[procCount - 1], &procTable[currentRunning], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
@@ -121,31 +128,31 @@ typedef struct {
 rel;
 #include "ELF.c"
 
-void runProcess(char * fileName) {
-	void(*progq)() = 0;// FAT32ReadFileATA(0, "OO.O");
-	unsigned int entry = relocELF(progq);
-	printTextToWindow(6, mywin, "!  %x:%x  !", progq, entry);
-	progq = entry;
+void runProcess(char * fileName, uint argc, char **argv) {
+	FILE * fp=fopen(fileName, "r");
+	fseek(fp, 0, 2);
+	uint z = fteel(fp);
+	rewind(fp);
+	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
+	fread(progq, z, 1, fp);
+	fclose(fp);
+	ELF_Process *  entry = relocELF(progq);
+	//progq = entry;
 	void * stack = malloc(8192);
 	procTable[procCount].stack = stack;
-	procTable[procCount].esp = stack + 8184;
-	procTable[procCount].currentAddr = entry;
-	procTable[procCount].startAddr = entry;
+	addProcessAlloc(entry, stack);
+	procTable[procCount].esp = stack + 8176;
+	procTable[procCount].currentAddr = entry->entry;
+	procTable[procCount].startAddr = progq;
 	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 1;
 	procTable[procCount].priorityL = 1;
 	procTable[procCount].eflags = 0x216;
-	//outportb(0x378, 'a');
-//	outportb(0x3F8, 'a');
-
-	*((unsigned int *)(stack + 8184)) = &processEnd; *((unsigned int *)(stack + 8188)) = 0x08;
-	for (int i = 0; i < 512; i++) {
-		break;
-		if (*((unsigned char *)(entry + i)) < 16)
-			printTextToWindow(7, mywin, "0");
-		printTextToWindow(7, mywin, "%x ", *((unsigned char *)(entry + i)));
-
-	} *((unsigned int *)(stack + 8180)) = &processEnd;
+	*((unsigned int *)(stack + 8176)) = (uint)argv;
+	*((unsigned int *)(stack + 8180)) = argc;
+	*((unsigned int *)(stack + 8184)) = 0x08;
+	*((unsigned int *)(stack + 8188)) = &processEnd; 
+	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
 	procTable[procCount].state = 1;
 	procCount++;

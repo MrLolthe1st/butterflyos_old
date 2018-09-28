@@ -148,6 +148,7 @@ void k_main()
 	addGlobalVariable("openWindow", &openWindow);
 	addGlobalVariable("fopen", &fopen);
 	addGlobalVariable("fclose", &fclose);
+	addGlobalVariable("Wait", &Wait);
 	addGlobalVariable("fread", &fread);
 	addGlobalVariable("ftell", &ftell);
 	addGlobalVariable("fwrite", &fwrite);
@@ -169,16 +170,13 @@ void k_main()
 	updateWindows();
 	PciInit();
 
-	makeLogicDrives();
-	mkdir("A:\\ZZ", 0);
-	char * path = "A:\\ZZ\\AAA.TXT";
-	path[0] = 'A' + bootedFrom;
-	FILE * f = fopen(path, "w");
-	fwrite("Some text from own kernel!", 26, 1, f);
+	//makeLogicDrives();
+	runProcess("CMD.O");
 	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
 	for (;;)
 	{
 		UsbPoll();
+		Wait(1);
 	}
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");

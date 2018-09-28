@@ -96,14 +96,33 @@ void ferr(int i)
 {
 	for (;;);
 }
-unsigned int relocELF(void * p)
+typedef struct _pralloc
+{
+	void * addr;
+	struct _pralloc * next;
+} processAlloc;
+typedef struct
+{
+	void * entry;
+	processAlloc *allocs;
+} ELF_Process;
+void addProcessAlloc(ELF_Process * p, void * addr)
+{
+	void * z = p->allocs;
+	p->allocs = malloc(sizeof(processAlloc));
+	p->entry = addr;
+	p->next = z;
+}
+
+
+ELF_Process *  relocELF(void * p)
 {
 	EHeader * elf = p;//printTextToWindow(7,mywin,"%x\n",sizeof(EHeader));
 
 	if (elf->magic == 0x464c457f)
 	{
 		unsigned int TText = 0;
-
+		ELF_Process * proc = malloc(sizeof(ELF_Process));
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
 			ESHeader *sh = 0x28 * i + (int)elf + elf->e_shoff;
@@ -115,7 +134,6 @@ unsigned int relocELF(void * p)
 					unsigned int mem = malloc(sh->sh_size);
 					memset(mem, 0, sh->sh_size);
 					sh->sh_offset = (int)mem - (int)elf;
-					//printTextToWindow(7, mywin, "allocated %x bytes for %d section!\n", sh->sh_size, i);
 				}
 			}
 		}
@@ -134,7 +152,6 @@ unsigned int relocELF(void * p)
 					}
 			}
 		}
-		//*((unsigned int*)(0)) = &ferr;
 		//Find undefined functions and variables
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
@@ -151,12 +168,12 @@ unsigned int relocELF(void * p)
 						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;
 						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = getVariableAddress((int)varName + 1);
 
-						//printTextToWindow(7, mywin, "Undef: %x %s %x\n", getVariableAddress((int)varName + 1), varName, &malloc);
 					}
 				}
 			}
 		}
 		unsigned int commonSectionPtr = malloc(commonSectionLength + 4);//Allocate common section
+		addProcessAlloc(proc, commonSectionPtr);
 		unsigned int comId = 0;
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
@@ -201,8 +218,9 @@ unsigned int relocELF(void * p)
 				}
 			}
 		}
-		return (int)elf + 0x34;
+		proc->entry = (int)elf + 0x34;
+		return proc;
 	}
 	else
-		return (int)elf;
+		return (int)0;
 }

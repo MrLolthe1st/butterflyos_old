@@ -76,5 +76,6 @@ typedef struct __attribute__((packed)) _E {
 	unsigned int mmx[2 * 8];
 	unsigned int priority;
 	unsigned int priorityL;
+	void * elf_process;
 
 } Process;
