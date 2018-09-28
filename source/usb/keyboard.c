@@ -256,6 +256,7 @@ void InputOnKey(uint code, uint val)
     {
         // key press
         addKey(code);
+		
 
         if (code == KEY_LSHIFT)
         {

@@ -110,8 +110,8 @@ void addProcessAlloc(ELF_Process * p, void * addr)
 {
 	void * z = p->allocs;
 	p->allocs = malloc(sizeof(processAlloc));
-	p->entry = addr;
-	p->next = z;
+	p->allocs->addr = addr;
+	p->allocs->next = z;
 }
 
 
@@ -149,6 +149,7 @@ ELF_Process *  relocELF(void * p)
 					if (st[i].st_shndx == 0xFFF2)
 					{
 						commonSectionLength += st[i].st_size;
+					//	kprintf("z");
 					}
 			}
 		}
@@ -167,6 +168,7 @@ ELF_Process *  relocELF(void * p)
 						char * varName = names->sh_offset + st[i].st_name + (int)elf;
 						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;
 						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = getVariableAddress((int)varName + 1);
+					//	kprintf("%s\n", (int)varName + 1);
 
 					}
 				}
@@ -187,7 +189,7 @@ ELF_Process *  relocELF(void * p)
 					{
 						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;		//Absolute offset
 						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = commonSectionPtr + comId;	//Set offset
-//						printTextToWindow(7, mywin, "Common: %x %x\n", i, comId);
+			//			kprintf("Common: %x %x\n", i, comId);
 						comId += st[i].st_size;
 
 					}
@@ -205,20 +207,23 @@ ELF_Process *  relocELF(void * p)
 				unsigned int sectionForId = section->sh_info;
 				ESHeader *relocSection = 0x28 * sectionForId + (int)elf + elf->e_shoff;
 				unsigned int relocSectionOffset = relocSection->sh_offset + (int)elf;
+				
 				for (int j = 0; j < RelocationCount; j++)
 				{
 					unsigned int relocationSymbol = relocTable[j].r_info >> 8;
+					//ESHeader * names = sh->sh_link * 0x28 + (int)elf + elf->e_shoff;
+
 					unsigned int sectionOffset = relocTable[j].r_offset;
 					unsigned int additional = getSymAdr(elf, section->sh_link, relocationSymbol);
 					if (relocTable[j].r_info & 1)
 						*((unsigned int*)(sectionOffset + (int)relocSectionOffset)) = *((unsigned int*)(sectionOffset + (int)relocSectionOffset)) + additional;
 					else if (relocTable[j].r_info & 2)
 						*((int*)(sectionOffset + (int)relocSectionOffset)) = *((int*)(sectionOffset + (int)relocSectionOffset)) + additional - (sectionOffset + (int)relocSectionOffset) - 4;
-					//printTextToWindow(7, mywin, "Reloc: %x \n", *((unsigned int*)(sectionOffset + (int)relocSectionOffset)));
+				//	printTextToWindow(7, mywin, "Reloc: %x %x \n", relocationSymbol, *((unsigned int*)(sectionOffset + (int)relocSectionOffset)));
 				}
 			}
 		}
-		proc->entry = (int)elf + 0x34;
+		proc->entry = (uint)elf + 0x34;
 		return proc;
 	}
 	else

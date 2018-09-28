@@ -16,6 +16,7 @@ void _## func()
 char pcidone = 0;
 char getKey()
 {
+
 	unsigned char * keysInQueue = KeysQueue;
 	unsigned char * queueFirst = KeysQueue + 1;
 	unsigned char * queueLast = KeysQueue + 2;
@@ -123,8 +124,8 @@ void k_main()
 	procTable = processTable;
 	*((unsigned int*)0x09921) = processTable;
 	procTable[0].state = 1;
-	procTable[0].priority = 20;
-	procTable[0].priorityL = 20;
+	procTable[0].priority = 1;
+	procTable[0].priorityL = 1;
 	currentRunning = 0;
 	procCount = 1;
 
@@ -139,7 +140,7 @@ void k_main()
 	initSVGA();
 	kprintf("ButterflyOS started. Build from 8th august 2018.\n");
 	char b[512];
-	Wait(50);
+	//Wait(50);
 	initGlobals();
 	addGlobalVariable("malloc", &malloc);
 	addGlobalVariable("free", &free);
@@ -154,7 +155,11 @@ void k_main()
 	addGlobalVariable("fwrite", &fwrite);
 	addGlobalVariable("fseek", &fseek);
 	addGlobalVariable("rewind", &rewind);
-	//addGlobalVariable("fseek", &fseek);
+	addGlobalVariable("kprintf", &kprintf);
+	addGlobalVariable("memcpy", &memcpy);
+	addGlobalVariable("getKey", &getKey);
+	
+		addGlobalVariable("DirectoryListing", &DirectoryListing);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
@@ -171,7 +176,7 @@ void k_main()
 	PciInit();
 
 	//makeLogicDrives();
-	runProcess("CMD.O");
+	runProcess("A:\\CMD.O",2,0);
 	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
 	for (;;)
 	{

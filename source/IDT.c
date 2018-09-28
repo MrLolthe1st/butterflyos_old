@@ -93,10 +93,12 @@ IDT_HANDLERM(multitasking2) {
 
 }
 
+#include "ELF.c"
 void processEnd() {
+	//for (;;);
 	free(procTable[currentRunning].startAddr);
 	//free(procTable[currentRunning].stack);
-	ELF_Process * z = procTable[currentRunning];
+	ELF_Process * z = procTable[currentRunning].elf_process;
 	processAlloc * p = z->allocs;
 	while (p)
 	{
@@ -126,25 +128,28 @@ typedef struct {
 
 }
 rel;
-#include "ELF.c"
 
 void runProcess(char * fileName, uint argc, char **argv) {
 	FILE * fp=fopen(fileName, "r");
+
 	fseek(fp, 0, 2);
-	uint z = fteel(fp);
+	uint z = ftell(fp);
 	rewind(fp);
 	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
 	fread(progq, z, 1, fp);
 	fclose(fp);
+	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF(progq);
 	//progq = entry;
 	void * stack = malloc(8192);
 	procTable[procCount].stack = stack;
 	addProcessAlloc(entry, stack);
+	procTable[procCount].elf_process = entry;
 	procTable[procCount].esp = stack + 8176;
 	procTable[procCount].currentAddr = entry->entry;
+	kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
-	procTable[procCount].eax = entry;
+//	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 1;
 	procTable[procCount].priorityL = 1;
 	procTable[procCount].eflags = 0x216;
@@ -514,6 +519,7 @@ void addKey(char c) {
 void keyboard_handle() {
 
 	unsigned char o = inportb(0x60);
+	//kprintf("!");
 	if (o == 0x36 || o == 0x2A)
 		shift = 1; //Shift нажали
 	else if (o == 0x36 + 0x80 || o == 0x2A + 0x80)
