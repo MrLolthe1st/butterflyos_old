@@ -119,59 +119,64 @@ typedef struct Keymap
 
 const Keymap g_keymapUs101 =
 {
-    .base =
-    {
-        [KEY_1] = '1',
-        [KEY_2] = '2',
-        [KEY_3] = '3',
-        [KEY_4] = '4',
-        [KEY_5] = '5',
-        [KEY_6] = '6',
-        [KEY_7] = '7',
-        [KEY_8] = '8',
-        [KEY_9] = '9',
-        [KEY_0] = '0',
-        [KEY_MINUS] = '-',
-        [KEY_EQUALS] = '=',
-        [KEY_Q] = 'q',
-        [KEY_W] = 'w',
-        [KEY_E] = 'e',
-        [KEY_R] = 'r',
-        [KEY_T] = 't',
-        [KEY_Y] = 'y',
-        [KEY_U] = 'u',
-        [KEY_I] = 'i',
-        [KEY_O] = 'o',
-        [KEY_P] = 'p',
-        [KEY_LBRACKET] = '[',
-        [KEY_RBRACKET] = ']',
-        [KEY_A] = 'a',
-        [KEY_S] = 's',
-        [KEY_D] = 'd',
-        [KEY_F] = 'f',
-        [KEY_G] = 'g',
-        [KEY_H] = 'h',
-        [KEY_J] = 'j',
-        [KEY_K] = 'k',
-        [KEY_L] = 'l',
-        [KEY_SEMICOLON] = ';',
-        [KEY_APOSTROPHE] = '\'',
-        [KEY_GRAVE] = '`',
-        [KEY_BACKSLASH] = '\\',
-        [KEY_Z] = 'z',
-        [KEY_X] = 'x',
-        [KEY_C] = 'c',
-        [KEY_V] = 'v',
-        [KEY_B] = 'b',
-        [KEY_N] = 'n',
-        [KEY_M] = 'm',
-        [KEY_COMMA] = ',',
-        [KEY_PERIOD] = '.',
-        [KEY_SLASH] = '/',
-        [KEY_KP_MUL] = '*',
-        [KEY_SPACE] = ' ',
-        [KEY_KP_SUB] = '-',
-        [KEY_KP_ADD] = '+'
+	.base =
+	{
+		[KEY_1] = '1',
+		[KEY_2] = '2',
+		[KEY_3] = '3',
+		[KEY_4] = '4',
+		[KEY_5] = '5',
+		[KEY_6] = '6',
+		[KEY_7] = '7',
+		[KEY_8] = '8',
+		[KEY_9] = '9',
+		[KEY_0] = '0',
+		[KEY_MINUS] = '-',
+		[KEY_EQUALS] = '=',
+		[KEY_Q] = 'q',
+		[KEY_W] = 'w',
+		[KEY_E] = 'e',
+		[KEY_R] = 'r',
+		[KEY_T] = 't',
+		[KEY_Y] = 'y',
+		[KEY_U] = 'u',
+		[KEY_I] = 'i',
+		[KEY_O] = 'o',
+		[KEY_P] = 'p',
+		[KEY_LBRACKET] = '[',
+		[KEY_RBRACKET] = ']',
+		[KEY_A] = 'a',
+		[KEY_S] = 's',
+		[KEY_D] = 'd',
+		[KEY_F] = 'f',
+		[KEY_G] = 'g',
+		[KEY_H] = 'h',
+		[KEY_J] = 'j',
+		[KEY_K] = 'k',
+		[KEY_L] = 'l',
+		[KEY_SEMICOLON] = ';',
+		[KEY_APOSTROPHE] = '\'',
+		[KEY_GRAVE] = '`',
+		[KEY_BACKSLASH] = '\\',
+		[KEY_Z] = 'z',
+		[KEY_X] = 'x',
+		[KEY_C] = 'c',
+		[KEY_V] = 'v',
+		[KEY_B] = 'b',
+		[KEY_N] = 'n',
+		[KEY_M] = 'm',
+		[KEY_COMMA] = ',',
+		[KEY_PERIOD] = '.',
+		[KEY_SLASH] = '/',
+		[KEY_KP_MUL] = '*',
+		[KEY_SPACE] = ' ',
+		[KEY_KP_SUB] = '-',
+		[KEY_KP_ADD] = '+',
+		[KEY_RETURN] = 10,
+		[KEY_BACKSPACE] = 8,
+		[0x2b] = 9,
+		[0x29] = 27,
+		[0x2c] = ' '
     },
     .shift =
     {
@@ -225,7 +230,12 @@ const Keymap g_keymapUs101 =
         [KEY_KP_MUL] = '*',
         [KEY_SPACE] = ' ',
         [KEY_KP_SUB] = '-',
-        [KEY_KP_ADD] = '+'
+        [KEY_KP_ADD] = '+',
+		[KEY_RETURN] = 10,
+		[KEY_BACKSPACE] = 8,
+		[0x2b] = 9,
+		[0x29] = 27,
+		[0x2c] = ' '
     },
     .numlock =
     {
@@ -255,7 +265,7 @@ void InputOnKey(uint code, uint val)
     if (val)
     {
         // key press
-        addKey(code);
+        //addKey(code);
 		
 
         if (code == KEY_LSHIFT)
@@ -298,7 +308,6 @@ void InputOnKey(uint code, uint val)
                     }
                 }
             }
-
             if (ch)
             {
                 // Apply caps lock modifier
@@ -339,7 +348,6 @@ static void UsbKbdProcess(UsbKbd *kbd)
 {
     u8 *data = kbd->data;
     bool error = false;
-
     // Modifier keys
     uint modDelta = data[0] ^ kbd->lastData[0];
     for (uint i = 0; i < 8; ++i)

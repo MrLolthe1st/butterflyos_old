@@ -148,6 +148,7 @@ void k_main()
 	addGlobalVariable("closeWindow", &closeWindow);
 	addGlobalVariable("openWindow", &openWindow);
 	addGlobalVariable("fopen", &fopen);
+	addGlobalVariable("clearScreen", &clearScreen);
 	addGlobalVariable("fclose", &fclose);
 	addGlobalVariable("Wait", &Wait);
 	addGlobalVariable("fread", &fread);
@@ -176,6 +177,7 @@ void k_main()
 	PciInit();
 
 	//makeLogicDrives();
+	
 	runProcess("A:\\CMD.O",2,0);
 	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
 	for (;;)

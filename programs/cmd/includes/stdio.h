@@ -1,7 +1,7 @@
 #define uint unsigned int
 extern char getKey();
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
-
+void clearScreen();
 int kprintf(const char* str, ...);
 
 //Memory functions
@@ -27,6 +27,8 @@ typedef struct dentr_y
 {
 	char name[255];
 	uint modified;
+	uint size;
+	unsigned char attrs;
 	struct dentr_y * next;
 } direntry;
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);

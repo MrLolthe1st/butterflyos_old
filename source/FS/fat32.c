@@ -35,6 +35,8 @@ typedef struct dentr_y
 {
 	char name[255];
 	uint modified;
+	uint size;
+	uchar attrs;
 	struct dentr_y * next;
 } direntry;
 direntry * FAT32GetDir(uint diskId, char * fileName)
@@ -154,7 +156,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 						}
 					}
 					//File/Folder name parsed.
-					//kprintf("%s\n", &longFileName);
+				//	kprintf("%s\n", &longFileName);
 					if (lastDir) {
 						direntry * o = malloc(sizeof(direntry));
 						o->next = res;
@@ -166,6 +168,8 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 							oo++;
 							++z;
 						}
+						o->size = e[i].size;
+						o->attrs = e[i].attributes;
 						o->modified = (e[i].lastModifiedTime << 16) + e[i].lastModifiedDate;
 						res = o;
 					}
@@ -200,8 +204,8 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 		}
 		curChar = fileName;
 		lastDir = 1;
-		//
-		
+		//kprintf("%x->", currentCluster);
+		if(!uu)
 			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
 
 		while (*curChar) {
@@ -214,7 +218,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 		}
 		if (currentCluster == 0xFFFFFFF)
 			break;
-		//Wait(1);
+	//	Wait(10000);
 	}
 	free(cluster);
 	free(lastcluster);

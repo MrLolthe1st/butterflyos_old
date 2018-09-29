@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Devices", "Devices", "{FE5F
 		source\Devices\disk.c = source\Devices\disk.c
 		source\Devices\fpu.c = source\Devices\fpu.c
 		source\Devices\PCI.c = source\Devices\PCI.c
+		source\Devices\pci_ide.c = source\Devices\pci_ide.c
 		source\Devices\ports.c = source\Devices\ports.c
 		source\Devices\ps2mouse.c = source\Devices\ps2mouse.c
 	EndProjectSection

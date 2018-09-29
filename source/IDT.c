@@ -147,7 +147,7 @@ void runProcess(char * fileName, uint argc, char **argv) {
 	procTable[procCount].elf_process = entry;
 	procTable[procCount].esp = stack + 8176;
 	procTable[procCount].currentAddr = entry->entry;
-	kprintf("!%x %x!",entry, entry->entry);
+	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
 //	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 1;
