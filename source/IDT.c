@@ -130,33 +130,36 @@ typedef struct {
 rel;
 
 void runProcess(char * fileName, uint argc, char **argv) {
-	FILE * fp=fopen(fileName, "r");
+	FILE * fp = fopen(fileName, "r");
 
 	fseek(fp, 0, 2);
 	uint z = ftell(fp);
 	rewind(fp);
+	kprintf("%x", &DirectoryListing);
 	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
 	fread(progq, z, 1, fp);
+	printMem((uint)progq + 0xc00, 4);
 	fclose(fp);
 	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF(progq);
 	//progq = entry;
-	void * stack = malloc(8192);
+	uint size_stack = 65536;
+	void * stack = malloc(size_stack);
 	procTable[procCount].stack = stack;
 	addProcessAlloc(entry, stack);
 	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = stack + 8176;
+	procTable[procCount].esp = stack + size_stack - 16;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
-//	procTable[procCount].eax = entry;
+	//	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 1;
 	procTable[procCount].priorityL = 1;
 	procTable[procCount].eflags = 0x216;
-	*((unsigned int *)(stack + 8176)) = (uint)argv;
-	*((unsigned int *)(stack + 8180)) = argc;
-	*((unsigned int *)(stack + 8184)) = 0x08;
-	*((unsigned int *)(stack + 8188)) = &processEnd; 
+	*((unsigned int *)(stack + size_stack - 16)) = (uint)argv;
+	*((unsigned int *)(stack + size_stack - 12)) = argc;
+	*((unsigned int *)(stack + size_stack - 8)) = 0x08;
+	*((unsigned int *)(stack + size_stack - 4)) = &processEnd;
 	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
 	procTable[procCount].state = 1;

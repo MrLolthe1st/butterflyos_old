@@ -159,8 +159,7 @@ void k_main()
 	addGlobalVariable("kprintf", &kprintf);
 	addGlobalVariable("memcpy", &memcpy);
 	addGlobalVariable("getKey", &getKey);
-	
-		addGlobalVariable("DirectoryListing", &DirectoryListing);
+	addGlobalVariable("DirectoryListing", &DirectoryListing);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;

@@ -581,7 +581,11 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	PitWait(1);
 	//printQh(qh);
 	//kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
-
+	if (qh->token & TD_TOK_XACT)
+	{
+		t->success = false;
+		t->complete = true;
+	}
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;

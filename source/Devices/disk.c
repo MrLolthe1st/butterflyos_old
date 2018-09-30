@@ -1013,9 +1013,7 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		if(*((u8*)((uint)diskDevices[param].link)+0))
-			_read16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
-		else
+		
 			_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
 		return 0;
 	}

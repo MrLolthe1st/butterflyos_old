@@ -340,9 +340,11 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	char zut[32];
+	cbw_t * cbw = &zut;
 	cbw->lun = 0;
-	cbw->tag = 0x10010;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
 	cbw->flags = 0x80;
@@ -355,6 +357,7 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
 	t->endp = endpointOut;//bulk Out
+	
 	t->req = 0;
 	t->data = cbw;
 	t->len = 0x1F;
@@ -373,6 +376,7 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 		t->success = false;
 		dev->hcIntr(dev, t);
 		buf += s->bytesPerBlock;
+		kprintf("[%x]",lba);
 	}
 	t->endp = endpointIn;
 	t->req = 0;
@@ -385,7 +389,9 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355)
 		MassStorageReset(dev, endpointIn);
-	free(cbw);
+
+	kprintf("[!%x]", lba);
+
 }
 long long bswap64(long long a)
 {

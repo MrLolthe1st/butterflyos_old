@@ -2,10 +2,11 @@
 
 void _main(int argc, char ** argv)
 {
-	clearScreen();
+//	clearScreen();
 	kprintf("\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
+	
 	dir[0]='A';
 	dir[1]=':';
 	dir[2]='\\';
