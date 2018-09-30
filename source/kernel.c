@@ -108,6 +108,7 @@ void k_main()
 {
 	//hubinit=&_usbHubInit;
 	memset(&drives, 0, sizeof(LogicDrive) * 26);
+	currentRunning = 0;
 	initCoProc();
 	setCursor(0);
 	clearScreen();
@@ -126,7 +127,6 @@ void k_main()
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
 	procTable[0].priorityL = 1;
-	currentRunning = 0;
 	procCount = 1;
 
 	//nextS = &nnn;
@@ -183,7 +183,7 @@ void k_main()
 	for (;;)
 	{
 		UsbPoll();
-		Wait(1);
+		Wait(10);
 	}
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");

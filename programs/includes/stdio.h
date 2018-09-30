@@ -1,5 +1,7 @@
 #define uint unsigned int
-
+extern char getKey();
+void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
+void clearScreen();
 int kprintf(const char* str, ...);
 
 //Memory functions
@@ -21,7 +23,14 @@ typedef struct __attribute__((packed)) _FHandler {
 	uint rights;
 	uint size;
 } FILE;
-
+typedef struct dentr_y
+{
+	char name[255];
+	uint modified;
+	uint size;
+	unsigned char attrs;
+	struct dentr_y * next;
+} direntry;
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);
 unsigned char fread(void * addr, uint size, uint count, FILE *f);
 void fclose(FILE * f);

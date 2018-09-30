@@ -126,7 +126,7 @@ unsigned int count_memory(void) {
 
 char * malloc(size_t size) {
 	if (!size) return 0;
-
+	
 	/* Loop through blocks and find a block sized the same or bigger */
 	uint8_t * mem = (uint8_t *)heap_begin;
 	while ((uint32_t)mem < last_alloc) {
@@ -180,6 +180,10 @@ nalloc:;
 	//kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
 	memory_used += size + 4 + sizeof(alloc_t);
 	memset((char *)((uint32_t)alloc + sizeof(alloc_t)), 0, size);
+	if (currentRunning)
+	{
+		addProcessAlloc(procTable[currentRunning].elf_process, (char *)((uint32_t)alloc + sizeof(alloc_t)));
+	}
 	return (char *)((uint32_t)alloc + sizeof(alloc_t));
 	/*
 		char* ret = (char*)last_alloc;
@@ -191,6 +195,13 @@ nalloc:;
 		}
 		kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, ret, last_alloc);
 		return ret;*/
+}
+void addProcessAlloc(ELF_Process * p, void * addr)
+{
+	void * z = p->allocs;
+	p->allocs = malloc(sizeof(processAlloc));
+	p->allocs->addr = addr;
+	p->allocs->next = z;
 }
 void mm_init(uint32_t kernel_end) {
 	last_alloc = kernel_end + 0x1000;

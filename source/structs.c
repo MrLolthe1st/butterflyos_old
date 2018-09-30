@@ -56,7 +56,16 @@ typedef struct __attribute__((packed)) _D {
 }
 dirEntry;
 
-
+typedef struct _pralloc
+{
+	void * addr;
+	struct _pralloc * next;
+} processAlloc;
+typedef struct
+{
+	void * entry;
+	processAlloc *allocs;
+} ELF_Process;
 
 typedef struct __attribute__((packed)) _E {
 	unsigned int eax;
@@ -79,3 +88,7 @@ typedef struct __attribute__((packed)) _E {
 	void * elf_process;
 
 } Process;
+
+
+Process * procTable = 0;
+int currentRunning = 0, procCount = 0;

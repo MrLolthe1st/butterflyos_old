@@ -34,8 +34,6 @@ pushl %ebp\n\
 movl %esp,%esi\n\
 \n call __"# func " \n \n iret \n");\
 void _## func()
-Process * procTable = 0;
-int currentRunning = 0, procCount = 0;
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
 	__asm__("movl %%esp,%0\n\ movl %%esi,%1": "=r" (stack), "=r" (s2) : );
@@ -103,7 +101,9 @@ void processEnd() {
 	while (p)
 	{
 		free(p->addr);
-		p = p->next;
+		processAlloc * pz = p->next;
+		free(p);
+		p = pz;
 	}
 	memcpy(&procTable[procCount - 1], &procTable[currentRunning], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;

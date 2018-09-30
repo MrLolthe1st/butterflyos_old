@@ -96,23 +96,8 @@ void ferr(int i)
 {
 	for (;;);
 }
-typedef struct _pralloc
-{
-	void * addr;
-	struct _pralloc * next;
-} processAlloc;
-typedef struct
-{
-	void * entry;
-	processAlloc *allocs;
-} ELF_Process;
-void addProcessAlloc(ELF_Process * p, void * addr)
-{
-	void * z = p->allocs;
-	p->allocs = malloc(sizeof(processAlloc));
-	p->allocs->addr = addr;
-	p->allocs->next = z;
-}
+
+
 
 
 ELF_Process *  relocELF(void * p)
