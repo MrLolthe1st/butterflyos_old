@@ -2,6 +2,8 @@
 extern char getKey();
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
 void clearScreen();
+void unlockTaskSwitch();
+void lockTaskSwitch(uint id);
 int kprintf(const char* str, ...);
 
 //Memory functions
@@ -38,3 +40,5 @@ void rewind(FILE * f);
 long ftell(FILE * f);
 uint fseek(FILE *stream, long offset, int origin);
 FILE *fopen(const char *fname, const char *mode);
+void mkdir(char *p, uint mode);
+void runProcess(char * fileName, uint argc, char **argv);

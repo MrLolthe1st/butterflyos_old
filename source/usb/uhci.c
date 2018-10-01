@@ -673,7 +673,7 @@ void _uhci_init(unsigned int id, PciDeviceInfo *info)
 	UsbController *controller = (UsbController *)malloc(sizeof(UsbController));
 	controller->next = g_usbControllerList;
 	controller->hc = hc;
-	//controller->poll = UhciControllerPoll;
+	controller->poll = UhciControllerPoll;
 
 	g_usbControllerList = controller;
 }

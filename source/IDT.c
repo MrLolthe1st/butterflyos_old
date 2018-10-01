@@ -32,7 +32,16 @@ pushl %esi\n\
 pushl %edi\n\
 pushl %ebp\n\
 movl %esp,%esi\n\
-\n call __"# func " \n \n iret \n");\
+\n call __"# func " \n\
+popl %ebp\n\
+popl %edi\n\
+popl %esi\n\
+popl %edx\n\
+popl %ecx\n\
+popl %ebx\n\
+popl %eax\n\
+popl %esp\n\
+\n iret \n");\
 void _## func()
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
@@ -53,6 +62,7 @@ void multiHandler() {
 	if (procTable[currentRunning].priorityL == 0) {
 		procTable[currentRunning].priorityL = procTable[currentRunning].priority;
 		currentRunning = (currentRunning + 1) % procCount;
+		
 		while (!procTable[currentRunning].state & 1) currentRunning = (currentRunning + 1) % procCount;
 	}
 	__asm__("\n\
@@ -75,20 +85,22 @@ void multiHandler() {
 		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning));
 
 }
+
 IDT_HANDLERM(multitasking) {
 	__asm__("push %ax\n\
 		movb $0x20, %al \n\
 		outb %al, $0x20\n\
 		pop %ax");
 	*sec100 = (*sec100) + 1; // % 100;
+	if(!locked)
 	__asm__("\
 	call _multiHandler");
 
 }
 IDT_HANDLERM(multitasking2) {
+	if (!locked)
 	__asm__("\
 	call _multiHandler");
-
 }
 
 #include "ELF.c"
@@ -105,12 +117,15 @@ void processEnd() {
 		free(p);
 		p = pz;
 	}
+	//kprintf("Emd!");
+	lockTaskSwitch(1);
 	memcpy(&procTable[procCount - 1], &procTable[currentRunning], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
-	printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
+	//printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
 	procTable[procCount].state = 0;
 	currentRunning = procCount;
+	unlockTaskSwitch();
 	for (;;);
 }
 typedef struct _eqa {
@@ -130,36 +145,33 @@ typedef struct {
 rel;
 
 void runProcess(char * fileName, uint argc, char **argv) {
-	FILE * fp = fopen(fileName, "r");
+	FILE * fp=fopen(fileName, "r");
 
 	fseek(fp, 0, 2);
 	uint z = ftell(fp);
 	rewind(fp);
-	kprintf("%x", &DirectoryListing);
 	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
 	fread(progq, z, 1, fp);
-	printMem((uint)progq + 0xc00, 4);
 	fclose(fp);
 	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF(progq);
 	//progq = entry;
-	uint size_stack = 65536;
-	void * stack = malloc(size_stack);
+	void * stack = malloc(8192);
 	procTable[procCount].stack = stack;
 	addProcessAlloc(entry, stack);
 	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = stack + size_stack - 16;
+	procTable[procCount].esp = stack + 8180;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
-	//	procTable[procCount].eax = entry;
+//	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 1;
 	procTable[procCount].priorityL = 1;
 	procTable[procCount].eflags = 0x216;
-	*((unsigned int *)(stack + size_stack - 16)) = (uint)argv;
-	*((unsigned int *)(stack + size_stack - 12)) = argc;
-	*((unsigned int *)(stack + size_stack - 8)) = 0x08;
-	*((unsigned int *)(stack + size_stack - 4)) = &processEnd;
+	*((unsigned int *)(stack + 8188)) = (uint)argv;
+	*((unsigned int *)(stack + 8184)) = argc;
+	//*((unsigned int *)(stack + 8180)) = 0x08;
+	*((unsigned int *)(stack + 8180)) = &processEnd; 
 	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
 	procTable[procCount].state = 1;
@@ -494,11 +506,12 @@ IRQ_HANDLER(irq_time81) {
 
 	qwx++;
 	*sec100 = (*sec100) + 1; // % 100;
-
+	kprintf("z");
 }
 
 IRQ_HANDLER1(irq_time8) {
 	qwx++;
+	kprintf("!");
 	*sec100 = (*sec100) + 1; // % 100;
 
 }

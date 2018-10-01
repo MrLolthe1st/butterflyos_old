@@ -1,7 +1,13 @@
-#include "includes\executable.c"
 #include "includes\stdio.h"
-void _main()
+void _main(int argc, char ** argv)
 {
-	kprintf("Program runned!\n");
-	for(;;);
+	lockTaskSwitch(1);
+	kprintf("%x %x Program runned!\n",argc, argv);
+	
+	for(int i=0;i<argc;i++)
+	{
+		kprintf("%s\n",argv[i]);
+	}
+	unlockTaskSwitch();
+	//for(;;);
 }

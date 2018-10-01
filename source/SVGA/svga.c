@@ -99,8 +99,8 @@ void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 unsigned int u;
 //Waits CRT back way
 void waitRetrace() {
-	while (inportb(0x3DA) & 0x8);
-	while (!(inportb(0x3DA) & 0x8));
+	while (inportb(0x3DA) & 0x8) { Wait(1); };
+	while (!(inportb(0x3DA) & 0x8)) { Wait(1); }
 }
 //Copies video buffer to video memory
 void swapBuffer() {

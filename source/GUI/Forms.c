@@ -358,6 +358,7 @@ void closeWindow(Window * ws) {
 //Opens a window
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
+	
 	Window * win = malloc(sizeof(Window));
 	Window * node = windows;
 	//Get active window pointer

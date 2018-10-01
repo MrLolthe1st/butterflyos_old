@@ -446,9 +446,9 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	
 	*reg|=(1<<12)|(1<<20);
 	Wait(1000);
-	kprintf("!Status: %x\n",*reg);
+	//kprintf("!Status: %x\n",*reg);
 	EhciPortSet(reg, PORT_RESET | (1<<12) | (1<<20) | (1<<6));
-	Wait(700);
+	Wait(600);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
@@ -461,7 +461,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 		// Get current status
 		status = *reg;
-		kprintf("Status: %x\n",status);
+		//kprintf("Status: %x\n",status);
 		// Check if device is attached to port
 		if (~status & PORT_CONNECTION)
 		{
@@ -581,11 +581,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	PitWait(1);
 	//printQh(qh);
 	//kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
-	if (qh->token & TD_TOK_XACT)
-	{
-		t->success = false;
-		t->complete = true;
-	}
+
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;

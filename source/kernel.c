@@ -28,6 +28,8 @@ char getKey()
 
 	return c;
 }
+unsigned int locked = 0;
+
 void nope(int a, ...)
 {
 
@@ -45,6 +47,7 @@ Window * mywin = 0;
 #pragma GCC push_options
 #include "Link.h"
 #include "devices/fpu.c"
+#include "usb_key_layout.c"
 #include "time.c"
 #include "mathf.c"
 #include "string.c"
@@ -53,6 +56,14 @@ Window * mywin = 0;
 #include "memory.c"
 #include "globalVariables.c"
 #include "kprin.c"
+void lockTaskSwitch(unsigned int id)
+{
+	locked = id;
+}
+void unlockTaskSwitch()
+{
+	locked = 0;
+}
 #include "Devices\PCI.c"
 #include "Devices/device.c"
 #include "Devices/disk.c"
@@ -160,6 +171,10 @@ void k_main()
 	addGlobalVariable("memcpy", &memcpy);
 	addGlobalVariable("getKey", &getKey);
 	addGlobalVariable("DirectoryListing", &DirectoryListing);
+	addGlobalVariable("lockTaskSwitch", &lockTaskSwitch);
+	addGlobalVariable("unlockTaskSwitch", &unlockTaskSwitch);
+	addGlobalVariable("mkdir", &mkdir);
+	addGlobalVariable("runProcess", &runProcess);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
@@ -178,19 +193,14 @@ void k_main()
 	//makeLogicDrives();
 	
 	runProcess("A:\\CMD.O",2,0);
-	//printTextToWindow(1,mywin,"Result: %s", (uint)tq);
-	for (;;)
-	{
-		UsbPoll();
-		Wait(10);
-	}
+
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
-	/*
+	
 	for (;;)
 	{
 		UsbPoll();
-	}*/
+	}
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
 	//kprintf("qq");
 

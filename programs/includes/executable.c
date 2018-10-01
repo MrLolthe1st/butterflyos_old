@@ -1,6 +1,6 @@
 
-void ____start()
+void ____start(int argc, char ** argv)
 {	
-	_main();
+	_main(argc, argv);
 }
 

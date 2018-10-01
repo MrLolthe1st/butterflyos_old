@@ -200,11 +200,12 @@ ELF_Process *  relocELF(void * p)
 
 					unsigned int sectionOffset = relocTable[j].r_offset;
 					unsigned int additional = getSymAdr(elf, section->sh_link, relocationSymbol);
+					//printTextToWindow(7, mywin, "Reloc:%x %x %x \n", additional, *((uint*)(sectionOffset + (uint)relocSectionOffset)) , (sectionOffset + (uint)relocSectionOffset) - 4);
 					if (relocTable[j].r_info & 1)
 						*((unsigned int*)(sectionOffset + (int)relocSectionOffset)) = *((unsigned int*)(sectionOffset + (int)relocSectionOffset)) + additional;
 					else if (relocTable[j].r_info & 2)
 						*((int*)(sectionOffset + (int)relocSectionOffset)) = *((int*)(sectionOffset + (int)relocSectionOffset)) + additional - (sectionOffset + (int)relocSectionOffset) - 4;
-				//	printTextToWindow(7, mywin, "Reloc: %x %x \n", relocationSymbol, *((unsigned int*)(sectionOffset + (int)relocSectionOffset)));
+					
 				}
 			}
 		}

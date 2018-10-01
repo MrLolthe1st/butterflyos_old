@@ -998,6 +998,8 @@ uint readingInProcess = 0, writingInProcess = 0;
 uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//kprintf("qq");
 	///////////////while (readingInProcess) { Wait(2); };
+
+	lockTaskSwitch(1);
 	readingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
@@ -1008,24 +1010,30 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		return _read(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
+		 _read(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		
+		if(*((u8*)((uint)diskDevices[param].link)+0))
+			_read16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
+		else
 			_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		return 0;
+		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
 		ide_read_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
 	}
 	readingInProcess = 0;
+
+	unlockTaskSwitch();
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//////while (writingInProcess) { Wait(2); };
+
+	lockTaskSwitch(1);
 	writingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
@@ -1045,13 +1053,15 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 			_write16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
 		else
 			_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		return 0;
+		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
 		ide_write_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
 	}
 	writingInProcess = 0;
+
+	unlockTaskSwitch();
 }
 #define ulon unsigned long long
 typedef struct __attribute((packed)) _LogicDrive {

@@ -89,7 +89,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
-	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+	//kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
 	if (n->rights & 2&&!ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);

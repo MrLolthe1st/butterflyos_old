@@ -2,6 +2,8 @@
 extern char getKey();
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
 void clearScreen();
+void unlockTaskSwitch();
+void lockTaskSwitch(uint id);
 int kprintf(const char* str, ...);
 
 //Memory functions
@@ -31,7 +33,6 @@ typedef struct dentr_y
 	unsigned char attrs;
 	struct dentr_y * next;
 } direntry;
-direntry * DirectoryListing(char *z);
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);
 unsigned char fread(void * addr, uint size, uint count, FILE *f);
 void fclose(FILE * f);
@@ -39,3 +40,5 @@ void rewind(FILE * f);
 long ftell(FILE * f);
 uint fseek(FILE *stream, long offset, int origin);
 FILE *fopen(const char *fname, const char *mode);
+void mkdir(char *p, uint mode);
+void runProcess(char * fileName, uint argc, char **argv);

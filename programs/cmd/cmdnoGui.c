@@ -1,24 +1,12 @@
-#include "includes\executable.c"
 #include "includes\stdio.h"
-#include "includes\structs.h"
-#include "includes\forms.h"
 #pragma GCC push_options
-void handle(void * z)
-{
-}
 void _main(int argc, char ** argv)
 {
-	//clearScreen();
-	//lockTaskSwitch(1);kprintf("1");
-	
-	Window * w;
-	w=openWindow(720,480,0,&handle,"Command Shell");
-	//w->handler=&_handle;
-	printTextToWindow(2,w,"\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
+	clearScreen();
+	kprintf("\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
 	char * ucmd = malloc(512);
-	
 	dir[0] = 'A';
 	dir[1] = ':';
 	dir[2] = '\\';
@@ -27,7 +15,7 @@ void _main(int argc, char ** argv)
 	char key = 0;
 	for (;;)
 	{
-		printTextToWindow(2,w,"\n%s>", dir);
+		kprintf("\n%s>", dir);
 		cmdLen = 0;
 		key = 0;
 		for (int i = 0; i < 512; i++)
@@ -37,12 +25,11 @@ void _main(int argc, char ** argv)
 			while ((key = getKey()) == 0) { Wait(1); };
 			if (key == 10) continue;
 			if (key == 0x9) continue;
-			printTextToWindow(2,w,"%c", key);
+			kprintf("%c", key);
 			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; continue; }
 			cmd[cmdLen] = key;
 			cmdLen++;
 		}
-		printTextToWindow(2,w,"\n");
 		toUpper(cmd, ucmd);
 		if (ucmd[0] == 'D'&&ucmd[1] == 'I'&&ucmd[2] == 'R')
 		{
@@ -68,7 +55,7 @@ void _main(int argc, char ** argv)
 					++op;
 				}
 
-				printTextToWindow(2,w,"%s", &d->name);
+				kprintf("%s", &d->name);
 				//void *ii = d;
 				uint day = (d->modified & 0b11111);
 				uint month = ((d->modified >> 5) & 0b1111);
@@ -78,37 +65,37 @@ void _main(int argc, char ** argv)
 				uint hour = ((d->modified >> 27) & 0b11111);
 
 				while (len < 29) {
-					printTextToWindow(2,w," ");
+					kprintf(" ");
 					len++;
 				}
 
-				printTextToWindow(2,w," MOD. ");
+				kprintf(" MOD. ");
 				if (day < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d.", day);
+					kprintf("0");
+				kprintf("%d.", day);
 				if (month < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d.%d ", month, year);
+					kprintf("0");
+				kprintf("%d.%d ", month, year);
 				if (hour < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d:", hour);
+					kprintf("0");
+				kprintf("%d:", hour);
 				if (minute < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d ", minute);
+					kprintf("0");
+				kprintf("%d ", minute);
 				if (d->attrs & 0x10) {
 
-					printTextToWindow(2,w,"DIR\n");
+					kprintf("DIR\n");
 					dircnt++;
 				}
 				else {
-					printTextToWindow(2,w,"FILE %d KBytes\n", d->size >> 10);
+					kprintf("FILE %d KBytes\n", d->size >> 10);
 					filescnt++;
 				}
 				tsize += d->size;
 				d = d->next;
 				//free(ii);
 			}
-			printTextToWindow(2,w,"Total %d KBytes in %d files and %d directories\n", tsize >> 10, filescnt, dircnt);
+			kprintf("Total %d KBytes in %d files and %d directories\n", tsize >> 10, filescnt, dircnt);
 		}
 		else
 			if (ucmd[0] == 'C'&&ucmd[1] == 'D')
@@ -171,8 +158,8 @@ void _main(int argc, char ** argv)
 					}
 					++z;
 				}
-				//printTextToWindow(2,w,"%x\n",args);
-			//	printTextToWindow(2,w,"\n%x args:\n",args);
+				//kprintf("%x\n",args);
+			//	kprintf("\n%x args:\n",args);
 				lockTaskSwitch(1);
 				memcpy(dir, ucmd, 512);
 				concatdir(dir, fname);
@@ -181,7 +168,7 @@ void _main(int argc, char ** argv)
 				unlockTaskSwitch();
 				for (int i = 0; i < cid; i++)
 				{
-					//	printTextToWindow(2,w,"!%s\n",args[i]);
+					//	kprintf("!%s\n",args[i]);
 						//free(args[i]);
 				}
 				//free(args);
@@ -203,6 +190,7 @@ void concatdir(char * dir, char * cmd)
 			dir[0] = *cu;
 			cu++;
 			dir[3] = 0;
+			kprintf("\n");
 		}
 		++cu;
 	}
@@ -225,7 +213,7 @@ void concatdir(char * dir, char * cmd)
 		uint zz = -1;
 		while (*cu)
 		{
-			//printTextToWindow(2,w,"%c %x %x %d\n",(uint)*cu,(uint)((uint)lslash-(uint)dir),(uint)((uint)llslash-(uint)dir),(uint)zz);
+			//kprintf("%c %x %x %d\n",(uint)*cu,(uint)((uint)lslash-(uint)dir),(uint)((uint)llslash-(uint)dir),(uint)zz);
 			if (*cu == '.'&&cu[1] == '.')
 			{
 				z = (uint)llslash + 1;

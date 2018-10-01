@@ -252,42 +252,42 @@ typedef struct __attribute__((packed)) UsbHubDesc
 
 void UsbPrintDeviceDesc(UsbDeviceDesc *desc)
 {
-	printTextToWindow(2, mywin, "  USB: Version=%d.%d Vendor ID=%x Product ID=%x Configs=%d\n",
+	/*printTextToWindow(2, mywin, "  USB: Version=%d.%d Vendor ID=%x Product ID=%x Configs=%d\n",
 		(int)desc->usbVer >> 8, (int)(desc->usbVer >> 4) & 0xf,
 		(int)desc->vendorId, (int)desc->productId,
-		(int)desc->confCount);
+		(int)desc->confCount);*/
 }
 
 // ------------------------------------------------------------------------------------------------
 void UsbPrintConfDesc(UsbConfDesc *desc)
 {
-	printTextToWindow(2, mywin, "  Configuration: totalLen=%d intfCount=%d confValue=%d confStr=%d\n",
+	/*printTextToWindow(2, mywin, "  Configuration: totalLen=%d intfCount=%d confValue=%d confStr=%d\n",
 		(int)desc->totalLen,
 		(int)desc->intfCount,
 		(int)desc->confValue,
-		(int)desc->confStr);
+		(int)desc->confStr);*/
 }
 
 // ------------------------------------------------------------------------------------------------
 void UsbPrintIntfDesc(UsbIntfDesc *desc)
 {
-	printTextToWindow(2, mywin, "   Interface: altSetting=%d endpCount=%d class=%d subclass=%d protocol=%d str=%d\n",
+	/*printTextToWindow(2, mywin, "   Interface: altSetting=%d endpCount=%d class=%d subclass=%d protocol=%d str=%d\n",
 		(int)desc->altSetting,
 		(int)desc->endpCount,
 		(int)desc->intfClass,
 		(int)desc->intfSubClass,
 		(int)desc->intfProtocol,
-		(int)desc->intfStr);
+		(int)desc->intfStr);*/
 }
 
 // ------------------------------------------------------------------------------------------------
 void UsbPrintEndpDesc(UsbEndpDesc *desc)
 {
-	printTextToWindow(2, mywin, "    EndPoint: addr=0x%x attributes=%d maxPacketSize=%d interval=%d\n",
+	/*printTextToWindow(2, mywin, "    EndPoint: addr=0x%x attributes=%d maxPacketSize=%d interval=%d\n",
 		(int)desc->addr,
 		(int)desc->attributes,
 		(int)desc->maxPacketSize,
-		(int)desc->interval);
+		(int)desc->interval);*/
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -298,11 +298,11 @@ void UsbPrintHidDesc(UsbHidDesc *desc)
 // ------------------------------------------------------------------------------------------------
 void UsbPrintHubDesc(UsbHubDesc *desc)
 {
-	kprintf(" Hub: port count=%d characteristics=0x%x power time=%d current=%d\n",
+	/*kprintf(" Hub: port count=%d characteristics=0x%x power time=%d current=%d\n",
 		desc->portCount,
 		desc->chars,
 		desc->portPowerTime,
-		desc->current);
+		desc->current);*/
 }
 #define USB_STRING_SIZE                 127
 
