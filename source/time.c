@@ -8,5 +8,6 @@ void Wait(unsigned int n)
 	while ((*sec100) - ls < n)
 	{
 		__asm__("int $0x40");//Continue execution
+		//((void*)(_multitasking2))();
 	}
 }

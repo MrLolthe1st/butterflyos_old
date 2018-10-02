@@ -86,6 +86,10 @@ typedef struct __attribute__((packed)) _E {
 	unsigned int priority;
 	unsigned int priorityL;
 	void * elf_process;
+	char ** argv;
+	unsigned int argc;
+	unsigned int runnedFrom;
+	char * workingDir;
 
 } Process;
 

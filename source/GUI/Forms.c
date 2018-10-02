@@ -279,6 +279,8 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 		}
 		free(text);
 	}
+	w->cursorState = 1;
+	w->lastUpdate = *sec100;
 	va_end(ap);
 }
 void updateWindows()
@@ -403,7 +405,7 @@ void Draw(Window * toDraw) {
 
 	CopyToVMemory(toDraw->x, toDraw->y, toDraw->wwidth, toDraw->wheight, toDraw->video);
 	Rect(toDraw->x - 1, toDraw->y - 1, toDraw->wwidth + 1, toDraw->wheight + 1, 0x1976D2);
-	if (*sec100 - (toDraw->lastUpdate) > 1000 - cursorSpeed) {
+	if (*sec100 - (toDraw->lastUpdate) > 10000 - cursorSpeed*10) {
 		toDraw->lastUpdate = *sec100;
 		toDraw->cursorState = 1 - toDraw->cursorState;
 	}

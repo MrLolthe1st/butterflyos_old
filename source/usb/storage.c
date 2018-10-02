@@ -270,6 +270,7 @@ u8 testUnitReady(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
+	free(cbw);
 	return *((u8*)((uint)cbw + 12));
 }
 typedef struct _sense_data {
@@ -317,6 +318,8 @@ void requestSense(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
+	printMem(cbw, 14);
+		free(cbw);
 }
 uint MassStorageReset(UsbDevice * dev, UsbEndpoint * out)
 {
@@ -340,8 +343,8 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	char aa[33];
-	cbw_t * cbw = &aa;
+	
+	cbw_t * cbw = malloc(33);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -362,8 +365,9 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	t->len = 0x1F;
 	t->complete = false;
 	t->success = false;
-	t->w = 1;
+	t->w = 1;// kprintf("{^%x}", lba);
 	dev->hcIntr(dev, t);
+	
 	
 	for (int i = 0; i < count; i++)
 	{
@@ -386,9 +390,10 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	//Read CSW
 	dev->hcIntr(dev, t);
 	//Invalid signature - soft reset
+	//kprintf("{~%x}", lba);
 	if (cbw->sig != 0x53425355)
 		MassStorageReset(dev, endpointIn);
-	
+	free(cbw);
 }
 long long bswap64(long long a)
 {
@@ -447,6 +452,10 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355)
 		MassStorageReset(dev, endpointIn);
+	if (testUnitReady(s))
+	{
+		requestSense(s);
+	}
 	free(cbw);
 }
 
@@ -512,9 +521,10 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = malloc(33);
 	cbw->lun = 0;
-	cbw->tag = 0x10013;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
 	cbw->flags = 0x00;
@@ -534,18 +544,17 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-	for (int i = 0; i < count; i++)
-	{
+//	kprintf("{*%x}", lba);
 		//Write by one sector
 		t->endp = endpointOut;
 		t->req = 0;
 		t->data = buf;
-		t->len = s->bytesPerBlock;
+		t->len = s->bytesPerBlock*count;
 		t->complete = false;
 		t->success = false;
 		dev->hcIntr(dev, t);
-		buf += s->bytesPerBlock;
-	}
+		//buf += s->bytesPerBlock;
+	
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -554,6 +563,7 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	t->success = false;
 	//Read CSW
 	dev->hcIntr(dev, t);
+//	kprintf("{$%x}", lba);
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355)
 		MassStorageReset(dev, endpointIn);
@@ -630,7 +640,7 @@ void _storageInit(UsbDevice * dev)
 	dev->onDisconnect = &storageDisconnect;
 	t->w = 1;
 	storage->t = t;
-	storage->tag = 10;
+	storage->tag = 0x20000;
 	storage->d = dev;
 	storage->endpointIn = endpointIn;
 	storage->endpointOut = endpointOut;
@@ -657,7 +667,7 @@ void _storageInit(UsbDevice * dev)
 	//Try read to clear chache
 	char * b = malloc(1024);
 	_read10usb(storage, 0x0, 2, b);
-	free(b);
+
 	//Add disk to disk devices, nextly we will check it for patritions.
 	diskDevices[dcount].structNo = 0;
 	diskDevices[dcount].type = DISK_TYPE_USB;
@@ -667,4 +677,6 @@ void _storageInit(UsbDevice * dev)
 	checkDiskPatritions(dcount);
 
 	dcount++;
+	
+	free(b);
 }

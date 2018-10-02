@@ -53,7 +53,23 @@ loadermain:
 	int 0x10
 	mov ax,0x4F02
 	mov bx,0x4118
-	;int 10h
+	%if 1 ;Set it to 0, if you won't use GUI.
+	int 10h
+	pusha
+	xor ax,ax
+	mov es,ax
+	mov di,0x3ff
+	mov al,1
+	stosb
+	popa
+	%else
+	pusha
+	xor ax,ax
+	mov es,ax
+	mov di,0x3ff
+	stosb
+	popa
+	%endif
     mov ax, cs
     mov ds, ax
     mov es, ax

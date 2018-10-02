@@ -44,7 +44,6 @@ int activeWindow = 0, rec = 0;
 int cursorSpeed = 700;
 Window * mywin = 0;
 
-#pragma GCC push_options
 #include "Link.h"
 #include "devices/fpu.c"
 #include "usb_key_layout.c"
@@ -70,12 +69,13 @@ void unlockTaskSwitch()
 #include "FS/fat32.c"
 #include "FS\files.c"
 #include "Devices/cpu.c"
+#pragma GCC push_options
 #pragma GCC optimize ("Ofast")
 #include "SVGA/svga.c"
 #include "Devices/ps2mouse.c"
 #include "idt.c"
-#include "GUI\Forms.c"
 #pragma GCC pop_options
+#include "GUI\Forms.c"
 #include "Devices/pci_ide.c"
 #include "usb\usbd.c"
 #include "usb\ehci.c"
@@ -114,7 +114,10 @@ void Win1Handler(void * ev)
 		printTextToWindow(6, mywin, "MButton UP Event\n");
 	}
 }
-
+uchar testForGUI()
+{
+	return (*((uchar*)0x3FF));
+}
 void k_main()
 {
 	//hubinit=&_usbHubInit;
@@ -175,6 +178,7 @@ void k_main()
 	addGlobalVariable("unlockTaskSwitch", &unlockTaskSwitch);
 	addGlobalVariable("mkdir", &mkdir);
 	addGlobalVariable("runProcess", &runProcess);
+	addGlobalVariable("testForGUI", &testForGUI);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
@@ -191,23 +195,42 @@ void k_main()
 	PciInit();
 
 	//makeLogicDrives();
-	
-	runProcess("A:\\CMD.O",2,0);
+
+	runProcess("A:\\CMD.O", 2, 0, 0,"A:\\");
 
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
-	
-	for (;;)
-	{
-		UsbPoll();
-	}
+	WindowEvent we;
+	we.data = malloc(2);
+	if (!(*((uchar*)0x3FF)))
+		for (;;)
+		{
+			Window * currentActive = windows;
+
+			while (currentActive)
+			{
+				if (currentActive->id == activeWindow)
+					break;
+				currentActive = currentActive->next;
+			}
+			char key = 0;
+			while (key = getKey())
+			{
+				if (currentActive)
+				{
+					we.code = WINDOWS_KEY_DOWN;
+					*((unsigned char*)we.data) = key;
+					*((char*)(we.data + 1)) = 0;
+					currentActive->handler(&we);
+				}
+			}
+			UsbPoll();
+		}
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
 	//kprintf("qq");
 
 	char * mo = malloc(12);
 	int tttt = 0;
-	WindowEvent we;
-	we.data = malloc(2);
 	//Bar(0,0,400,600,50);
 	//for(;;);
 	int bb = 1;

@@ -770,6 +770,7 @@ bool _rread(HBA_PORT *port, uint16_t *buf)
 	{
 		// In some longer duration reads, it may be helpful to spin on the DPS bit 
 		// in the PxIS port field as well (1 << 5)
+		Wait(1);
 		if ((port->ci & (1 << slot)) == 0)
 			break;
 		if (port->is & HBA_PxIS_TFES)	// Task file error
@@ -860,7 +861,7 @@ int write_port(HBA_PORT *port, unsigned long long starth, unsigned int count,
 	{
 		// In some longer duration reads, it may be helpful to spin on the DPS bit 
 		// in the PxIS port field as well (1 << 5)
-		PitWait(1);
+		Wait(1);
 		if ((port->ci & (1 << slot)) == 0)
 			break;
 		if (port->is & HBA_PxIS_TFES)	// Task file error
@@ -1015,10 +1016,9 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		if(*((u8*)((uint)diskDevices[param].link)+0))
-			_read16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
-		else
-			_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		__asm__("cli");
+		_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		__asm__("sti");
 		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
@@ -1049,10 +1049,9 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		if (*((u8*)((uint)diskDevices[param].link) + 0))
-			_write16usb(diskDevices[param].link, LBA, (uint)cnt, addr);
-		else
-			_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		__asm__("cli");
+		_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
+		__asm__("sti");
 		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
@@ -1104,7 +1103,7 @@ int checkPatrition(uint startSec, uint did)
 		if(!((uchar)bootSect[0]==0xEB))
 		{
 			if (*((uint*)((uint)q + 454 + j * 16)) > 0) {
-				if (!checkPatrition((*((uint*)&bootSect[446 + j * 16 + 8])), did))
+				if (1)
 				{
 					int uy = 0;
 					for (int lt = 0; lt < 26; lt++)

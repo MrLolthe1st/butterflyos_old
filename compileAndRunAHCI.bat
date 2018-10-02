@@ -28,6 +28,7 @@ if '%errorlevel%' NEQ '0' (
     pushd "%CD%"
     CD /D "%~dp0"
 :--------------------------------------    
+@echo on
 "compilers\nasm\nasm.exe" -f elf "source\elf.asm" -o "binaries\elf.o"
 gcc -ffreestanding -std=c99 -c -o binaries\kernell.o source\kernel.c -w
 ld -Ttext 0x100000 -o binaries\kernel.o binaries\elf.o binaries\kernell.o

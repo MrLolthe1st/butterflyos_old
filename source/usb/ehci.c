@@ -454,7 +454,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
 	uint status = 0;
 	///	*reg |=  (1 << 12);
-	for (uint i = 0; i < 10; ++i)
+	for (uint i = 0; i < 5; ++i)
 	{
 		// Delay
 		Wait(300);
@@ -578,7 +578,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(1);
+	//PitWait(2);
 	//printQh(qh);
 	//kprintf("[%x,%x,%x]", qh->token, qh->nextLink,hc->opRegs->usbCmd);
 
@@ -604,7 +604,6 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 			{
 				kprintf(" Missed Micro-Frame\n");
 			}
-
 			t->success = true;
 			t->complete = true;
 		}

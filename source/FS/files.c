@@ -49,14 +49,119 @@ void FileCreate(uint diskId, void * f)
 	if (drives[diskId].type == 0)
 		FAT32CreateFile(diskId, f);
 }
+void concatdir(char * dir, char * cmd)
+{
+	if (cmd[0] == '\\') {
+		for (int i = 3; i<512; i++)
+			dir[i] = 0;
+		++cmd;
+	}
+	char * cu = (uint)cmd;
+	uint chdisk = 0;
+	while (*cu)
+	{
+		if (*cu == ':')
+		{
+			chdisk = 1;
+			--cu;
+			dir[0] = *cu;
+			cu++;
+			dir[3] = 0;
+		}
+		++cu;
+	}
+	if (!chdisk) {
+		--cu;
+
+		cu = (uint)cmd;
+		char * z = dir;
+		while (*z)
+			++z;
+		char * ls = z;
+		while (*cu)
+		{
+			*z = *cu;
+			++z;
+			++cu;
+		}
+		char * lslash = (uint)dir + 2, *llslash = (uint)dir + 2;
+		cu = dir;
+		uint zz = -1;
+		while (*cu)
+		{
+			//printTextToWindow(2,w,"%c %x %x %d\n",(uint)*cu,(uint)((uint)lslash-(uint)dir),(uint)((uint)llslash-(uint)dir),(uint)zz);
+			if (*cu == '.'&&cu[1] == '.')
+			{
+				z = (uint)llslash + 1;
+				++cu;
+				++cu;
+				++cu;
+				while (*z)
+				{
+					if (*cu == 0)
+						*z = 0;
+					else
+						*z = *cu;
+					++z;
+					if (*cu)
+						++cu;
+				}
+				cu = dir; lslash = (uint)dir + 2;
+				llslash = (uint)dir + 2;
+				zz = -1;
+			}
+			if (*cu == '\\') {
+				zz++;
+				if (zz > 0) {
+					llslash = lslash;
+					lslash = cu;
+
+				}
+			}
+			++cu;
+		}
+
+	}
+
+}
 FILE *fopen(const char *fname, const char *mode)
 {
-	if (!drives[fname[0] - 'A'].avaliable)
+	
+	char * ups = malloc(512);
+	
+	if (fname[1] != ':')
+	{
+		//Working dir
+
+		char * wdir = procTable[currentRunning].workingDir;
+		char * z = wdir;
+		char * p = ups;
+		while (*z)
+		{
+			*p = *z;
+			++z;
+			++p;
+		}
+
+		concatdir(ups, fname);
+		//
+	}
+	else {
+		char * p = ups;
+		char * z = fname;
+		while (*z)
+		{
+			*p = *z;
+			++p;
+			++z;
+		}
+	}
+	if (!drives[ups[0] - 'A'].avaliable)
 		return 0;
 	FILE * n = malloc(sizeof(FILE));
-	n->name = fname;
+	n->name = ups;
 	n->rights = 0;
-	n->diskId = fname[0] - 'A';
+	n->diskId = ups[0] - 'A';
 	if (mode[0] == 'r')
 		n->rights |= 1;
 	else
@@ -72,16 +177,15 @@ FILE *fopen(const char *fname, const char *mode)
 	n->currentByte = 0;
 
 
-	FileInfo * q = FileSeek(fname[0] - 'A', (uint)fname + 3);
-	//kprintf("%x!", q);
+	FileInfo * q = FileSeek(ups[0] - 'A', (uint)ups + 3);
 	uint ut = 0;
 	if (!q&&!(n->rights&2)) {
 		free(n);
 		return 0;
 	}
 	else if ((n->rights & 2) && !q) {
-		FileCreate(n->diskId, (uint)fname + 3);
-		q = FileSeek(fname[0] - 'A', (uint)fname + 3);
+		FileCreate(n->diskId, (uint)ups + 3);
+		q = FileSeek(ups[0] - 'A', (uint)ups + 3);
 		ut = 1;
 	}
 
@@ -97,8 +201,10 @@ FILE *fopen(const char *fname, const char *mode)
 }
 direntry * DirectoryListing(char *z)
 {
+	lockTaskSwitch(1);
 	if (drives[z[0] - 'A'].type == 0)
 		return FAT32GetDir(z[0] - 'A', (uint)z + 3);
+	unlockTaskSwitch();
 }
 uint fseek(FILE *stream, long offset, int origin) {
 	long long z = stream->currentByte;
@@ -129,15 +235,18 @@ void rewind(FILE * f)
 
 void FileWrite(FILE * f, void * addr, uint cnt)
 {
+	lockTaskSwitch(1);
 
 	if (drives[f->diskId].type == 0)
 		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
+	unlockTaskSwitch();
 }
 uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
 {
-	kprintf("%x %x", stream->add2, stream->add3);
+	//kprintf("%x %x!", stream->add2, stream->add3);
 	FileWrite(stream, buf, size*count);
+	//stream->currentByte += size * count;
 }
 uchar fgetc(FILE * f)
 {
@@ -145,9 +254,11 @@ uchar fgetc(FILE * f)
 }
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
-	
+
+	lockTaskSwitch(1);
 	if (drives[f->diskId].type == 0)
 		FAT32ReadFileB(f->diskId, f->add1, from, cnt, addr);
+	unlockTaskSwitch();
 
 }
 uchar fread(void * addr, uint size, uint count, FILE *f)

@@ -29,8 +29,8 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :--------------------------------------    
 
-gcc -ffreestanding cmdnoGui.c -c -o qq.o -w -std=c99
+gcc -ffreestanding copy.c -c -o qq.o -w -std=c99
 objcopy qq.o -O elf32-i386
 sync64 A
-copy qq.o A:\CMD.O
+copy qq.o A:\COPY.O
 pause

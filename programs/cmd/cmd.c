@@ -1,20 +1,31 @@
-#include "includes\executable.c"
-#include "includes\stdio.h"
-#include "includes\structs.h"
-#include "includes\forms.h"
-#pragma GCC push_options
-void handle(void * z)
+#include "..\includes\executable.c"
+#include "..\includes\stdio.h"
+#include "..\includes\structs.h"
+#include "..\includes\forms.h"
+#include "..\includes\windowsEventsCodes.h"
+
+
+Window * w;
+char kkey = 0;
+void handle(WindowEvent * z)
 {
+	if(z->code==WINDOWS_KEY_DOWN)
+	{
+		kkey = *((char*)z->data);
+	}
+}
+char RecieveKey()
+{
+	if(kkey){
+		char z=kkey;
+		kkey=0;
+		return z;
+	}
 }
 void _main(int argc, char ** argv)
-{
-	//clearScreen();
-	//lockTaskSwitch(1);kprintf("1");
-	
-	Window * w;
+{	
 	w=openWindow(720,480,0,&handle,"Command Shell");
-	//w->handler=&_handle;
-	printTextToWindow(2,w,"\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
+	printTextToWindow(1,w,"\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
 	char * ucmd = malloc(512);
@@ -27,24 +38,27 @@ void _main(int argc, char ** argv)
 	char key = 0;
 	for (;;)
 	{
-		printTextToWindow(2,w,"\n%s>", dir);
+		printTextToWindow(6,w,"\n%s>", dir);
 		cmdLen = 0;
 		key = 0;
 		for (int i = 0; i < 512; i++)
 			cmd[i] = 0;
 		while (key != 10)
 		{
-			while ((key = getKey()) == 0) { Wait(1); };
+			while ((key = RecieveKey()) == 0) { Wait(1); };
 			if (key == 10) continue;
 			if (key == 0x9) continue;
-			printTextToWindow(2,w,"%c", key);
+			if ((key==0x8&&cmdLen > 0)||key!=0x8)
+				printTextToWindow(6,w,"%c", key);
 			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; continue; }
 			cmd[cmdLen] = key;
 			cmdLen++;
 		}
 		printTextToWindow(2,w,"\n");
+		for(int i=0;i<512;i++)
+			ucmd[i]=0;
 		toUpper(cmd, ucmd);
-		if (ucmd[0] == 'D'&&ucmd[1] == 'I'&&ucmd[2] == 'R')
+		if (ucmd[0] == 'D'&&ucmd[1] == 'I'&&ucmd[2] == 'R'&&ucmd[3]==0)
 		{
 			///////Wait(10000);
 			direntry * d = DirectoryListing(dir);
@@ -69,7 +83,7 @@ void _main(int argc, char ** argv)
 				}
 
 				printTextToWindow(2,w,"%s", &d->name);
-				//void *ii = d;
+				void *ii = d;
 				uint day = (d->modified & 0b11111);
 				uint month = ((d->modified >> 5) & 0b1111);
 				uint year = 1980 + ((d->modified >> 9) & 0b1111111);
@@ -106,13 +120,14 @@ void _main(int argc, char ** argv)
 				}
 				tsize += d->size;
 				d = d->next;
-				//free(ii);
+				free(ii);
 			}
 			printTextToWindow(2,w,"Total %d KBytes in %d files and %d directories\n", tsize >> 10, filescnt, dircnt);
 		}
 		else
-			if (ucmd[0] == 'C'&&ucmd[1] == 'D')
+			if (ucmd[0] == 'C'&&ucmd[1] == 'D' &&ucmd[2]==' ')
 			{
+				
 				concatdir(dir, (uint)cmd + 3);
 				char * u = dir;
 				while (*((char*)((uint)u + 1)))
@@ -125,7 +140,7 @@ void _main(int argc, char ** argv)
 					*u = '\\';
 				}
 			}
-			else if (ucmd[0] == 'M'&&ucmd[1] == 'D')
+			else if (ucmd[0] == 'M'&&ucmd[1] == 'D'&&ucmd[2]==' ')
 			{
 				memcpy(dir, ucmd, 512);
 				concatdir(dir, (uint)cmd + 3);
@@ -143,6 +158,7 @@ void _main(int argc, char ** argv)
 					++z;
 
 				}
+				
 				uint cid = 0;
 				char ** args;
 				char * fs = z;
@@ -171,27 +187,29 @@ void _main(int argc, char ** argv)
 					}
 					++z;
 				}
-				//printTextToWindow(2,w,"%x\n",args);
-			//	printTextToWindow(2,w,"\n%x args:\n",args);
 				lockTaskSwitch(1);
 				memcpy(dir, ucmd, 512);
 				concatdir(dir, fname);
-				runProcess(dir, cid, args);
+				FILE * fp = fopen(dir,"r");
+				if(!fp)
+				{
+					printTextToWindow(4,w,"%s isn't a command or executable file!\n",fname);
+					continue;
+				}
+				runProcess(dir, cid, args, !testForGUI(), ucmd);
 				memcpy(ucmd, dir, 512);
 				unlockTaskSwitch();
-				for (int i = 0; i < cid; i++)
-				{
-					//	printTextToWindow(2,w,"!%s\n",args[i]);
-						//free(args[i]);
-				}
-				//free(args);
-				//free(fname);
 			}
 			Wait(1);
 	}
 }
 void concatdir(char * dir, char * cmd)
 {
+	if(cmd[0]=='\\'){
+		for(int i = 3;i<512;i++)
+			dir[i]=0;
+		++cmd;
+	}
 	char * cu = (uint)cmd;
 	uint chdisk = 0;
 	while (*cu)

@@ -146,7 +146,7 @@ static void UsbHubPoll(UsbDevice *dev)
 		}
 		if (status&PORT_CONNECTION_CHANGE && !(status&PORT_CONNECTION))
 		{
-			kprintf("USB Hub device disconnected!\n");
+			//kprintf("USB Hub device disconnected!\n");
 			//Clear Connection change bit
 			if (!UsbDevRequest(dev,
 				0x23,
@@ -179,7 +179,7 @@ static void UsbHubPoll(UsbDevice *dev)
 		}
 		else if (status&PORT_CONNECTION_CHANGE && (status&PORT_CONNECTION))
 		{
-			kprintf("USB Hub device connected!\n");
+			//kprintf("USB Hub device connected!\n");
 			if (!UsbDevRequest(dev,
 				0x23,
 				REQ_SET_FEATURE, F_PORT_POWER, port + 1,
@@ -207,7 +207,6 @@ static void UsbHubPoll(UsbDevice *dev)
 
 					if (!UsbDevInit(dev))
 					{
-						kprintf("Fail");
 					}
 				}
 			}

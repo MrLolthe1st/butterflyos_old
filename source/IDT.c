@@ -40,7 +40,7 @@ popl %edx\n\
 popl %ecx\n\
 popl %ebx\n\
 popl %eax\n\
-popl %esp\n\
+add $4,%esp\
 \n iret \n");\
 void _## func()
 void multiHandler() {
@@ -57,13 +57,15 @@ void multiHandler() {
 	procTable[currentRunning].esp = stack + 44;
 	procTable[currentRunning].currentAddr = *((unsigned int *)(stack + 32));
 	procTable[currentRunning].eflags = *((unsigned int *)(stack + 40));
-	if (procTable[currentRunning].priorityL > 0)
-		procTable[currentRunning].priorityL--;
-	if (procTable[currentRunning].priorityL == 0) {
-		procTable[currentRunning].priorityL = procTable[currentRunning].priority;
-		currentRunning = (currentRunning + 1) % procCount;
-		
-		while (!procTable[currentRunning].state & 1) currentRunning = (currentRunning + 1) % procCount;
+	if (!locked) {
+		if (procTable[currentRunning].priorityL > 0)
+			procTable[currentRunning].priorityL--;
+		if (procTable[currentRunning].priorityL == 0) {
+			procTable[currentRunning].priorityL = procTable[currentRunning].priority;
+			currentRunning = (currentRunning + 1) % procCount;
+
+			while (!procTable[currentRunning].state & 1) currentRunning = (currentRunning + 1) % procCount;
+		}
 	}
 	__asm__("\n\
 		mov %0,%%esi\n\
@@ -87,18 +89,15 @@ void multiHandler() {
 }
 
 IDT_HANDLERM(multitasking) {
-	__asm__("push %ax\n\
-		movb $0x20, %al \n\
+	__asm__("movb $0x20, %al \n\
 		outb %al, $0x20\n\
-		pop %ax");
+		");
 	*sec100 = (*sec100) + 1; // % 100;
-	if(!locked)
 	__asm__("\
 	call _multiHandler");
 
 }
 IDT_HANDLERM(multitasking2) {
-	if (!locked)
 	__asm__("\
 	call _multiHandler");
 }
@@ -106,6 +105,7 @@ IDT_HANDLERM(multitasking2) {
 #include "ELF.c"
 void processEnd() {
 	//for (;;);
+	lockTaskSwitch(1);
 	free(procTable[currentRunning].startAddr);
 	//free(procTable[currentRunning].stack);
 	ELF_Process * z = procTable[currentRunning].elf_process;
@@ -118,7 +118,15 @@ void processEnd() {
 		p = pz;
 	}
 	//kprintf("Emd!");
-	lockTaskSwitch(1);
+	for (int i = 0; i < procCount; i++)
+		if (procTable[i].runnedFrom == currentRunning)
+			procTable[i].runnedFrom = 0;
+	if (procTable[currentRunning].runnedFrom)
+		procTable[procTable[currentRunning].runnedFrom].state |= 1;
+	for (int i = 0; i < procTable[currentRunning].argc; i++)
+		free(procTable[currentRunning].argv[i]);
+	free(procTable[currentRunning].argv);
+	free(procTable[currentRunning].workingDir);
 	memcpy(&procTable[procCount - 1], &procTable[currentRunning], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
@@ -143,11 +151,13 @@ typedef struct {
 
 }
 rel;
-
-void runProcess(char * fileName, uint argc, char **argv) {
+uint stack_size = 32768;
+void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 	FILE * fp=fopen(fileName, "r");
 
 	fseek(fp, 0, 2);
+	if (!fp)
+		return;
 	uint z = ftell(fp);
 	rewind(fp);
 	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
@@ -156,11 +166,22 @@ void runProcess(char * fileName, uint argc, char **argv) {
 	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF(progq);
 	//progq = entry;
-	void * stack = malloc(8192);
+	void * stack = malloc(stack_size);
 	procTable[procCount].stack = stack;
 	addProcessAlloc(entry, stack);
+	procTable[procCount].argc = argc;
+	procTable[procCount].argv = argv;
+	
+	procTable[procCount].workingDir = malloc(512);
+	char * zz = dir;
+	uint ooo = 0;
+	while (*zz)
+	{
+		procTable[procCount].workingDir[ooo++]=*zz;
+		++zz;
+	}
 	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = stack + 8180;
+	procTable[procCount].esp = stack + stack_size-12;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
@@ -168,10 +189,13 @@ void runProcess(char * fileName, uint argc, char **argv) {
 	procTable[procCount].priority = 1;
 	procTable[procCount].priorityL = 1;
 	procTable[procCount].eflags = 0x216;
-	*((unsigned int *)(stack + 8188)) = (uint)argv;
-	*((unsigned int *)(stack + 8184)) = argc;
+	procTable[procCount].runnedFrom = currentRunning;
+	if(suspendIt)
+		procTable[currentRunning].state &= ~1;
+	*((unsigned int *)(stack + stack_size-4)) = (uint)argv;
+	*((unsigned int *)(stack + stack_size-8)) = argc;
 	//*((unsigned int *)(stack + 8180)) = 0x08;
-	*((unsigned int *)(stack + 8180)) = &processEnd; 
+	*((unsigned int *)(stack + stack_size-12)) = &processEnd;
 	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
 	procTable[procCount].state = 1;
