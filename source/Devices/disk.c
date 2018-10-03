@@ -996,7 +996,7 @@ void _probe_port(HBA_MEM *abar_temp)
 
 uint readingInProcess = 0, writingInProcess = 0;
 //Чтение
-uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
+uint ReadController(unsigned int LBA, char cnt, void * addr, unsigned char param) {
 	//kprintf("qq");
 	///////////////while (readingInProcess) { Wait(2); };
 
@@ -1016,9 +1016,7 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		__asm__("cli");
 		_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		__asm__("sti");
 		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
@@ -1049,9 +1047,7 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
-		__asm__("cli");
 		_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		__asm__("sti");
 		
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
@@ -1129,14 +1125,14 @@ int checkPatrition(uint startSec, uint did)
 	free(bootSect);
 	return found;
 }
-void ReadFromDisk(ulon LBA, uint count, void * buf, uint letter)
+void ReadFromDisk(int LBA, uint count, void * buf, char letter)
 {
 	if (drives[letter].avaliable)
 		ReadController(drives[letter].diskOffset + LBA, count, buf, drives[letter].diskId);
 	else
-		kprintf("No drive!");
+		kprintf("No drive%x!",letter);
 }
-void WriteToDisk(ulon LBA, uint count, void * buf, uint letter)
+void WriteToDisk(int LBA, uint count, void * buf, char letter)
 {
 	if (drives[letter].avaliable)
 		WriteController(drives[letter].diskOffset + LBA, count, buf, drives[letter].diskId);

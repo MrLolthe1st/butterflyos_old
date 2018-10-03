@@ -60,6 +60,7 @@ void multiHandler() {
 	if (!locked) {
 		if (procTable[currentRunning].priorityL > 0)
 			procTable[currentRunning].priorityL--;
+		
 		if (procTable[currentRunning].priorityL == 0) {
 			procTable[currentRunning].priorityL = procTable[currentRunning].priority;
 			currentRunning = (currentRunning + 1) % procCount;
@@ -151,10 +152,10 @@ typedef struct {
 
 }
 rel;
-uint stack_size = 32768;
+uint stack_size = 65536;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 	FILE * fp=fopen(fileName, "r");
-
+	kprintf("!%x!", sizeof(Process));
 	fseek(fp, 0, 2);
 	if (!fp)
 		return;

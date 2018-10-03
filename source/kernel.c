@@ -179,6 +179,7 @@ void k_main()
 	addGlobalVariable("mkdir", &mkdir);
 	addGlobalVariable("runProcess", &runProcess);
 	addGlobalVariable("testForGUI", &testForGUI);
+	addGlobalVariable("ReadFromDisk", &ReadFromDisk);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;

@@ -3,12 +3,11 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
-#define buf_size 4096
+#define buf_size 1024
 void _main(int argc, char ** argv)
 {	
 	if(argc!=2)
 		return;
-	
 	FILE * z = fopen(argv[0],"r");
 	FILE * u = fopen(argv[1],"w");
 	fseek(z,0,2);
@@ -25,6 +24,7 @@ void _main(int argc, char ** argv)
 			fread(buf,buf_size,1,z);
 			fwrite(buf,buf_size,1,u);
 		}
+		kprintf("1");
 	}
 	free(buf);
 	fclose(z);
