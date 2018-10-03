@@ -623,7 +623,10 @@ unsigned int ppport = 0;
 IRQ_HANDLER1(nirq1) {
 	kprintf("nirq1");
 }
-
+IDT_HANDLER(idt_std)
+{
+	
+}
 void iint() {
 	mouse_cur = malloc(16 * 16 * 4 + 16);
 	for (int i = 0; i < 16 * 16 * 4; i++)
@@ -670,7 +673,8 @@ void iint() {
 		inst(i, &irq_time81, 0x8F);
 	for (int i = 40; i < 48; i++)
 		inst(i, &irq_time8, 0x8F);
-
+	for (int i = 48; i < 256; i++)
+		inst(i, &idt_std, 0x8E);
 	for (int i = 0; i < 0x20; i++)
 		inst(i, &irq_ex, 0x8e); //Установим обработчики исключенй
 
