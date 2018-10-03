@@ -21,6 +21,7 @@ void _## func()
 # define SCS 0x8
 #define keys_buff 0x9810
 //0x90 - nop
+uint sugg = 0;
 #define IDT_HANDLERM(func) unsigned char func = 0x90;\
 __asm__(#func ": \n \
 pushl %esp\n\
@@ -31,7 +32,7 @@ pushl %edx\n\
 pushl %esi\n\
 pushl %edi\n\
 pushl %ebp\n\
-movl %esp,%esi\n\
+movl %esp,_sugg\n\
 \n call __"# func " \n\
 popl %ebp\n\
 popl %edi\n\
@@ -45,7 +46,7 @@ add $4,%esp\
 void _## func()
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
-	__asm__("movl %%esp,%0\n\ movl %%esi,%1": "=r" (stack), "=r" (s2) : );
+	__asm__("movl %%esp,%0\n\ movl _sugg,%1": "=r" (stack), "=r" (s2) : );
 	stack = s2;
 	procTable[currentRunning].ebp = *((int *)(stack));
 	procTable[currentRunning].edi = *((int *)(stack + 4));
