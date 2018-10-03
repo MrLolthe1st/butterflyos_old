@@ -35,10 +35,12 @@ ld -Ttext 0x100000 -o binaries\kernel.o binaries\elf.o binaries\kernell.o
 objcopy binaries\kernel.o -O binary
 "compilers\nasm\nasm.exe"  "source\boot.asm" -o "binaries\BOOT"
 copy binaries\BOOT A:\STARTUP
+del Images\boot.img.lock
+del Images\bb.img.lock
 utils\sync64.exe A
 copy images\disk.img images\boot.img
 chcp 65001
-utils\dd.exe if=images\boot.img of=images\dq.vhd
+utils\dd.exe if=images\boot.img of=e:\butterflyos\images\dq.vhd
 #$ping 127.0.0.1 -n 16 > nul
 qemu\qemu-system-x86_64.exe -trace usb_host   -m 33 -drive id=disk,file=images\boot.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0  -no-reboot -vga std -D aa.txt -monitor stdio -usbdevice mouse
 pause

@@ -153,7 +153,7 @@ typedef struct {
 
 }
 rel;
-uint stack_size = 65536;
+uint stack_size = 65536*2;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 	FILE * fp=fopen(fileName, "r");
 	kprintf("!%x!", sizeof(Process));
@@ -183,7 +183,7 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 		++zz;
 	}
 	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = stack + stack_size-12;
+	procTable[procCount].esp = (uint)stack + stack_size-12;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;

@@ -651,7 +651,7 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 					// This is a Parallel IDE Controller which uses IRQs 14 and 15.
 				inst(0x3E, &irq_ideMast, 0x8e);
 				inst(0x3E, &irq_ideSlave, 0x8e);
-				ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+			//	ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
 			}
 		}
 	}

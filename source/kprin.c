@@ -41,7 +41,14 @@ int __qkprintf(const char* str, ...) {
 	__kprintf_va_list((char *)str, ap);
 	return 1;
 }
-
+void _kprintf(const char* str, ...) {
+	if (!str)
+		return;
+	va_list ap;
+	va_start(ap, str);
+	__kprintf_va_list((char *)str, ap);
+	return;
+}
 int kprintf(const char* str, ...) {
 	if (!str)
 		return 0;

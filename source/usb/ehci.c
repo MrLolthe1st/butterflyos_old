@@ -517,8 +517,8 @@ static void EhciInitTD(EhciTD *td, EhciTD *prev,
 	// Remaining pages of buffer memory.
 	for (uint i = 1; i < 4; ++i)
 	{
-		/////p += 0x1000;
-		td->buffer[i] = (u32)(p);
+		p += 0x1000;
+		td->buffer[i] = (uint)p;
 		td->extBuffer[i] = 0;
 	}
 }
@@ -578,7 +578,6 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	PitWait(2	);
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -586,11 +585,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	}
 	else if (qh->nextLink & PTR_TERMINATE)
 	{
-		if ((qh->token >> 12) & 0b111)
-			Wait(1);
+		
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
-
+			
 			if (qh->token & TD_TOK_BABBLE)
 			{
 				kprintf(" Babble Detected\n");
@@ -644,7 +642,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 static void EhciWaitForQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-
+	//Wait(1);
 	while (!t->complete)
 	{
 		EhciProcessQH(hc, qh);
@@ -750,10 +748,8 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 
 	// Determine transfer properties
 	uint speed = dev->speed;
-	if (speed == 0)
-		speed = 1;
 	uint addr = dev->addr;
-	uint maxSize = 512;
+	uint maxSize = t->endp->desc->maxPacketSize;
 	uint endp = t->endp->desc->addr & 0xf;
 	//kprintf("$%x$", endp);
 	// Create queue of transfer descriptors

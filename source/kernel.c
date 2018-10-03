@@ -57,11 +57,11 @@ Window * mywin = 0;
 #include "kprin.c"
 void lockTaskSwitch(unsigned int id)
 {
-	locked = id;
+	locked += id;
 }
 void unlockTaskSwitch()
 {
-	locked = 0;
+	locked -= 1;
 }
 #include "Devices\PCI.c"
 #include "Devices/device.c"
@@ -226,6 +226,7 @@ void k_main()
 				}
 			}
 			UsbPoll();
+			Wait(1);
 		}
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
 	//kprintf("qq");

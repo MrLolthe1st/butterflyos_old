@@ -6,6 +6,7 @@
 #define buf_size 1024
 void _main(int argc, char ** argv)
 {	
+
 	if(argc!=2)
 		return;
 	FILE * z = fopen(argv[0],"r");
@@ -14,6 +15,7 @@ void _main(int argc, char ** argv)
 	uint sz = ftell(z);
 	rewind(z);
 	char * buf = malloc(buf_size);
+	
 	for(uint i=0;i<=sz/buf_size;i++)
 	{
 		if((sz-i*buf_size)<buf_size)
@@ -24,9 +26,9 @@ void _main(int argc, char ** argv)
 			fread(buf,buf_size,1,z);
 			fwrite(buf,buf_size,1,u);
 		}
-		kprintf("1");
 	}
 	free(buf);
 	fclose(z);
 	fclose(u);
+	
 }

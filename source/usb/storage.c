@@ -343,7 +343,7 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(33);
+	cbw_t * cbw = malloc(31);
 retry_read:;
 	cbw->lun = 0;
 	cbw->tag = s->tag;
@@ -359,6 +359,7 @@ retry_read:;
 	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
+	*((u8*)((uint)cbw + 15 + 1)) = (1 << 3) | (1<<4);//Count of sectors also
 	t->endp = endpointOut;//bulk Out
 	t->req = 0;
 	t->data = cbw;
@@ -369,18 +370,17 @@ retry_read:;
 	dev->hcIntr(dev, t);
 	
 	
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < count*(s->bytesPerBlock / endpointIn->desc->maxPacketSize); i++)
 	{
 		//Read by one sector
 		t->endp = endpointIn;
 		t->req = 0;
 		t->data = buf;
-		t->len = s->bytesPerBlock;
+		t->len = endpointIn->desc->maxPacketSize;
 		t->complete = false;
 		t->success = false;
 		dev->hcIntr(dev, t);
-		
-		buf += s->bytesPerBlock;
+		buf += endpointIn->desc->maxPacketSize;
 	}
 	t->endp = endpointIn;
 	t->req = 0;
@@ -391,7 +391,6 @@ retry_read:;
 	//Read CSW
 	dev->hcIntr(dev, t);
 	//Invalid signature - soft reset
-	//kprintf("{~%x}", lba);
 	if (cbw->sig != 0x53425355) {
 		if (!UsbDevRequest(dev, RT_HOST_TO_DEV | RT_CLASS | RT_INTF, 0xff, 0, dev->intfDesc->intfIndex, 0, 0)) {
 			kprintf("Can't reset mass storage, exiting....\n");	
@@ -446,17 +445,17 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < count*(s->bytesPerBlock/ dev->maxPacketSize); i++)
 	{
 		//Read by one sector
 		t->endp = endpointIn;
 		t->req = 0;
 		t->data = buf;
-		t->len = s->bytesPerBlock;
+		t->len = dev->maxPacketSize;
 		t->complete = false;
 		t->success = false;
 		dev->hcIntr(dev, t);
-		buf += s->bytesPerBlock;
+		buf += dev->maxPacketSize;
 	}
 	t->endp = endpointIn;
 	t->req = 0;
@@ -538,7 +537,10 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(33);
+	char abg[35];
+
+	cbw_t * cbw = &abg;
+	memset(cbw, 0, 31);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -553,6 +555,7 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
+	*((u8*)((uint)cbw + 15 + 1)) = (1<<3)|(1<<4);//Count of sectors also
 	t->endp = endpointOut;//bulk Out
 	t->req = 0;
 	t->data = cbw;
@@ -562,16 +565,18 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	t->w = 1;
 	dev->hcIntr(dev, t);
 //	kprintf("{*%x}", lba);
-		//Write by one sector
+	for (int i = 0; i < count*(s->bytesPerBlock / endpointOut->desc->maxPacketSize); i++)
+	{
+		//Read by one sector
 		t->endp = endpointOut;
 		t->req = 0;
 		t->data = buf;
-		t->len = s->bytesPerBlock*count;
+		t->len = endpointOut->desc->maxPacketSize;
 		t->complete = false;
 		t->success = false;
 		dev->hcIntr(dev, t);
-		//buf += s->bytesPerBlock;
-	
+		buf += endpointOut->desc->maxPacketSize;
+	}
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -580,9 +585,7 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	t->success = false;
 	//Read CSW
 	dev->hcIntr(dev, t);
-//	kprintf("{$%x}", lba);
 	//Invalid signature - soft reset
-	free(cbw);
 }
 
 void storageDisconnect(UsbDevice *d)

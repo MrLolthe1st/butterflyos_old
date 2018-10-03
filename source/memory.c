@@ -125,7 +125,8 @@ unsigned int count_memory(void) {
 }
 
 char * malloc(size_t size) {
-	if (!size) return 0;
+	if (!size) { return 0;
+	}
 	
 	/* Loop through blocks and find a block sized the same or bigger */
 	uint8_t * mem = (uint8_t *)heap_begin;
@@ -180,7 +181,6 @@ nalloc:;
 	//kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
 	memory_used += size + 4 + sizeof(alloc_t);
 	memset((char *)((uint32_t)alloc + sizeof(alloc_t)), 0, size);
-
 	return (char *)((uint32_t)alloc + sizeof(alloc_t));
 	/*
 		char* ret = (char*)last_alloc;
