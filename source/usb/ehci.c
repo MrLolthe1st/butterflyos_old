@@ -578,6 +578,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
+	Wait(1);
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -642,7 +643,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 static void EhciWaitForQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-	//Wait(1);
+	
 	while (!t->complete)
 	{
 		EhciProcessQH(hc, qh);

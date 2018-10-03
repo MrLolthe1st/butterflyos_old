@@ -359,7 +359,7 @@ retry_read:;
 	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
-	*((u8*)((uint)cbw + 15 + 1)) = (1 << 3) | (1<<4);//Count of sectors also
+	*((u8*)((uint)cbw + 15 + 1)) = 0;//Count of sectors also
 	t->endp = endpointOut;//bulk Out
 	t->req = 0;
 	t->data = cbw;
@@ -555,7 +555,7 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
-	*((u8*)((uint)cbw + 15 + 1)) = (1<<3)|(1<<4);//Count of sectors also
+	*((u8*)((uint)cbw + 15 + 1)) = 0;//Count of sectors also
 	t->endp = endpointOut;//bulk Out
 	t->req = 0;
 	t->data = cbw;
