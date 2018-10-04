@@ -343,9 +343,11 @@ void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(31);
+	char abg[31];
+	cbw_t * cbw = &abg;
+	
 retry_read:;
-	cbw->lun = 0;
+	memset(cbw, 0, 31);
 	cbw->tag = s->tag;
 	s->tag++;
 	cbw->sig = 0x43425355;
@@ -355,8 +357,6 @@ retry_read:;
 	cbw->xfer_len = s->bytesPerBlock * count;
 	cmd_rw10_t * cmd = (void*)((uint)cbw + 15);
 	cmd->op = 0x28;
-	cmd->group = 0;
-	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
 	*((u8*)((uint)cbw + 15 + 1)) = 0;//Count of sectors also
@@ -392,22 +392,7 @@ retry_read:;
 	dev->hcIntr(dev, t);
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355) {
-		if (!UsbDevRequest(dev, RT_HOST_TO_DEV | RT_CLASS | RT_INTF, 0xff, 0, dev->intfDesc->intfIndex, 0, 0)) {
-			kprintf("Can't reset mass storage, exiting....\n");	
-		}
-		endpointIn->toggle = 0;
-		endpointOut->toggle = 0;
-		kprintf("Sig isn't valid!");
-		while (testUnitReady(s)) {
-			//Request sense from device
-			requestSense(s);
-			Wait(100);
-		}
-		uint sectorCount = readcapacity10(s);
-		kprintf("%x", sectorCount);
-		Wait(70000);
-		buf = ut;
-		goto retry_read;
+		
 	}
 	free(cbw);
 }
@@ -541,7 +526,6 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 
 	cbw_t * cbw = &abg;
 	memset(cbw, 0, 31);
-	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
 	cbw->sig = 0x43425355;
@@ -551,8 +535,6 @@ void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
 	cbw->xfer_len = count * s->bytesPerBlock;
 	cmd_rw10_t * cmd = (void*)((uint)cbw + 15);
 	cmd->op = 0x2A;
-	cmd->group = 0;
-	cmd->control = 0;
 	*((uint*)((uint)cbw + 15 + 2)) = bswap_32_m(lba);//LBA for CBW is big-endian
 	*((u16*)((uint)cbw + 15 + 7)) = ((count & 0xFF) << 8);//Count of sectors also
 	*((u8*)((uint)cbw + 15 + 1)) = 0;//Count of sectors also
@@ -669,7 +651,6 @@ void _storageInit(UsbDevice * dev)
 		while (testUnitReady(storage)) {
 			//Request sense from device
 			requestSense(storage);
-			Wait(100);
 		}
 		sectorCount = readcapacity10(storage);
 		long long z = readcapacity16(storage);

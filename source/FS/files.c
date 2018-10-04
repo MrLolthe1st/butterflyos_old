@@ -193,7 +193,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
-	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+//////////	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
 	if (n->rights & 2&&!ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);
@@ -233,12 +233,10 @@ void rewind(FILE * f)
 
 void FileWrite(FILE * f, void * addr, uint cnt)
 {
-	lockTaskSwitch(1);
 
 	if (drives[f->diskId].type == 0)
 		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
-	unlockTaskSwitch();
 }
 uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
 {
@@ -253,10 +251,9 @@ uchar fgetc(FILE * f)
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
 
-	lockTaskSwitch(1);
 	if (drives[f->diskId].type == 0)
 		FAT32ReadFileB(f->diskId, f->add1, from, cnt, addr);
-	unlockTaskSwitch();
+
 
 }
 uchar fread(void * addr, uint size, uint count, FILE *f)

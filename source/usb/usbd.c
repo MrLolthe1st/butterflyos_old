@@ -618,7 +618,7 @@ static bool UsbDevInit(UsbDevice *dev)
 	}
 
 	dev->addr = addr;
-	PitWait(2);    // Set address recovery time
+	PitWait(40);    // Set address recovery time
 
 	// Read entire descriptor
 	if (!UsbDevRequest(dev,

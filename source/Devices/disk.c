@@ -705,11 +705,12 @@ bool _read(HBA_PORT *port, unsigned long long starth, unsigned long long count, 
 	{
 		// In some longer duration reads, it may be helpful to spin on the DPS bit 
 		// in the PxIS port field as well (1 << 5)
+		Wait(1);
 		if ((port->ci & (1 << slot)) == 0)
 			break;
 		if (port->is & HBA_PxIS_TFES)	// Task file error
 		{
-			kprintf("Read disk error\n");
+			kprintf("Read disk error %x\n",(uint)starth);
 			return 0;
 		}
 	}
@@ -717,7 +718,7 @@ bool _read(HBA_PORT *port, unsigned long long starth, unsigned long long count, 
 	// Check again
 	if (port->is & HBA_PxIS_TFES)
 	{
-		kprintf("Read disk error\n");
+		kprintf("Read disk error %x\n", (uint)starth);
 		return 0;
 	}
 
@@ -996,11 +997,11 @@ void _probe_port(HBA_MEM *abar_temp)
 
 uint readingInProcess = 0, writingInProcess = 0;
 //Чтение
-uint ReadController(unsigned int LBA, char cnt, void * addr, unsigned char param) {
+uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//kprintf("qq");
 	///////////////while (readingInProcess) { Wait(2); };
 
-	lockTaskSwitch(1);
+	//lockTaskSwitch(1);
 	readingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
@@ -1011,7 +1012,7 @@ uint ReadController(unsigned int LBA, char cnt, void * addr, unsigned char param
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		 _read(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
+		 _read(AHCIDevices[diskDevices[param].structNo].port, (long long)LBA, cnt, (uint16_t*)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
@@ -1025,13 +1026,13 @@ uint ReadController(unsigned int LBA, char cnt, void * addr, unsigned char param
 	}
 	readingInProcess = 0;
 
-	unlockTaskSwitch();
+	//unlockTaskSwitch();
 }
 //Запись
 void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned char param) {
 	//////while (writingInProcess) { Wait(2); };
 
-	lockTaskSwitch(1);
+	//lockTaskSwitch(1);
 	writingInProcess = 1;
 	if (diskDevices[param].type == DISK_TYPE_SATA) {
 		char drive_id = diskDevices[param].structNo;
@@ -1056,7 +1057,7 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	}
 	writingInProcess = 0;
 
-	unlockTaskSwitch();
+	//unlockTaskSwitch();
 }
 #define ulon unsigned long long
 typedef struct __attribute((packed)) _LogicDrive {
@@ -1065,8 +1066,11 @@ typedef struct __attribute((packed)) _LogicDrive {
 	ulon size;
 	ulon diskOffset;
 	uint type;
+	
 } LogicDrive;
+
 LogicDrive drives[26];
+
 uint lastLetter = 0, bootedFrom = 999;
 void printMem(unsigned char * a, uint c)
 {
@@ -1125,14 +1129,14 @@ int checkPatrition(uint startSec, uint did)
 	free(bootSect);
 	return found;
 }
-void ReadFromDisk(int LBA, uint count, void * buf, char letter)
+void ReadFromDisk(unsigned long long LBA, uint count, void * buf, char letter)
 {
 	if (drives[letter].avaliable)
 		ReadController(drives[letter].diskOffset + LBA, count, buf, drives[letter].diskId);
 	else
 		kprintf("No drive%x!",letter);
 }
-void WriteToDisk(int LBA, uint count, void * buf, char letter)
+void WriteToDisk(unsigned long long LBA, uint count, void * buf, char letter)
 {
 	if (drives[letter].avaliable)
 		WriteController(drives[letter].diskOffset + LBA, count, buf, drives[letter].diskId);

@@ -3,7 +3,7 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
-#define buf_size 1024
+#define buf_size 65536
 void _main(int argc, char ** argv)
 {	
 
@@ -11,6 +11,7 @@ void _main(int argc, char ** argv)
 		return;
 	FILE * z = fopen(argv[0],"r");
 	FILE * u = fopen(argv[1],"w");
+	
 	fseek(z,0,2);
 	uint sz = ftell(z);
 	rewind(z);

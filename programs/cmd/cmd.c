@@ -187,7 +187,6 @@ void _main(int argc, char ** argv)
 					}
 					++z;
 				}
-				lockTaskSwitch(1);
 				memcpy(dir, ucmd, 512);
 				concatdir(dir, fname);
 				FILE * fp = fopen(dir,"r");
@@ -196,9 +195,8 @@ void _main(int argc, char ** argv)
 					printTextToWindow(4,w,"%s isn't a command or executable file!\n",fname);
 					continue;
 				}
-				runProcess(dir, cid, args, !testForGUI(), ucmd);
+				runProcess(dir, cid, args, 1, ucmd);
 				memcpy(ucmd, dir, 512);
-				unlockTaskSwitch();
 			}
 			Wait(1);
 	}

@@ -576,9 +576,11 @@ static void EhciInitQH(EhciQH *qh, UsbTransfer *t, EhciTD *td, UsbDevice *parent
 // ------------------------------------------------------------------------------------------------
 static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
+	lockTaskSwitch(1);
 	UsbTransfer *t = qh->transfer;
 	//hc->opRegs->frameIndex = 0;
-	Wait(1);
+	Wait(3);
+//////////	kprintf("$");
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -637,6 +639,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 		// Free queue head
 		EhciFreeQH(qh);
 	}
+	unlockTaskSwitch();
 }
 
 // ------------------------------------------------------------------------------------------------
