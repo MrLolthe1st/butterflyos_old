@@ -365,7 +365,7 @@ static uint UhciResetPort(UhciController *hc, uint port)
 	UhciPortSet(hc->ioAddr + reg, PORT_RESET);
 	//printTextToWindow(1, mywin, "a");
 	//return 0;
-	PitWait(50);
+	PitWait(500);
 	UhciPortClr(hc->ioAddr + reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
@@ -373,7 +373,7 @@ static uint UhciResetPort(UhciController *hc, uint port)
 	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
-		PitWait(10);
+		PitWait(150);
 
 		// Get current status
 		status = IoRead16(hc->ioAddr + reg);
@@ -587,7 +587,7 @@ static void UhciControllerPoll(UsbController *controller)
 	UhciQH *next;
 	ListForEachSafe(qh, next, hc->asyncQH->qhLink, qhLink)
 	{
-		if (qh->transfer)
+		if (qh->transfer&&!qh->transfer->w)
 		{
 			UhciProcessQH(hc, qh);
 		}

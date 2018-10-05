@@ -786,16 +786,16 @@ void * FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf
 			((uint*)(&FATTablePart))[currentCluster % 128] = (uint)nw;
 			WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 			currentCluster = nw;
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
+			if ((lastCluster >> 7) != (currentCluster >> 7))
+				ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 			((uint*)(&FATTablePart))[currentCluster % 128] = 0xfffffff;
 			WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
+			lastCluster = currentCluster;
 		}
 		cluster[curOffs] = ((uchar*)buf)[i];
 		curOffs = (curOffs + 1) % (512 * sectorsPerCluster);
-		if (curOffs == 0)
-		{
+		if (!curOffs)
 			sz = 1;
-		}
 	}
 	WriteToDisk(FatStart + currentCluster - 2, sectorsPerCluster, cluster, diskId);
 	((uint*)(&FATTablePart))[currentCluster % 128] = 0xfFFFFFF;
