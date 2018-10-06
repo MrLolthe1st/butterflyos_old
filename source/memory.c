@@ -16,7 +16,7 @@ void memset(void * addr, char s, size_t count) {
 	for (int i = 0; i < count; i++)
 		(*((unsigned char *)addr + i)) = s;
 }
-void memcpy(unsigned char * s, unsigned char * d, size_t count) {
+void memcpy(unsigned char * d, unsigned char * s, size_t count) {
 	__asm__("pusha\n\
 			mov %2,%%ecx\n\
 			mov %0,%%esi\n\

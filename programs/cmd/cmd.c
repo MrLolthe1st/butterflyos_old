@@ -142,10 +142,10 @@ void _main(int argc, char ** argv)
 			}
 			else if (ucmd[0] == 'M'&&ucmd[1] == 'D'&&ucmd[2]==' ')
 			{
-				memcpy(dir, ucmd, 512);
+				memcpy(ucmd, dir, 512);
 				concatdir(dir, (uint)cmd + 3);
 				mkdir(dir, 0);
-				memcpy(ucmd, dir, 512);
+				memcpy(dir, ucmd, 512);
 			}
 			else {
 				char * fname = malloc(256);
@@ -187,7 +187,7 @@ void _main(int argc, char ** argv)
 					}
 					++z;
 				}
-				memcpy(dir, ucmd, 512);
+				memcpy(ucmd,dir , 512);
 				concatdir(dir, fname);
 				FILE * fp = fopen(dir,"r");
 				if(!fp)
@@ -196,7 +196,7 @@ void _main(int argc, char ** argv)
 					continue;
 				}
 				runProcess(dir, cid, args, 1, ucmd);
-				memcpy(ucmd, dir, 512);
+				memcpy(dir, ucmd, 512);
 			}
 			Wait(1);
 	}

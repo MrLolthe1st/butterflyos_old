@@ -135,3 +135,5 @@ void CpuDetect()
 		//printTextToWindow(7, windows,"CPU Name: %s\n", p);
 	}
 }
+
+

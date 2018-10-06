@@ -94,6 +94,7 @@ IDT_HANDLERM(multitasking) {
 	__asm__("movb $0x20, %al \n\
 		outb %al, $0x20\n\
 		");
+	*((uint*)((uint)g_localApicAddr+0xb0))=0;
 	*sec100 = (*sec100) + 1; // % 100;
 	__asm__("\
 	call _multiHandler");
@@ -129,7 +130,7 @@ void processEnd() {
 		free(procTable[currentRunning].argv[i]);
 	free(procTable[currentRunning].argv);
 	free(procTable[currentRunning].workingDir);
-	memcpy(&procTable[procCount - 1], &procTable[currentRunning], sizeof(Process));
+	memcpy(&procTable[currentRunning],&procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
 	//printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
@@ -628,6 +629,9 @@ IDT_HANDLER(idt_std)
 {
 	
 }
+
+
+
 void iint() {
 	mouse_cur = malloc(16 * 16 * 4 + 16);
 	for (int i = 0; i < 16 * 16 * 4; i++)
@@ -699,6 +703,10 @@ void iint() {
 	outportb(0x43, 0x34);
 	outportb(0x40, (unsigned char)hz & 0xFF); //Low
 	outportb(0x40, (unsigned char)(hz >> 8) & 0xFF); //Hight, about 1000 times per second
+
+	LocalApicInit();
+	IoApicInit();
+	IoApicSetEntry(g_ioApicAddr, AcpiRemapIrq(0), 0x20);
 	int_e(); //Enabling interrupts
 	//	unsigned short hz = 65536	;
 
@@ -724,4 +732,57 @@ void int_e() {
 void int_d() {
 	__asm__("cli");
 }
+// ------------------------------------------------------------------------------------------------
+// Globals
+u8 *g_ioApicAddr;
+
+// ------------------------------------------------------------------------------------------------
+// Memory mapped registers for IO APIC register access
+#define IOREGSEL                        0x00
+#define IOWIN                           0x10
+
+// ------------------------------------------------------------------------------------------------
+// IO APIC Registers
+#define IOAPICID                        0x00
+#define IOAPICVER                       0x01
+#define IOAPICARB                       0x02
+#define IOREDTBL                        0x10
+
+// ------------------------------------------------------------------------------------------------
+static void IoApicOut(u8 *base, u8 reg, u32 val)
+{
+    MmioWrite32(base + IOREGSEL, reg);
+    MmioWrite32(base + IOWIN, val);
+}
+
+// ------------------------------------------------------------------------------------------------
+static u32 IoApicIn(u8 *base, u8 reg)
+{
+    MmioWrite32(base + IOREGSEL, reg);
+    return MmioRead32(base + IOWIN);
+}
+
+// ------------------------------------------------------------------------------------------------
+void IoApicSetEntry(u8 *base, u8 index, u64 data)
+{
+    IoApicOut(base, IOREDTBL + index * 2, (u32)data);
+    IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
+}
+
+// ------------------------------------------------------------------------------------------------
+void IoApicInit()
+{
+    // Get number of entries supported by the IO APIC
+    u32 x = IoApicIn(g_ioApicAddr, IOAPICVER);
+    uint count = ((x >> 16) & 0xff) + 1;    // maximum redirection entry
+
+    kprintf("I/O APIC pins = %d\n", count);
+
+    // Disable all entries
+    for (uint i = 0; i < count; ++i)
+    {
+        IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
+    }
+}
+
 #pragma GCC pop_options

@@ -708,7 +708,7 @@ static bool UsbDevInit(UsbDevice *dev)
 			{
 				//printTextToWindow(1, mywin, "  De:\n");
 				UsbIntfDesc *intfDesc = malloc(sizeof(UsbIntfDesc));
-				memcpy(data, intfDesc, sizeof(UsbIntfDesc) - 8);
+				memcpy(intfDesc, data, sizeof(UsbIntfDesc) - 8);
 				intfDesc->next = 0;
 				intfDesc->endpoints = 0;
 				if (!pickedIntfDesc)
@@ -731,7 +731,7 @@ static bool UsbDevInit(UsbDevice *dev)
 			{
 				//Currently I'm checking last interface, add that endpoint to it.
 				UsbEndpDesc *endp_desc = malloc(sizeof(UsbEndpDesc));
-				memcpy(data, endp_desc, sizeof(UsbEndpDesc) - 4);
+				memcpy(endp_desc, data, sizeof(UsbEndpDesc) - 4);
 				endp_desc->next = 0;
 				//UsbPrintEndpDesc(endp_desc);
 

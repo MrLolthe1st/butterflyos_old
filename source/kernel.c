@@ -73,6 +73,7 @@ void unlockTaskSwitch()
 #pragma GCC optimize ("Ofast")
 #include "SVGA/svga.c"
 #include "Devices/ps2mouse.c"
+#include "acpi\acpi.c"
 #include "idt.c"
 #pragma GCC pop_options
 #include "GUI\Forms.c"
@@ -146,7 +147,9 @@ void k_main()
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
+	AcpiInit();
 	iint();
+	//Wait(1000);
 	//unsigned char nnn = 0x90;
 	//while(getKey()!=0);
 	initDevices();
@@ -194,6 +197,7 @@ void k_main()
 	//
 	updateWindows();
 	PciInit();
+	SmpInit();
 
 	//makeLogicDrives();
 

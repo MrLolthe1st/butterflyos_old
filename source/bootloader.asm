@@ -81,7 +81,7 @@
 [BITS 16]
 
 ?                       equ     0
-ImageLoadSeg            equ     60h     ; <=07Fh because of "push byte ImageLoadSeg" instructions
+ImageLoadSeg            equ     0800h     ; <=07Fh because of "push word ImageLoadSeg" instructions
 
 [SECTION .text]
 [ORG 0]
@@ -191,8 +191,10 @@ main:
         mov     esi, [bsRootDirectoryClusterNo] ; esi=cluster # of root dir
 
 RootDirReadContinue:
-        push    byte ImageLoadSeg
-        pop     es
+        push ax
+		mov ax,0x800
+		mov es,ax
+		pop ax
         xor     bx, bx
         call    ReadCluster             ; read one cluster of root dir
         push    esi                     ; save esi=next cluster # of root dir
@@ -202,8 +204,10 @@ RootDirReadContinue:
 ;; Look for the COM/EXE file to load and run ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        push    byte ImageLoadSeg
-        pop     es
+        push ax
+		mov ax,0x800
+		mov es,ax
+		pop ax
         xor     di, di                  ; es:di -> root entries array
         mov     si, ProgramName         ; ds:si -> program name
 
@@ -249,9 +253,11 @@ FindNameFound:
 ;; Load the entire file ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        push    byte ImageLoadSeg
+      push ax
+		mov ax,0x800
+		mov es,ax
+		pop ax
 		;stc
-        pop     es
         xor     bx, bx
 FileReadContinue:
 		
@@ -264,7 +270,7 @@ FileReadContinue:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
         
-        jmp     0x0:0x600
+        jmp     0x0:0x8000
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Reads a FAT32 cluster        ;;

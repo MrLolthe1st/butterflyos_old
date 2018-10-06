@@ -91,7 +91,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 						uint len = 0, reread = 0;
 						uint j = i - 1;
 						if (j == -1) {
-							memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+							memcpy(cluster,lastcluster, 512 * sectorsPerCluster);
 							j = 16 * sectorsPerCluster - 1;
 							reread = 1;
 						}
@@ -107,7 +107,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 								break;
 							j--;
 							if (j == -1) {
-								memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+								memcpy(cluster,lastcluster, 512 * sectorsPerCluster);
 								j = 16 * sectorsPerCluster - 1;
 								reread = 1;
 							}
@@ -278,7 +278,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 						uint len = 0, reread = 0;
 						uint j = i - 1;
 						if (j == -1) {
-							memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+							memcpy( cluster,lastcluster, 512 * sectorsPerCluster);
 							j = 16 * sectorsPerCluster - 1;
 							reread = 1;
 						}
@@ -294,7 +294,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 								break;
 							j--;
 							if (j == -1) {
-								memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+								memcpy( cluster,lastcluster, 512 * sectorsPerCluster);
 								j = 16 * sectorsPerCluster - 1;
 								reread = 1;
 							}
@@ -473,7 +473,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 			//.^ start here(1)
 			//....^ end here(4)
 			uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st;
-			memcpy(&cluster[st - ofs * 512 * sectorsPerCluster], buf, countR);
+			memcpy(buf, &cluster[st - ofs * 512 * sectorsPerCluster], countR);
 			buf += countR;
 		}
 		else
@@ -483,7 +483,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 			{
 				ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 				uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st - ((uint)buf - (uint)qf);
-				memcpy(cluster, buf, countR);
+				memcpy(buf, cluster, countR);
 				buf += countR;
 			}
 
@@ -543,7 +543,7 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 						uint len = 0, reread = 0;
 						uint j = i - 1;
 						if (j == -1) {
-							memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+							memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 							j = 16 * sectorsPerCluster - 1;
 							reread = 1;
 						}
@@ -559,7 +559,7 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 								break;
 							j--;
 							if (j == -1) {
-								memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+								memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 								j = 16 * sectorsPerCluster - 1;
 								reread = 1;
 							}
@@ -902,7 +902,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 						uint len = 0, reread = 0;
 						uint j = i - 1;
 						if (j == -1) {
-							memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+							memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 							j = 16 * sectorsPerCluster - 1;
 							reread = 1;
 						}
@@ -918,7 +918,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 								break;
 							j--;
 							if (j == -1) {
-								memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+								memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 								j = 16 * sectorsPerCluster - 1;
 								reread = 1;
 							}
@@ -1140,7 +1140,7 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 						uint len = 0, reread = 0;
 						uint j = i - 1;
 						if (j == -1) {
-							memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+							memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 							j = 16 * sectorsPerCluster - 1;
 							reread = 1;
 						}
@@ -1156,7 +1156,7 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 								break;
 							j--;
 							if (j == -1) {
-								memcpy(lastcluster, cluster, 512 * sectorsPerCluster);
+								memcpy(cluster, lastcluster, 512 * sectorsPerCluster);
 								j = 16 * sectorsPerCluster - 1;
 								reread = 1;
 							}

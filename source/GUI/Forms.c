@@ -96,7 +96,7 @@ void printChars(unsigned char color, Window * w, char * text)
 		if (w->cursorY == w->wheight / 16)
 		{
 			//Scroll memory up
-			memcpy(w->video + 16 * w->wwidth * 3, w->video, (w->wheight - 16)*w->wwidth * 3);
+			memcpy(w->video, w->video + 16 * w->wwidth * 3, (w->wheight - 16)*w->wwidth * 3);
 			//Zero last line
 			memset(w->video + (w->wheight - 16)*w->wwidth * 3, 0, 16 * w->wwidth * 3);
 			//Back to last line
@@ -118,7 +118,7 @@ void printChars(unsigned char color, Window * w, char * text)
 	if (w->cursorY == w->wheight / 16)
 	{
 		//Scroll memory up
-		memcpy(w->video + 16 * w->wwidth * 3, w->video, (w->wheight - 16)*w->wwidth * 3);
+		memcpy(w->video, w->video + 16 * w->wwidth * 3, (w->wheight - 16)*w->wwidth * 3);
 		//Zero last line
 		memset(w->video + (w->wheight - 16)*w->wwidth * 3, 0, 16 * w->wwidth * 3);
 		//Back to last line
@@ -247,7 +247,7 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 				if (w->cursorY == w->wheight / 16)
 				{
 					//Scroll memory up
-					memcpy(w->video + 16 * w->wwidth * 3, w->video, (w->wheight - 16)*w->wwidth * 3);
+					memcpy(w->video, w->video + 16 * w->wwidth * 3, (w->wheight - 16)*w->wwidth * 3);
 					//Zero last line
 					memset(w->video + (w->wheight - 16)*w->wwidth * 3, 0, 16 * w->wwidth * 3);
 					//Back to last line
@@ -270,7 +270,7 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 			if (w->cursorY == w->wheight / 16)
 			{
 				//Scroll memory up
-				memcpy(w->video + 16 * w->wwidth * 3, w->video, (w->wheight - 16)*w->wwidth * 3);
+				memcpy(w->video, w->video + 16 * w->wwidth * 3, (w->wheight - 16)*w->wwidth * 3);
 				//Zero last line
 				memset(w->video + (w->wheight - 16)*w->wwidth * 3, 0, 16 * w->wwidth * 3);
 				//Back to last line

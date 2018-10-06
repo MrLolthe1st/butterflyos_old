@@ -1,32 +1,28 @@
-jmp loadermain
-[org 0x600]
+[org 0x8000]
 
-GDT:
-NULLSELECTOR    EQU             $ - GDT
-                DD 0x0
-                DD 0x0
-
-CODESELECTOR    EQU             $ - GDT          ; 4GB Flat Code at 0x0 with max 0xFFFFF limit
-                DW              0FFFFh           ; Limit(2):0xFFFF
-                DW              0h               ; Base(3)
-                DB              0h               ; Base(2)
-                DB              09Ah             ; Type: present,ring0,code,exec/read/accessed (10011000)
-                DB              0CFh             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
-                DB              0h               ; Base(1)
-
-DATASELECTOR    EQU             $ - GDT          ; 4GB Flat Data at 0x0 with max 0xFFFFF limit
-                DW              0FFFFh           ; Limit(2):0xFFFF
-                DW              0h               ; Base(3)
-                DB              0h               ; Base(2)
-                DB              092h             ; Type: present,ring0,data/stack,read/write (10010010)
-                DB              0CFh             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
-                DB              0h               ; Base(1)
-GDTEND:
-
-GDTR:
-GDTsize DW GDTEND - GDT - 1
-GDTbase DD GDT
 loadermain:
+lap:
+		jmp short bsp
+		 mov esp, 0fffh
+		
+		;mov esi, [0x2550]
+        ;add esi, 0x00f0             ; Spurious Interrupt Vector
+        ;mov edi, esi
+        ;lodsd
+        ;or eax, 0x100
+        ; Enable interrupts
+		
+        ; Mark CPU as active
+        ;lock
+		
+    inc byte [0x2555]
+		jmp $
+	bsp:
+	xor ax,ax
+	mov ds,ax
+	mov dword[0x2550],0
+	mov dword[0x2555],0
+	mov word [ds:0x8000], 0x9090
 	xor di,di
 	mov ax,0x4F0A
 	mov bx,0
@@ -126,20 +122,49 @@ lEnterPMode:
 
 [BITS 32]
 FlushPipeline:
+
+	
     mov eax, DATASELECTOR
     mov ds, eax
     mov es, eax
     mov fs, eax
     mov gs, eax
     mov ss, eax
+	
+
     mov esp, 0ffffh
 	mov ecx,165535
 	mov edi,0x100000
 	mov esi,kernel
 	rep movsd
-	
-	
-	
-	jmp 0x100000	
+	jmp 0x100000
 ;times 1024-($-$$) db 0
+
+
+
+GDT:
+NULLSELECTOR    EQU             $ - GDT
+                DD 0x0
+                DD 0x0
+
+CODESELECTOR    EQU             $ - GDT          ; 4GB Flat Code at 0x0 with max 0xFFFFF limit
+                DW              0FFFFh           ; Limit(2):0xFFFF
+                DW              0h               ; Base(3)
+                DB              0h               ; Base(2)
+                DB              09Ah             ; Type: present,ring0,code,exec/read/accessed (10011000)
+                DB              0CFh             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
+                DB              0h               ; Base(1)
+
+DATASELECTOR    EQU             $ - GDT          ; 4GB Flat Data at 0x0 with max 0xFFFFF limit
+                DW              0FFFFh           ; Limit(2):0xFFFF
+                DW              0h               ; Base(3)
+                DB              0h               ; Base(2)
+                DB              092h             ; Type: present,ring0,data/stack,read/write (10010010)
+                DB              0CFh             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
+                DB              0h               ; Base(1)
+GDTEND:
+
+GDTR:
+GDTsize DW GDTEND - GDT - 1
+GDTbase DD GDT
 kernel incbin 'binaries\kernel.o'
