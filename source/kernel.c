@@ -7,7 +7,7 @@
 #define IRQ_HANDLER(func) char func = 0x90;\
 __asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
 void _## func()
-
+unsigned int g_pitTicks = 0;
 //PIC#1; port 0xA0
 #define IRQ_HANDLER1(func) char func = 0x90;\
 __asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
@@ -43,11 +43,10 @@ Window * windows = 0;
 int activeWindow = 0, rec = 0;
 int cursorSpeed = 700;
 Window * mywin = 0;
-
+unsigned int usbPoll = 1;
 #include "Link.h"
 #include "devices/fpu.c"
 #include "usb_key_layout.c"
-#include "time.c"
 #include "mathf.c"
 #include "string.c"
 #include "video.c"
@@ -55,6 +54,7 @@ Window * mywin = 0;
 #include "memory.c"
 #include "globalVariables.c"
 #include "kprin.c"
+#include "time.c"
 void lockTaskSwitch(unsigned int id)
 {
 	locked += id;
@@ -87,6 +87,8 @@ void unlockTaskSwitch()
 #include "usb\hub.c"
 #include "internet\internet.c"
 #include "internet\rtl8139.c"
+u8 g_netTrace;
+void * hher;
 void Win1Handler(void * ev)
 {
 
@@ -119,12 +121,51 @@ uchar testForGUI()
 {
 	return (*((uchar*)0x3FF));
 }
+uint *stacks;
+
+static void HttpOnTcpState(TcpConn *conn, uint oldState, uint newState)
+{
+	const char *msg = (const char *)conn->ctx;
+
+	if (newState == TCP_ESTABLISHED)
+	{
+		TcpSend(conn, msg, strlen(msg));
+	}
+
+	if (newState == TCP_CLOSE_WAIT)
+	{
+		TcpClose(conn);
+	}
+}
+static void HttpOnTcpData(TcpConn *conn, const u8 *data, uint len)
+{
+	uint col = 0;
+
+	for (uint i = 0; i < len; ++i)
+	{
+		char c = data[i];
+		printTextToWindow(3,mywin,"%c",c);
+		++col;
+		if (c == '\n')
+		{
+			col = 0;
+		}
+		else if (col == 80)
+		{
+			printTextToWindow(3, mywin, "\n");
+			col = 0;
+		}
+	}
+}
+
+#include "smp\smp.c"
+
 void k_main()
 {
 	//hubinit=&_usbHubInit;
+	initCoProc();
 	memset(&drives, 0, sizeof(LogicDrive) * 26);
 	currentRunning = 0;
-	initCoProc();
 	setCursor(0);
 	clearScreen();
 	setCursor(0);
@@ -143,7 +184,10 @@ void k_main()
 	procTable[0].priority = 1;
 	procTable[0].priorityL = 1;
 	procCount = 1;
-
+	stacks = malloc(65536 * 16);
+	*((unsigned int*)0x09925) = stacks;
+	*((unsigned int*)0x09929) = stacks;
+	*((unsigned int*)0x09933) = &smp_core;
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
@@ -153,8 +197,7 @@ void k_main()
 	//unsigned char nnn = 0x90;
 	//while(getKey()!=0);
 	initDevices();
-	//ATAInit();
-	initSVGA();
+	ATAInit();
 	kprintf("ButterflyOS started. Build from 8th august 2018.\n");
 	char b[512];
 	//Wait(50);
@@ -189,23 +232,30 @@ void k_main()
 	*(cur_dir + 0) = '/';
 	*(cur_dir + 1) = 0;
 	unsigned short pos = 0;
-	mywin = openWindow(640, 680, 0, 0, "CPU Info");
-	mywin->handler = &Win1Handler;
 
 	//CpuDetect();
 	//for(;;);
 	//
-	updateWindows();
 	PciInit();
+	mywin = openWindow(640, 680, 0, 0, "CPU Info");
+	mywin->handler = &Win1Handler;
+	initSVGA();
+	updateWindows();
 	SmpInit();
-
-	//makeLogicDrives();
-
-	runProcess("A:\\CMD.O", 2, 0, 0,"A:\\");
-
+	//NetInit();
+	runProcess("A:\\CMD.O", 2, 0, 0, "A:\\");
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
+	//kprintf("%x!", &videoMemory);
+	//smp_core(0);
+	if (g_activeCpuCount > 1)
+		for (;;) { 
+
+			UsbPoll();
+			NetPoll();
+		}
 	WindowEvent we;
+	
 	we.data = malloc(2);
 	if (!(*((uchar*)0x3FF)))
 		for (;;)
@@ -230,10 +280,11 @@ void k_main()
 				}
 			}
 			UsbPoll();
+			NetPoll();
 			Wait(1);
-		}
+		}kprintf("qq");
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
-	//kprintf("qq");
+	kprintf("qq");
 
 	char * mo = malloc(12);
 	int tttt = 0;
@@ -251,6 +302,7 @@ void k_main()
 		tttt++;
 		//printTextToWindow(1, mywin, "!@#$%x&&&",&_UsbMouseInit);
 		UsbPoll();
+		NetPoll();
 		unsigned int x = *sec100;
 		char key = 0;
 		Window * currentActive = windows;

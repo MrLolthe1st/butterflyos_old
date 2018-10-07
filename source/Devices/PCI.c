@@ -662,6 +662,7 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	);
 
 	_ehci_init(id, &info);
+	EthIntelInit(id, &info);
 	_uhci_init(id, &info);
 	_rtl39_init(id, &info);
 	/////while (!getKey());

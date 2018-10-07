@@ -1066,11 +1066,45 @@ typedef struct __attribute((packed)) _LogicDrive {
 	ulon size;
 	ulon diskOffset;
 	uint type;
-	
+	uint structId;
 } LogicDrive;
+typedef struct PACKED _fat32drive
+{
+	uint FatStart;
+	uint reserved;
+	uint RootEntry;
+	uint * FATTable;
 
+}f32drive;
+f32drive f32drives[26];
 LogicDrive drives[26];
-
+void checkFS(uint di)
+{
+	char bootSect[512];
+	ReadFromDisk((long long)0,1,&bootSect,di);
+	printTextToWindow(7, mywin, "%x %x",di,*((uint*)((uint)&bootSect+ 0x52)));
+	if (bootSect[0x52] == 'F'&&bootSect[0x53] == 'A'&&bootSect[0x54] == 'T'&&bootSect[0x55] == '3')
+	{
+		char sectorsPerCluster = bootSect[0x0D];
+		u16 reserved = *((u16*)&bootSect[0xE]);
+		char FATTableCount = bootSect[0x10];
+		uint RootEntry = *((uint*)&bootSect[0x2C]);
+		uint SectorsPerFat = *((uint*)&bootSect[0x24]);
+		uint FatStart = SectorsPerFat * FATTableCount + reserved;
+		f32drives[di].FatStart = FatStart;
+		f32drives[di].FATTable = malloc(512 * SectorsPerFat);
+		f32drives[di].reserved = reserved;
+		f32drives[di].RootEntry = RootEntry;
+		uint lost = SectorsPerFat;
+		for (int i = 0; i < SectorsPerFat >> 4; i++) {
+			ReadFromDisk((unsigned long long)reserved+(long long)i*16, lost<16?lost:16,(uint)i*16*512+ (uint)f32drives[di].FATTable, di);
+			lost -= 16;
+		}
+		//kprintf("((((((%x %x)))))))", f32drives[di].FATTable[0x2bc], SectorsPerFat);
+		//Wait(10000);
+	} else
+	drives[di].type = 0xff;
+}
 uint lastLetter = 0, bootedFrom = 999;
 void printMem(unsigned char * a, uint c)
 {
@@ -1119,6 +1153,7 @@ int checkPatrition(uint startSec, uint did)
 					drives[uy].diskOffset = (*((uint*)&bootSect[446 + j * 16 + 8]));
 					drives[uy].size = (*((uint*)&bootSect[446 + j * 16 + 12]));
 					drives[uy].type = 0;
+					checkFS(uy);
 					if(uy==lastLetter)
 						lastLetter++;
 				}
@@ -1188,7 +1223,7 @@ void checkDiskPatritions(uint i)
 			drives[uy].avaliable = 1;
 			drives[uy].diskId = i;
 			drives[uy].diskOffset = startLBA;
-			drives[uy].size = endLBA - startLBA + 1; drives[uy].type = 0;
+			drives[uy].size = endLBA - startLBA + 1; drives[uy].type = 0; checkFS(uy);
 			if(uy==lastLetter)
 				lastLetter++;
 
@@ -1206,7 +1241,7 @@ void checkDiskPatritions(uint i)
 		drives[uy].avaliable = 1;
 		drives[uy].diskId = i;
 		drives[uy].diskOffset = 0;
-		drives[uy].size = diskDevices[i].sectorsCount; drives[uy].type = 0;
+		drives[uy].size = diskDevices[i].sectorsCount; drives[uy].type = 0; checkFS(uy);
 		ReadController(0, 1, &bootSect, i);
 		if (bootSect[512 - 13] == 'S')
 			if (bootSect[512 - 12] == 'T')

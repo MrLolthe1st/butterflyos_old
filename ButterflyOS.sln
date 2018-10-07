@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		source\string.c = source\string.c
 		source\structs.c = source\structs.c
 		source\time.c = source\time.c
+		source\usb_key_layout.c = source\usb_key_layout.c
 		source\video.c = source\video.c
 		source\windowsEventsCodes.c = source\windowsEventsCodes.c
 	EndProjectSection
@@ -72,6 +73,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "internet", "internet", "{D9
 		source\internet\rtl8139.c = source\internet\rtl8139.c
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "acpi", "acpi", "{130317C1-1723-4E33-B56A-915649AA7D18}"
+	ProjectSection(SolutionItems) = preProject
+		source\acpi\acpi.c = source\acpi\acpi.c
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "smp", "smp", "{FAC91504-45BE-4163-9450-12DC4E965FA5}"
+	ProjectSection(SolutionItems) = preProject
+		source\smp\smp.c = source\smp\smp.c
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,6 +94,8 @@ Global
 		{3CFAA31B-E386-4D65-A054-CE7D2F055305} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 		{6C4FC3D3-2C74-4A38-B45A-075056F9C9DC} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 		{D9CE8A36-BE4C-4589-86BC-3135B7716B26} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{130317C1-1723-4E33-B56A-915649AA7D18} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{FAC91504-45BE-4163-9450-12DC4E965FA5} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6F4CB408-3EA0-4854-8E28-15F23A83F7CF}

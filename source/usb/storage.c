@@ -321,6 +321,45 @@ void requestSense(UsbStorage * s)
 	printMem(cbw, 14);
 		free(cbw);
 }
+
+void startStorage(UsbStorage * s)
+{
+	UsbDevice * dev = s->d;
+	UsbTransfer *t = s->t;
+	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
+
+	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw->lun = 0;
+	cbw->tag = 0x1000;
+	cbw->sig = 0x43425355;
+	cbw->wcb_len = 10;
+
+	cbw->flags = 0x80;
+	cbw->xfer_len = 0;
+	*((u8*)((uint)cbw + 15)) = 0x1b;
+	*((u8*)((uint)cbw + 18)) = 0;
+	*((u8*)((uint)cbw + 19)) = 1|(1<<4);//252 bytes - full sense(see SCSI spec.)
+	t->endp = endpointOut;
+	t->req = 0;
+	t->data = cbw;
+	t->len = 0x1F;
+	t->complete = false;
+	t->success = false;
+	t->w = 1;
+	dev->hcIntr(dev, t);
+	t->endp = endpointIn;
+	t->req = 0;
+	t->data = cbw;
+	t->len = 13;
+	t->complete = false;
+	t->success = false;
+	t->w = 1;
+	dev->hcIntr(dev, t);
+	kprintf("$");
+	printMem(cbw, 13); kprintf("$");
+	free(cbw);
+}
+
 uint MassStorageReset(UsbDevice * dev, UsbEndpoint * out)
 {
 	//MassStorage Reset command
@@ -648,10 +687,13 @@ void _storageInit(UsbDevice * dev)
 	long long sectorCount = 0;
 	for (int lun = 0; lun <= lunCnt; ++lun) {
 		//Test for ready
+		inquiryRequest(storage);
+		startStorage(storage);
 		while (testUnitReady(storage)) {
 			//Request sense from device
 			requestSense(storage);
 		}
+		requestSense(storage);
 		sectorCount = readcapacity10(storage);
 		long long z = readcapacity16(storage);
 		if (z > 0) {

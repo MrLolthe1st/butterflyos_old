@@ -99,16 +99,17 @@ void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 unsigned int u;
 //Waits CRT back way
 void waitRetrace() {
-	while (inportb(0x3DA) & 0x8) { Wait(1); };
-	while (!(inportb(0x3DA) & 0x8)) { Wait(1); }
+	while (inportb(0x3DA) & 0x8) {  };
+	while (!(inportb(0x3DA) & 0x8)) {  }
 }
 //Copies video buffer to video memory
 void swapBuffer() {
 	//Waits retrace
-	while (inportb(0x3DA) & 0x8);
-	while (!(inportb(0x3DA) & 0x8));
+	while (inportb(0x3DA) & 0x8) {};
+	while (!(inportb(0x3DA) & 0x8)) {}
 	__asm__("\
-		pusha			  				#Save registers in stack			\n\
+		.byte 0x60\n\
+					  				#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
 		mov %0,%%edi 					#Video memory start to edi			\n\
 		mov %1,%%esi 					#Video buffer start to esi			\n\
@@ -126,7 +127,7 @@ void swapBuffer() {
 			dec		%%ecx				#Decrement count					\n\
 			#test 	%%ecx,%%ecx 		#Compare ecx with zero				\n\
 			jnz 	ww1sse2 			#If not zero, repeat again			\n\
-		popa							#Restore registers from stack		\
+		.byte 0x61							#Restore registers from stack		\
 		"::"r" (videoMemory), "r" (videoBuffer), "r" (ccnt));
 }
 //Copies image to the screen
@@ -196,7 +197,6 @@ void CopyFromVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	if (bpp == 3) {
 		for (j = startY; j < endY; j++, buf += width + width + width, bb2 += w * 3) {
 			//memcpy( videoBuffer + j*width*3 + x1*3,, w*3);
-
 			__asm__("pusha\n\
 		mov %0,%%edi\n\
 		mov %1,%%ecx\n\
@@ -303,7 +303,7 @@ void CopyFromVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 	int ccc = w * 3;
 	for (j = startY; j < endY; j++, bufStart += cc, bbstart += ccc) {
 		//memcpy( videoBuffer + j*width*3 + x1*3,, w*3);
-		if (bpp == 3)
+		if (bpp == 3) {
 			__asm__("pusha\n\
 		mov %0,%%edi\n\
 		mov %1,%%ecx\n\
@@ -316,6 +316,7 @@ void CopyFromVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 		jnz w2q1\n\
 		popa\
 		"::"r" (bbstart), "r" (mmw), "r" (bufStart));
+		}
 		else
 			__asm__("pusha\n\
 		mov %0,%%edi\n\
@@ -369,7 +370,8 @@ void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 	void * bufStart = videoBuffer + width * bpp * y1 + x1 * bpp;
 	unsigned int cc = width * bpp;
 	if (bpp == 3)
-		for (y = y1; y <= (short)(y2); y++, bufStart += cc)
+		for (y = y1; y <= (short)(y2); y++, bufStart += cc) {
+		//	kprintf("");
 			__asm__("push %%ecx \n\
 		push %%edi \n\
 		push %%esi \n\
@@ -386,6 +388,7 @@ void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 		pop %%edi\n\
 		pop %%ecx\n\
 		"::"r" (bufStart), "r" (x2 - x1 + 1), "r" (&color));
+		}
 	else
 		for (y = y1; y <= (short)(y2); y++, bufStart += cc)
 			__asm__("push %%ecx \n\
@@ -552,14 +555,23 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 }
 void * cat;
 void loadFontPointer() {
-	fontPointer = 0x30000 + 256;
+	fontPointer = 0x50000 + 256;
 	///Bar(0, 0, 600, 600, 0xFF0000);
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
-	//OutTextXY(220,332,"Please wait, desktop is loading...",0xFFFFFF,2);
+	
+	OutTextXY(220,332,"Please wait, desktop is loading...",0xFFFFFF,2);
 	//return;
-	//swapBuffer();
-	return;
-	cat = FAT32ReadFileATA(0, "CAT.BMP");
+	swapBuffer();
+	FILE * f = fopen("A:\\WP.BM","r");
+	kprintf("###%x###", f);
+	if (!f)
+		return;
+	fseek(f, 0, 2);
+	uint sz = ftell(f);
+	rewind(f);
+	cat = malloc(sz);
+	fread(cat, sz, 1, f);
+	//cat = FAT32ReadFileATA(0, "CAT.BMP");
 	//cat = 0x400000;
 	short h = 768;
 	short w = *((short *)(cat + 0x12));
@@ -567,9 +579,9 @@ void loadFontPointer() {
 	void * mo = malloc(w * 3);
 
 	for (short i = 0; i < h / 2; i++) {
-		memcpy((void *)(cat + i * w * 3), mo, w * 3);
-		memcpy((void *)(cat + (h - i - 1) * w * 3), (void *)(cat + i * w * 3), w * 3);
-		memcpy((void *)(mo), (void *)(cat + (h - i - 1) * w * 3), w * 3);
+		memcpy(mo, (void *)(cat + i * w * 3), w * 3);
+		memcpy((void *)(cat + i * w * 3), (void *)(cat + (h - i - 1) * w * 3), w * 3);
+		memcpy((void *)(cat + (h - i - 1) * w * 3), (void *)(mo), w * 3);
 	}
 
 	//swapBuffer();
@@ -610,7 +622,7 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 	}
 }
 void initSVGA() {
-	bpp = (unsigned int) * (((unsigned char *)0x30000 + 0x19)) / 8;
+	bpp = (unsigned int) * (((unsigned char *)0x50000 + 0x19)) / 8;
 
 	ccnt = 36864;
 	if (bpp == 4) {
@@ -619,9 +631,9 @@ void initSVGA() {
 	}
 	videoBuffer = malloc(width * height * 4 + 32 + 4096 + 4096 + 4096);
 	videoBuffer = (((unsigned int)videoBuffer) / 16) * 16 + 4096;
-	videoMemory = *((unsigned char *)0x30000 + 40) +
-		(*((unsigned char *)0x30000 + 41) << 8) + (*((unsigned char *)0x30000 + 42) << 16) + (*((unsigned char *)0x30000 + 43) << 24);
-	VBE4F07 = *((unsigned int *)(0x30000 + 256 * 17));
+	videoMemory = *((unsigned char *)0x50000 + 40) +
+		(*((unsigned char *)0x50000 + 41) << 8) + (*((unsigned char *)0x50000 + 42) << 16) + (*((unsigned char *)0x50000 + 43) << 24);
+	VBE4F07 = *((unsigned int *)(0x50000 + 256 * 17));
 	char * mm = malloc(12);
 	__itoa(((unsigned int)VBE4F07), 16, mm);
 	loadFontPointer();

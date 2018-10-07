@@ -441,7 +441,7 @@ void SmpInit()
 	}
 
 	// wait
-	kprintf(150);
+	Wait(150);
 
 	// Send Startup to all cpus except self
 	for (uint i = 0; i < g_acpiCpuCount; ++i)
@@ -450,6 +450,7 @@ void SmpInit()
 		if (apicId != localId)
 		{
 			LocalApicSendStartup(apicId, 0x8);
+			Wait(50);
 		}
 	}
 
@@ -458,7 +459,7 @@ void SmpInit()
 	while (*g_activeCpuCount != g_acpiCpuCount)
 	{
 		kprintf("Waiting... %d\n", *g_activeCpuCount);
-		PitWait(1000);
+		PitWait(10);
 	}
 
 	kprintf("All CPUs activated\n");

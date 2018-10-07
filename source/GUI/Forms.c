@@ -41,8 +41,8 @@ void initWindows()
 void drawDesktop()
 {
 	//Draw background
-	//CopyToVMemory(0, 0, 1024, 736, cat);
-	Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
+	CopyToVMemory(0, 0, 1024, 736, cat);
+	//Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
 	//Task Panel
 	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
 	//Some text...
@@ -300,12 +300,13 @@ void updateWindows()
 	time[5] = ':';
 	time[8] = 0;
 	OutTextXY(950, 746, &time, 0xFFFFFF, 1);
-	__itoa(*sec100 % 1000, 10, &time);
-	OutTextXY(900, 746, &time, 0xFFFFFF, 1);
+	//__itoa(*sec100 % 1000, 10, &time);
+	//OutTextXY(900, 746, &time, 0xFFFFFF, 1);
 	Window * w = windows;
 	//Active window is on top of windows list
 	while (w) {
-		Draw(w);
+		if(w->lastUpdate)
+			Draw(w);
 		w = w->next;
 	}
 
@@ -365,7 +366,7 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	Window * node = windows;
 	//Get active window pointer
 	while (node != 0 && node->next != 0) node = node->next;
-
+	win->lastUpdate = 0;
 	if (node == 0) {
 		//There aren't any windows!
 		node = win;

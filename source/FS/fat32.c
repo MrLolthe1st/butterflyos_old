@@ -1,3 +1,4 @@
+#pragma GCC push_options
 #pragma GCC optimize ("Ofast")
 typedef __attribute__((packed)) struct _F32_e
 {
@@ -71,8 +72,6 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 
 	while (!found)
 	{
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		F32E * e = cluster;
 		ReadFromDisk(FatStart + (lastCluster - 2) * sectorsPerCluster, sectorsPerCluster, lastcluster, diskId);
@@ -207,7 +206,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 		lastDir = 1;
 		////kprintf("%x->", currentCluster);
 		if(!uu)
-			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+			currentCluster = f32drives[diskId].FATTable[currentCluster];
 
 		while (*curChar) {
 			if ((*curChar) == '\\')
@@ -236,11 +235,9 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 	uint RootEntry = *((uint*)&bootSect[0x2C]);
 	uint SectorsPerFat = *((uint*)&bootSect[0x24]);
 	uint FatStart = SectorsPerFat * FATTableCount + reserved;
-	char FATTablePart[512];
 	uint lastCluster = RootEntry, currentCluster = RootEntry;
 	//printMem(&bootSect, 16);
 	////kprintf("%x",reserved);
-	ReadFromDisk(reserved, 1, &FATTablePart, diskId);
 	char * cluster = malloc(512 * sectorsPerCluster);
 	char found = 0, lastDir = 1;
 	char * curChar = fileName;
@@ -257,8 +254,6 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 
 	while (!found)
 	{
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		F32E * e = cluster;
 		char longFileName[256];
@@ -343,6 +338,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 
 						}
 					}
+					//kprintf("%s\n", &longFileName);
 					//File/Folder name parsed.
 					if ((!(e[i].attributes & 0x10)) && lastDir) {
 						int j = 0;
@@ -407,7 +403,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 			break;
 		}
 		else if (!uu)
-			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+			currentCluster = f32drives[diskId].FATTable[currentCluster % 128];
 
 		while (*curChar) {
 			if ((*curChar) == '\\')
@@ -450,21 +446,19 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 	uint RootEntry = *((uint*)&bootSect[0x2C]);
 	uint SectorsPerFat = *((uint*)&bootSect[0x24]);
 	uint FatStart = SectorsPerFat * FATTableCount + reserved;
-	char FATTablePart[512];
+	//char FATTablePart[512];
 	uint lastCluster = RootEntry, currentCluster = RootEntry;
-	ReadFromDisk(reserved, 1, &FATTablePart, diskId);
+	//ReadFromDisk(reserved, 1, &FATTablePart, diskId);
 	char * cluster = malloc(512 * sectorsPerCluster);
 	char found = 0, lastDir = 1;
 	uint ofs = 0;
 	currentCluster = clu;
 	lastCluster = currentCluster;
 	void * qf = buf;
-	ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
-	while (currentCluster != 0xFFFFFFF)
+//	ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
+	while (currentCluster != 0xFFFFFFF&&currentCluster!=0)
 	{
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
-
+		
 		if ((ofs + 1) * 512 * sectorsPerCluster > st && ofs * 512 * sectorsPerCluster <= st)
 		{
 			ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
@@ -488,7 +482,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 			}
 
 		lastCluster = currentCluster;
-		currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+		currentCluster = f32drives[diskId].FATTable[currentCluster];
 		ofs++;
 	}
 	free(cluster);
@@ -706,17 +700,13 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 }
 uint findFreeFATEntry(uint diskId, uint reserved)
 {
-	uint currentCluster = 0;
-	uchar found = 0;
-	uint FATTablePart[128]; uint z = 0;
-	while (!found) {
-		ReadFromDisk(reserved + (currentCluster), 1, &FATTablePart, diskId);
-		for (int i = 0; i < 128; i++)
-			if (FATTablePart[i] == 0) {
-				return i + z;
-			}
-		currentCluster++;
-		z += 128;
+	for (int i = 0; i < 0xFFFFFF;i++)
+	{
+		if (f32drives[diskId].FATTable[i] == 0)
+		{
+			f32drives[diskId].FATTable[i] = 0xFFFFFFF;
+			return i;
+		}
 	}
 }
 void * FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, uint cnt)
@@ -864,9 +854,9 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	uint RootEntry = *((uint*)&bootSect[0x2C]);
 	uint SectorsPerFat = *((uint*)&bootSect[0x24]);
 	uint FatStart = SectorsPerFat * FATTableCount + reserved;
-	char FATTablePart[512];
+	//char FATTablePart[512];
 	uint lastCluster = RootEntry, currentCluster = RootEntry;
-	ReadFromDisk(reserved, 1, &FATTablePart, diskId);
+	//ReadFromDisk(reserved, 1, &FATTablePart, diskId);
 	char * cluster = malloc(512 * sectorsPerCluster);
 	char found = 0, lastDir = 1;
 	char * curChar = fileName;
@@ -882,8 +872,6 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	uint size = 0;
 	while (!found)
 	{
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		F32E * e = cluster;
 		char longFileName[256];
@@ -1012,7 +1000,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 			++curChar;
 		}
 		lastCluster = currentCluster;
-		currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+		currentCluster = f32drives[diskId].FATTable[currentCluster];
 		if (lastDir)
 			break;
 		if (currentCluster == 0xFFFFFFF)
@@ -1025,8 +1013,6 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	uint ffound = 0;
 	uint avaliable = 0;
 	while (currentCluster != 0xFFFFFFF && !avaliable) {
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		for (int i = 0; i < 16 * sectorsPerCluster; i++) {
 			if (e[i].name[0] == 0) {
@@ -1037,30 +1023,32 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 		if (!avaliable)
 		{
 			lastCluster = currentCluster;
-			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+			currentCluster = f32drives[diskId].FATTable[currentCluster];
 		}
 	}
 	if (!avaliable)
 	{
 		uint nw = findFreeFATEntry(diskId, reserved);
-		((uint*)&FATTablePart)[lastCluster % 128] = nw;
-		WriteToDisk(reserved + (lastCluster >> 7), 1, &FATTablePart, diskId);
+		f32drives[diskId].FATTable[lastCluster] = nw;
+		WriteToDisk((long long)reserved + (lastCluster >> 7), 1, (uint)f32drives[diskId].FATTable + (lastCluster / 128) * 128, diskId);
 		currentCluster = nw;
 		memset(cluster, 0, 512 * sectorsPerCluster);
 		avaliable = 1;
-		ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
-		((uint*)&FATTablePart)[currentCluster % 128] = 0xFFFFFFF;
-		WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
+		f32drives[diskId].FATTable[currentCluster] = 0xFFFFFFF;
+		WriteToDisk((long long)reserved + (currentCluster >> 7), 1, (uint)f32drives[diskId].FATTable + (currentCluster / 128) * 128, diskId);
 	}
-	printTextToWindow(3, mywin, "Found free entry at cluster %x, index=%x\n", currentCluster, avaliable - 1);
-	//kprintf("Cluster: %x\n", currentCluster);
+	//printTextToWindow(6,mywin,"Cluster: %x\n", currentCluster);
 	avaliable--;
 	uint t = avaliable;
 	e[t].size = 0;
-	e[t].clusterHi = 0;
-	e[t].clusterLo = 0;
+	uint zz = 0;
+	e[t].clusterHi = zz << 16;
+	e[t].clusterLo = zz & 0xFFFF;
 	e[t].lastModifiedTime = ((((*sec100) / ticksPerSecond) % 60) / 2) + (((((*sec100) / ticksPerSecond) / 60) % 60) << 5) + ((((((*sec100) / ticksPerSecond) / 60) / 60) % 24) << 11);
-	e[t].lastModifiedDate = 04 + (10 << 5) + (38 << 9);
+	e[t].lastModifiedDate = 26 + (9 << 5) + (38 << 9);
+	e[t].attributes = 0;
+
+
 	uint cdot = 0;
 	for (int i = 0; i < 8; i++)
 	{
@@ -1086,9 +1074,10 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 			}
 		}
 	}
-	WriteToDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 
+	/////kprintf("%s %x\n", fileName, cdot);
 
+	WriteToDisk((long long)FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	free(cluster);
 	free(lastcluster);
 }
@@ -1102,9 +1091,9 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 	uint RootEntry = *((uint*)&bootSect[0x2C]);
 	uint SectorsPerFat = *((uint*)&bootSect[0x24]);
 	uint FatStart = SectorsPerFat * FATTableCount + reserved;
-	char FATTablePart[512];
+	//char FATTablePart[512];
 	uint lastCluster = RootEntry, currentCluster = RootEntry;
-	ReadFromDisk(reserved, 1, &FATTablePart, diskId);
+	//ReadFromDisk(reserved, 1, &FATTablePart, diskId);
 	char * cluster = malloc(512 * sectorsPerCluster);
 	char found = 0, lastDir = 1;
 	char * curChar = fileName;
@@ -1120,8 +1109,6 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 	uint size = 0;
 	while (!found)
 	{
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		F32E * e = cluster;
 		char longFileName[256];
@@ -1250,7 +1237,7 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 			++curChar;
 		}
 		lastCluster = currentCluster;
-		currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+		currentCluster = f32drives[diskId].FATTable[currentCluster];
 		if (lastDir)
 			break;
 		if (currentCluster == 0xFFFFFFF)
@@ -1263,8 +1250,6 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 	uint ffound = 0;
 	uint avaliable = 0;
 	while (currentCluster != 0xFFFFFFF && !avaliable) {
-		if ((lastCluster >> 7) != (currentCluster >> 7))
-			ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 		for (int i = 0; i < 16 * sectorsPerCluster; i++) {
 			if (e[i].name[0] == 0) {
@@ -1275,22 +1260,21 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 		if (!avaliable)
 		{
 			lastCluster = currentCluster;
-			currentCluster = ((uint*)&FATTablePart)[currentCluster % 128];
+			currentCluster = f32drives[diskId].FATTable[currentCluster];
 		}
 	}
 	if (!avaliable)
 	{
 		uint nw = findFreeFATEntry(diskId, reserved);
-		((uint*)&FATTablePart)[lastCluster % 128] = nw;
-		WriteToDisk(reserved + (lastCluster >> 7), 1, &FATTablePart, diskId);
+		f32drives[diskId].FATTable[lastCluster] = nw;
+		WriteToDisk((long long)reserved + (lastCluster >> 7), 1, (uint)f32drives[diskId].FATTable + (lastCluster/128)*128, diskId);
 		currentCluster = nw;
 		memset(cluster, 0, 512 * sectorsPerCluster);
 		avaliable = 1;
-		ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
-		((uint*)&FATTablePart)[currentCluster % 128] = 0xFFFFFFF;
-		WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
+		f32drives[diskId].FATTable[currentCluster] = 0xFFFFFFF;
+		WriteToDisk((long long)reserved + (currentCluster >> 7), 1, (uint)f32drives[diskId].FATTable + (currentCluster /128)*128, diskId);
 	}
-	//kprintf("Cluster: %x\n", currentCluster);
+	//printTextToWindow(6,mywin,"Cluster: %x\n", currentCluster);
 	avaliable--;
 	uint t = avaliable;
 	e[t].size = 0;
@@ -1318,11 +1302,13 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 
 	/////kprintf("%s %x\n", fileName, cdot);
 	
-	WriteToDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
+	WriteToDisk((long long)FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	
-	ReadFromDisk(reserved + (zz >> 7), 1, &FATTablePart, diskId);
-	((uint*)&FATTablePart)[zz % 128] = 0xFFFFFFF;
-	WriteToDisk(reserved + (zz >> 7), 1, &FATTablePart, diskId);
+	
+	f32drives[diskId].FATTable[zz] = 0xFFFFFFF;
+	WriteToDisk((long long)reserved + (zz >> 7), 1, (uint)f32drives[diskId].FATTable + (zz /128)*128, diskId);
+	memset(cluster, 0, 512 * sectorsPerCluster);
+	WriteToDisk((long long)FatStart + (zz - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	free(cluster);
 	free(lastcluster);
 }

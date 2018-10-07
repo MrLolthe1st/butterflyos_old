@@ -3,25 +3,20 @@
 loadermain:
 lap:
 		jmp short bsp
-		 mov esp, 0fffh
-		
-		;mov esi, [0x2550]
-        ;add esi, 0x00f0             ; Spurious Interrupt Vector
-        ;mov edi, esi
-        ;lodsd
-        ;or eax, 0x100
-        ; Enable interrupts
-		
+		xor ax,ax
+		mov ss,ax
+		mov sp, 0x7c00
+		xor ax,ax
+		mov ds,ax
         ; Mark CPU as active
-        ;lock
-		
-    inc byte [0x2555]
-		jmp $
+        lock
+		inc byte [ds:0x2555]
+		jmp zop
 	bsp:
 	xor ax,ax
 	mov ds,ax
-	mov dword[0x2550],0
-	mov dword[0x2555],0
+	mov dword[ds:0x2550],0
+	mov dword[ds:0x2555],0
 	mov word [ds:0x8000], 0x9090
 	xor di,di
 	mov ax,0x4F0A
@@ -32,7 +27,7 @@ lap:
 	mov si,di
 	push ax
 	mov di,256 + 16*256
-	mov ax,0x3000
+	mov ax,0x5000
 	mov es,ax
 	;mov ax,si
 	pop ax
@@ -40,7 +35,7 @@ lap:
 	mov ax,ds
 	stosw
 	
-	mov ax,0x3000
+	mov ax,0x5000
 	mov es,ax
 	mov [es:0x0000],byte 1
 	mov di,0x0000
@@ -49,7 +44,7 @@ lap:
 	int 0x10
 	mov ax,0x4F02
 	mov bx,0x4118
-	%if 0 ;Set it to 0, if you won't use GUI.
+	%if  1;Set it to 0, if you won't use GUI.
 	int 10h
 	pusha
 	xor ax,ax
@@ -71,7 +66,7 @@ lap:
     mov es, ax
     mov fs, ax
 	
-	mov ax,0x3000
+	mov ax,0x5000
 	mov es,ax
 	mov di,0x100
 	push			ds
@@ -93,7 +88,7 @@ lap:
     mov ax, 1D0h
     mov ss, ax
     mov sp, 0200h
-
+	zop:
     in al, 0x92;включаем A20
 	or al, 2
 	out 0x92, al
@@ -130,17 +125,39 @@ FlushPipeline:
     mov fs, eax
     mov gs, eax
     mov ss, eax
-	
-
+	mov eax,dword[ds:0x2555]
+	cmp eax,0
+	jnz bsp_ok
     mov esp, 0ffffh
-	mov ecx,165535
+	mov ecx,0x40000
 	mov edi,0x100000
 	mov esi,kernel
 	rep movsd
+	mov eax,cr4
+	or eax,0x200
+	mov cr4,eax
+	mov edi,0xb8000
+	movaps 	[edi],xmm0
 	jmp 0x100000
+bsp_ok:
+	 mov esp, 0x10000
+     lock
+     xadd [0x9925], esp
+	 add esp,0x10000
+	mov eax,cr4
+	or eax,0x200
+	mov cr4,eax
+	mov edi,0xb8000
+	movaps 	[edi],xmm0
+	 
+	 mov eax,esp
+	 sub eax,dword[0x9929]
+	 shr eax,16
+	 push eax
+	 push eax
+	 mov edi,dword[0x9933]
+	 jmp edi
 ;times 1024-($-$$) db 0
-
-
 
 GDT:
 NULLSELECTOR    EQU             $ - GDT

@@ -157,7 +157,6 @@ rel;
 uint stack_size = 65536*2;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 	FILE * fp=fopen(fileName, "r");
-	kprintf("!%x!", sizeof(Process));
 	fseek(fp, 0, 2);
 	if (!fp)
 		return;

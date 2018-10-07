@@ -577,8 +577,7 @@ static void EhciInitQH(EhciQH *qh, UsbTransfer *t, EhciTD *td, UsbDevice *parent
 static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-	//hc->opRegs->frameIndex = 0;
-	Wait(1);
+
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -586,10 +585,12 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 	}
 	else if (qh->nextLink & PTR_TERMINATE)
 	{
-		
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
-			
+			if (qh->token & TD_TOK_DATABUFFER)
+			{
+				kprintf(" Data Buffer Error\n");
+			}
 			if (qh->token & TD_TOK_BABBLE)
 			{
 				kprintf(" Babble Detected\n");
@@ -602,12 +603,9 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 			{
 				kprintf(" Missed Micro-Frame\n");
 			}
+
 			t->success = true;
 			t->complete = true;
-		}
-		else
-		{
-
 		}
 	}
 
@@ -618,7 +616,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 
 		// Update endpoint toggle state
 		if (t->success && t->endp)
-		{//
+		{
 			t->endp->toggle ^= 1;
 		}
 
@@ -636,6 +634,10 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 
 		// Free queue head
 		EhciFreeQH(qh);
+		for (int i = 0; i < 50000; i++)
+		{
+			__asm__("nop");
+		}
 	}
 }
 
