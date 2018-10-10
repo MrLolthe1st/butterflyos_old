@@ -473,7 +473,7 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 			else if ((ofs + 1) * 512 * sectorsPerCluster > st)
 			{
 				ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
-				uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st - ((uint)buf - (uint)bufStart;
+				uint countR = min((ofs + 1)*sectorsPerCluster * 512, st + cnt) - st - ((uint)buf - (uint)bufStart);
 				memcpy(buf, cluster, countR);
 				buf += countR;
 			}

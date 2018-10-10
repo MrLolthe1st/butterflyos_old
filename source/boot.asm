@@ -190,50 +190,6 @@ kernel incbin 'binaries\kernel.o'
 
 
 
-;In: edi - pointer to array
-;ecx - count of elements
-remove:
-	pusha
-	mov eax,0
-	mov ebx,0
-	.lp1:
-		.lp2:
-			push edi
-			push ebx
-			shl ebx,2
-			add edi,ebx
-			test dword[edi],dword[edi];a[i2]=0?
-			pop ebx
-			pop edi
-			jnz .ex1;a[i2]!=0
-			inc ebx
-			
-			jmp .lp2
-		.ex1:
-		push edi
-		push esi
-		push eax
-		push ebx
-		shl eax,2
-		shl ebx,2
-		mov esi,edi
-		add edi,eax
-		add esi,ebx
-		movsd;a[i1]:=a[i2]
-		pop ebx
-		pop eax
-		pop esi
-		pop edi
-		inc eax
-		inc ebx		
-		cmp ebx,ecx
-		jle .lp1
-	popa
-	ret
-
-
-
-
 
 
 

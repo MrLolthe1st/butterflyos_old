@@ -230,7 +230,7 @@ void int_l() {
 IDT_HANDLER(irq_ex) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Dividing by zero", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Dividing by zero", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
@@ -482,42 +482,42 @@ IRQ_HANDLER1(irq_mouse) {
 IDT_HANDLER(irq_ex1) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Single-step interrupt", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Single-step interrupt", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
 IDT_HANDLER(irq_ex3) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Breakpoint", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Breakpoint", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
 IDT_HANDLER(irq_ex4) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Overflow", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Overflow", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
 IDT_HANDLER(irq_ex5) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Bounds", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Bounds", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
 IDT_HANDLER(irq_ex6) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Invalid Opcode", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Invalid Opcode", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
 IDT_HANDLER(irq_ex7) {
 	unsigned int o = 0;
 
-	OutTextXYV(10, 10, "Coprocessor not available", 0xFF00FF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "Coprocessor not available", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
 
@@ -612,7 +612,7 @@ IRQ_HANDLER1(ATA2) {
 }
 //Non-Mask-able-Interrupts
 IDT_HANDLER(NMI) {
-	OutTextXYV(10, 10, "NMI", 0xFFFFFF, 1, 1024, videoMemory);
+	//OutTextXYV(10, 10, "NMI", 0xFFFFFF, 1, 1024, videoMemory);
 }
 IDT_HANDLER(kbdService) {
 

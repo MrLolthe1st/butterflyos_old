@@ -24,8 +24,9 @@ void putPixelD(int x, int y, unsigned int color) {
 		* ((Pixel *)(videoMemory + x * bpp + y * width * bpp)) = *((Pixel *)& color);
 }
 //Puts pixel in some image in memory
-void putPixelVideo(unsigned int x, unsigned int y, unsigned int color, unsigned int w, unsigned char * where) {
-	*((Pixel *)(where + x * 3 + y * w * 3)) = *((Pixel *)& color);
+void putPixelVideo(unsigned int x, unsigned int y, unsigned int color, unsigned int w, unsigned int h, unsigned char * where) {
+	if (x >= 0 && y >= 0 && x < w&&y < h)
+		*((Pixel *)((int)where + x * 3 + y * w * 3)) = *((Pixel *)& color);
 }
 unsigned char fmma(unsigned char a, unsigned char b)
 {
@@ -99,8 +100,8 @@ void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 unsigned int u;
 //Waits CRT back way
 void waitRetrace() {
-	while (inportb(0x3DA) & 0x8) {  };
-	while (!(inportb(0x3DA) & 0x8)) {  }
+	while (inportb(0x3DA) & 0x8) {};
+	while (!(inportb(0x3DA) & 0x8)) {}
 }
 //Copies video buffer to video memory
 void swapBuffer() {
@@ -370,7 +371,7 @@ void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 	unsigned int cc = width * bpp;
 	if (bpp == 3)
 		for (y = y1; y <= (short)(y2); y++, bufStart += cc) {
-		//	kprintf("");
+			//	kprintf("");
 			__asm__("push %%ecx \n\
 		push %%edi \n\
 		push %%esi \n\
@@ -408,6 +409,36 @@ void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 		pop %%ecx\n\
 		"::"r" (videoBuffer + width * bpp * y + x1 * bpp), "r" (x2 - x1 + 1), "r" (&color));
 }
+void BarVideo(int x1, int y1, int x2, int y2, unsigned int color, int ww, int wh, void * vvideoBuffer) {
+	if (x1 >= ww || y1 >= wh)
+		return;
+	short y;
+	x1 = min(max(x1, -1), ww - 1);
+	y1 = min(max(y1, -1), wh - 1);
+	x2 = min(max(x2, -1), ww - 1);
+	y2 = min(max(y2, -1), wh - 1);
+	void * bufStart = vvideoBuffer + ww * 3 * y1 + x1 * 3;
+	unsigned int cc = ww * 3;
+	for (y = y1; y <= (short)(y2); y++, bufStart += cc) {
+		//	kprintf("");
+		__asm__("push %%ecx \n\
+			push %%edi \n\
+			push %%esi \n\
+			mov %0,%%edi\n\
+			mov %1,%%ecx\n\
+			mov %2,%%esi\n\
+			wzl: movsb\n\
+			movsw\n\
+			dec %%esi\n dec %%esi \n dec %%esi\n\
+			dec %%ecx\n\
+			test %%ecx,%%ecx\n\
+			jnz wzl\n\
+			pop %%esi\n\
+			pop %%edi\n\
+			pop %%ecx\n\
+			"::"r" (bufStart), "r" (x2 - x1 + 1), "r" (&color));
+	}
+}
 void Line(int x1, int y1, int x2, int y2, unsigned int color) {
 
 	const int deltaX = abs(x2 - x1);
@@ -420,6 +451,33 @@ void Line(int x1, int y1, int x2, int y2, unsigned int color) {
 	putPixel(x2, y2, color);
 	while ((x1 != x2 || y1 != y2)) {
 		putPixel(x1, y1, color);
+		const int error2 = error * 2;
+		//
+		if (error2 > -deltaY) {
+			error -= deltaY;
+			x1 += signX;
+		}
+		if (error2 < deltaX) {
+			error += deltaX;
+			y1 += signY;
+		}
+	}
+
+}
+
+void LineVideo(int x1, int y1, int x2, int y2, unsigned int color, int w, int h, void * ww) {
+
+	const int deltaX = abs(x2 - x1);
+	const int deltaY = abs(y2 - y1);
+	const int signX = x1 < x2 ? 1 : -1;
+	const int signY = y1 < y2 ? 1 : -1;
+	//
+	int error = deltaX - deltaY;
+	//
+
+	putPixelVideo(x2, y2, color, w, h, ww);
+	while ((x1 != x2 || y1 != y2)) {
+		putPixelVideo(x1, y1, color, w, h, ww);
 		const int error2 = error * 2;
 		//
 		if (error2 > -deltaY) {
@@ -455,7 +513,7 @@ void BarV(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, un
 		"::"r" (where + w * 3 * y + x1 * 3), "r" (x2 - x1 + 1), "r" (&color));
 }
 
-void drawcharv(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned char * where) {
+void drawcharv(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return;
 	unsigned int cx, cy, o, o1;
 	unsigned int mask[8] = {
@@ -475,10 +533,10 @@ void drawcharv(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int
 			if (glyph[cy] & mask[7 - cx])
 				for (o = 0; o < scale; o++)
 					for (o1 = 0; o1 < scale; o1++)
-						putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, fgcolor, w, where);
+						putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, fgcolor, w, h, where);
 }
 
-void drawcharvf(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned char * where) {
+void drawcharvf(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return;
 	unsigned int cx, cy, o, o1;
 	unsigned int mask[8] = {
@@ -498,12 +556,12 @@ void drawcharvf(unsigned char c, int x, int y, unsigned int fgcolor, unsigned in
 			//if (glyph[cy] & mask[7 - cx])
 			for (o = 0; o < scale; o++)
 				for (o1 = 0; o1 < scale; o1++)
-					putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, ((glyph[cy] & mask[7 - cx]) != 0)*fgcolor, w, where);
+					putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, ((glyph[cy] & mask[7 - cx]) != 0)*fgcolor, w, h, where);
 }
-void OutTextXYV(unsigned int x, unsigned int y, char * s, unsigned int color, unsigned int scale, unsigned int w, unsigned char * where) {
+void OutTextXYV(unsigned int x, unsigned int y, char * s, unsigned int color, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	unsigned int i = 0;
 	while (s[i] != 0) {
-		drawcharv(s[i], x + i * 8 * scale, y, color, scale, w, where);
+		drawcharv(s[i], x + i * 8 * scale, y, color, scale, w, h, where);
 		i++;
 	}
 }
@@ -557,11 +615,11 @@ void loadFontPointer() {
 	fontPointer = 0x50000 + 256;
 	///Bar(0, 0, 600, 600, 0xFF0000);
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
-	
-	OutTextXY(220,332,"Please wait, desktop is loading...",0xFFFFFF,2);
+
+	OutTextXY(220, 332, "Please wait, desktop is loading...", 0xFFFFFF, 2);
 	//return;
 	swapBuffer();
-	FILE * f = fopen("A:\\WP.BM","r");
+	FILE * f = fopen("A:\\WP.BM", "r");
 	kprintf("###%x###", f);
 	if (!f)
 		return;
@@ -616,7 +674,7 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 			deltaX *= ceiling;
 			xx = (int)(deltaX) & 15;
 			yy = (int)(ceiling + t) & 15;
-			putPixelVideo(j, i, (xx << 4) | ((yy << 4) << 16), wwidth, where);
+			putPixelVideo(j, i, (xx << 4) | ((yy << 4) << 16), wwidth, wheight, where);
 		}
 	}
 }

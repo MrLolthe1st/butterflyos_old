@@ -71,7 +71,7 @@ void printChars(unsigned char color, Window * w, char * text)
 			}
 		}
 		//Draw space where was symbol
-		drawcharvf(' ', w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->video);
+		drawcharvf(' ', w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->wheight, w->video);
 		//Goto next character in string
 		text++;
 		return;
@@ -106,7 +106,7 @@ void printChars(unsigned char color, Window * w, char * text)
 	};
 	}
 	//Draw char from string
-	drawcharv(*text, w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->video);
+	drawcharv(*text, w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->wheight, w->video);
 	//Goto next character
 	text++;
 	//Next symbol at line
@@ -222,7 +222,7 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 					}
 				}
 				//Draw space where was symbol
-				drawcharvf(' ', w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->video);
+				drawcharvf(' ', w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->wheight, w->video);
 				//Goto next character in string
 				text++;
 				continue;
@@ -258,7 +258,7 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 			};
 			}
 			//Draw char from string
-			drawcharv(*text, w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->video);
+			drawcharv(*text, w->cursorX * 8, w->cursorY * 16, colors[color], 1, w->wwidth, w->wheight, w->video);
 			//Goto next character
 			text++;
 			//Next symbol at line

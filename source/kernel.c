@@ -226,6 +226,10 @@ void k_main()
 	addGlobalVariable("runProcess", &runProcess);
 	addGlobalVariable("testForGUI", &testForGUI);
 	addGlobalVariable("ReadFromDisk", &ReadFromDisk);
+	addGlobalVariable("putPixelVideo", &putPixelVideo);
+	addGlobalVariable("LineVideo", &LineVideo); 
+	addGlobalVariable("BarVideo", &BarVideo);
+	addGlobalVariable("drawcharv", &drawcharv);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
