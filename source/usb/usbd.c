@@ -759,7 +759,6 @@ static bool UsbDevInit(UsbDevice *dev)
 			data += len;
 		}
 	}
-	//	printTextToWindow(1, mywin, "Class=%x.%x\n", (int)dev->intfDesc->intfClass, (int)dev->intfDesc->intfSubClass);
 	// Configure device
 	if (pickedConfValue)
 	{
@@ -771,7 +770,6 @@ static bool UsbDevInit(UsbDevice *dev)
 			return false;
 		}
 		UsbIntfDesc *cur = dev->intfDesc;
-		//printTextToWindow(1, mywin, "Class=%x.%x\n", (int)cur->intfClass, (int)cur->intfSubClass);
 		while (cur)
 		{
 			UsbPrintIntfDesc(cur);
@@ -783,11 +781,7 @@ static bool UsbDevInit(UsbDevice *dev)
 			}
 			cur = cur->next;
 		}
-		//dev->endp.desc = *pickedEndpDesc;
-
-		// Initialize driver
 		_usbhubinit(dev);
-		//printTextToWindow(1, mywin, "!@#$%x&&&",&_UsbMouseInit);
 		_UsbMouseInit(dev); _UsbKbdInit(dev);
 
 		if (pickedIntfDesc->intfClass == 8 && pickedEndpDesc->attributes)

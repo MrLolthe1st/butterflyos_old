@@ -108,8 +108,7 @@ void swapBuffer() {
 	while (inportb(0x3DA) & 0x8) {};
 	while (!(inportb(0x3DA) & 0x8)) {}
 	__asm__("\
-		.byte 0x60\n\
-					  				#Save registers in stack			\n\
+		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
 		mov %0,%%edi 					#Video memory start to edi			\n\
 		mov %1,%%esi 					#Video buffer start to esi			\n\

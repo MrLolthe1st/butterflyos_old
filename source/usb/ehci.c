@@ -246,7 +246,8 @@ typedef struct EhciQH
 	Link qhLink;
 	u32 tdHead;
 	u32 active;
-	u8 pad[40];
+	u32 queries;
+	u8 pad[36];
 } EhciQH;
 
 // Endpoint Characteristics
@@ -484,7 +485,6 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 	return status;
 }
-// ------------------------------------------------------------------------------------------------
 static void EhciInitTD(EhciTD *td, EhciTD *prev,
 	uint toggle, uint packetType,
 	uint len, const void *data)
@@ -498,7 +498,7 @@ static void EhciInitTD(EhciTD *td, EhciTD *prev,
 	td->link = PTR_TERMINATE;
 	td->altLink = PTR_TERMINATE;
 	td->tdNext = 0;
-
+	
 	td->token =
 		(toggle << TD_TOK_D_SHIFT) |
 		(len << TD_TOK_LEN_SHIFT) |
@@ -507,19 +507,17 @@ static void EhciInitTD(EhciTD *td, EhciTD *prev,
 		TD_TOK_ACTIVE;
 
 	// Data buffer (not necessarily page aligned)
-	uintptr_t p = (uint)data;
-	//kprintf("###%x###", p);
+	uintptr_t p = (uintptr_t)data;
 	td->buffer[0] = (u32)p;
 	td->extBuffer[0] = 0;
-	//	kprintf("$!%x$!", p);
-	////////////////////return;
 	p &= ~0xfff;
+
 	// Remaining pages of buffer memory.
 	for (uint i = 1; i < 4; ++i)
 	{
 		p += 0x1000;
-		td->buffer[i] = (uint)p;
-		td->extBuffer[i] = 0;
+		td->buffer[i] = (u32)(p);
+		td->extBuffer[i] =0;
 	}
 }
 
@@ -567,23 +565,27 @@ static void EhciInitQH(EhciQH *qh, UsbTransfer *t, EhciTD *td, UsbDevice *parent
 
 	qh->ch = ch;
 	qh->caps = caps;
-
+	qh->queries = 0;
 	qh->tdHead = (u32)(uintptr_t)td;
 	qh->nextLink = (u32)(uintptr_t)td;
 	qh->token = 0;
 }
 
+
 // ------------------------------------------------------------------------------------------------
 static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-
-	if (qh->token & TD_TOK_HALTED)
+	lockTaskSwitch(1);
+	__asm__("int $0x40");
+	qh->queries++;
+	unlockTaskSwitch();
+	if (qh->token & TD_TOK_HALTED||qh->queries>3000)
 	{
 		t->success = false;
-		t->complete = true;
+		t->complete = true; 
 	}
-	else if (qh->nextLink & PTR_TERMINATE)
+	else if (qh->nextLink & PTR_TERMINATE&& (~((EhciTD*)qh->tdHead)->token & TD_TOK_ACTIVE))
 	{
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
@@ -611,6 +613,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 
 	if (t->complete)
 	{
+		lockTaskSwitch(1);
 		// Clear transfer from queue
 		qh->transfer = 0;
 
@@ -633,11 +636,9 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 		}
 
 		// Free queue head
+		unlockTaskSwitch();
 		EhciFreeQH(qh);
-		for (int i = 0; i < 50000; i++)
-		{
-			__asm__("nop");
-		}
+		//Wait(1);
 	}
 }
 
@@ -748,7 +749,6 @@ uint ehciInterval(UsbDevice * d, uint i)
 static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 {
 	EhciController *hc = (EhciController *)dev->hc;
-
 	// Determine transfer properties
 	uint speed = dev->speed;
 	uint addr = dev->addr;
@@ -866,7 +866,6 @@ static void EhciControllerPollList(EhciController *hc, Link *list)
 static void EhciControllerPoll(UsbController *controller)
 {
 	EhciController *hc = (EhciController *)controller->hc;
-
 	EhciControllerPollList(hc, &hc->asyncQH->qhLink);
 	EhciControllerPollList(hc, &hc->periodicQH->qhLink);
 	uint portCount = RCR(hcsParamsO) & HCSPARAMS_N_PORTS_MASK;

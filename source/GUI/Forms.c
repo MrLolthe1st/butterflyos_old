@@ -46,7 +46,7 @@ void drawDesktop()
 	//Task Panel
 	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
 	//Some text...
-	OutTextXY(width - 210, height - 19 - 32, "ButterFlyOS Build 0.0.0.5", 0xDD2C00, 1);
+	OutTextXY(width - 340, height - 19 - 32, "ButterflyOS alsmost stable build 0.0.1.0", 0xDD2C00, 1);
 }
 
 void printChars(unsigned char color, Window * w, char * text)

@@ -124,6 +124,8 @@ unsigned int count_memory(void) {
 	return mem_end;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("Ofast")
 char * malloc(size_t size) {
 	if (!size) { return 0;
 	}
@@ -193,6 +195,7 @@ nalloc:;
 		kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, ret, last_alloc);
 		return ret;*/
 }
+#pragma GCC pop_options
 void addProcessAlloc(ELF_Process * p, void * addr)
 {
 	void * z = p->allocs;

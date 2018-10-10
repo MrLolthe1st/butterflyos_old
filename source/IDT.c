@@ -188,8 +188,8 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
 //	procTable[procCount].eax = entry;
-	procTable[procCount].priority = 1;
-	procTable[procCount].priorityL = 1;
+	procTable[procCount].priority = 2;
+	procTable[procCount].priorityL = 2;
 	procTable[procCount].eflags = 0x216;
 	procTable[procCount].runnedFrom = currentRunning;
 	if(suspendIt)

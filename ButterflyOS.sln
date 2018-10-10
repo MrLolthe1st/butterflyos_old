@@ -69,8 +69,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SVGA", "SVGA", "{6C4FC3D3-2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "internet", "internet", "{D9CE8A36-BE4C-4589-86BC-3135B7716B26}"
 	ProjectSection(SolutionItems) = preProject
+		source\internet\addr.c = source\internet\addr.c
+		source\internet\arp.c = source\internet\arp.c
+		source\internet\buf.c = source\internet\buf.c
+		source\internet\checksum.c = source\internet\checksum.c
+		source\internet\dhcp.c = source\internet\dhcp.c
+		source\internet\dns.c = source\internet\dns.c
+		source\internet\eth.c = source\internet\eth.c
+		source\internet\icmp.c = source\internet\icmp.c
+		source\internet\intel.c = source\internet\intel.c
 		source\internet\internet.c = source\internet\internet.c
+		source\internet\intf.c = source\internet\intf.c
+		source\internet\IPv4.c = source\internet\IPv4.c
+		source\internet\IPv6.c = source\internet\IPv6.c
+		source\internet\loopback.c = source\internet\loopback.c
+		source\internet\ntp.c = source\internet\ntp.c
+		source\internet\port.c = source\internet\port.c
+		source\internet\route.c = source\internet\route.c
 		source\internet\rtl8139.c = source\internet\rtl8139.c
+		source\internet\tcp.c = source\internet\tcp.c
+		source\internet\udp.c = source\internet\udp.c
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "acpi", "acpi", "{130317C1-1723-4E33-B56A-915649AA7D18}"

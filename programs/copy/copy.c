@@ -3,7 +3,7 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
-#define buf_size 16384
+#define buf_size 65536
 void handle(int a)
 {
 	
