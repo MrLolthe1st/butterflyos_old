@@ -6,7 +6,7 @@
 
 typedef struct _tl
 {
-	struct _tl * left, down;
+	struct _tl * left, * down;
 	char * buf;
 } TextLine;
 TextLine * fl;
@@ -83,26 +83,27 @@ void updateCursor()
 	}
 	
 }
-
-void InsertLine(char * ln)
+void FillWithTextAt(char * ln, TextLine * op, TextLine * lineStart)
 {
-	TextLine * z = fl;
-	while(z->down)
-		z=z->down;
-	z->down = op;
-	TextLine * lsz;
-	TextLine * op = malloc(sizeof(TextLine));
-	lsz=op;
-	op->down = 0;op->left = 0;
-	op->buf = malloc(512);
+	TextLine * lsz = lineStart;
 	char * ss = op->buf;
 	int i=0;
-	while(ln)
+	while(*ln)
 	{
-		
+		if(*ln == 10)
+		{
+			lsz->down = malloc(sizeof(TextLine));
+			lsz->down->buf=malloc(512);
+			lsz->down->left=0;
+			op=lsz->down;
+			ss=lsz->down->buf;
+			lsz=lsz->down;
+			i=0;
+			continue;
+		}
 		*ss=*ln;
 		i++;
-		if(i==512)
+		if(i==256)
 		{
 			op->left = malloc(sizeof(TextLine));
 			op->left->buf=malloc(512);
@@ -113,6 +114,56 @@ void InsertLine(char * ln)
 			i=0;
 		}
 		++ln;
+		++ss;
+	}
+}
+void * strend(char * ln)
+{
+	while(*ln)
+		++ln;
+	return ln;
+}
+void InsertText(char * ln, int pos)
+{
+	int inslen = (uint)strend(ln)-(uint)ln;
+	TextLine * p = fl;
+	if(!fl)
+	{
+		fl = malloc(sizeof(TextLine));
+		fl->down=0;
+		fl->buf = malloc(512);
+		fl->left=0;
+		p=fl;
+	}
+	int cpos = 0,ccpos=0;
+	TextLine * pz=p;
+	while(cpos<=pos&&p)
+	{
+		pz = p;
+		while(p)
+		{
+			cpos+=(uint)strend(p->buf)-(uint)p->buf;
+			if(cpos>=pos) break;
+			p=p->left;
+			ccpos=cpos;
+		}
+		if(cpos>=pos) break;
+		p=pz->down;
+	}
+	if(512-((uint)strend(p->buf)-(uint)p->buf)>=inslen)
+	{
+		//memccpy((uint)p->buf+ccpos++inslen,(uint)p->buf+pos-ccpos+inslen,
+		memcpy((uint)p->buf+pos-ccpos+inslen,(uint)p->buf+pos-ccpos,(uint)strend(p->buf)-(uint)p->buf-(pos-ccpos));
+		memcpy((uint)p->buf+pos-ccpos,ln,inslen);
+	} else
+	if(!p->left)
+	{
+		TextLine * u = malloc(sizeof(TextLine));
+		u->left=0;
+		u->down=0;
+		u->buf=malloc(512);
+		p->left=u;
+		FillWithTextAt(ln, u, pz);
 	}
 	
 }
@@ -142,10 +193,24 @@ void redraw()
 			width,height,w->video);
 	
 }
-
+void outText()
+{
+	TextLine * z =fl, *pz=fl;
+	while(z)
+	{
+		pz=z;
+		while(z)
+		{
+			printTextToWindow(1,w,z->buf);
+			z=z->left;
+		}
+		z=pz->down;
+	}
+}
 void _main(int argc, char ** argv)
 {	
 	w = openWindow(720,480,1,&handle,"Notepad--");
+	//printTextToWindow(2,w,"qq");
 	width = 720;
 	height = 480;
 	pageSizeX = width / 8;
@@ -156,11 +221,16 @@ void _main(int argc, char ** argv)
 			closeWindow(w);
 			return;
 		};
+	fl=0;
+	redraw();
+	InsertText("abcde",0);
+	InsertText("aebcde",1);
+	outText();
+	
 	if(curFile)
 	{
 		
 	}
-	redraw();
 	for(;;)
 	{
 		
