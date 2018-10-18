@@ -619,7 +619,7 @@ void loadFontPointer() {
 	OutTextXY(220, 332, "Please wait, desktop is loading...", 0xFFFFFF, 2);
 	//return;
 	swapBuffer();
-	FILE * f = fopen("A:\\WP.BM", "r");
+	FILE * f = fopen("A:\\WP.BMP", "r");
 	kprintf("###%x###", f);
 	if (!f)
 		return;

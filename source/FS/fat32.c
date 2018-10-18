@@ -1,5 +1,12 @@
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
+char upcase(char s)
+{
+	
+	if (s >= 'a'&&s <= 'z')
+		return s + ('A' - 'a');
+	else return s;
+}
 typedef __attribute__((packed)) struct _F32_e
 {
 	char name[8];
@@ -26,6 +33,7 @@ typedef __attribute__((packed)) struct _fil
 char F32OkName(char q)
 {
 	if ((q >= 'A'&&q <= 'Z') ||
+		(q >= 'a'&&q <= 'z') ||
 		(q >= 128 && q <= 228) ||
 		(q >= 230 && q <= 255) ||
 		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' || q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' || q == '}' || q == '~'))
@@ -146,17 +154,17 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 							j = 0;
 							if (!(e[i].ext[j] == ' '))
 								longFileName[len++] = '.';
-							while (!(e[i].ext[j] == ' ') && j < 3)
+							while (!(e[i].ext[j] == ' '))
 							{
 								longFileName[len++] = e[i].ext[j];
 								j++;
+								if (j == 3)break;
 							}
 
 
 						}
 					}
 					//File/Folder name parsed.
-				//	//kprintf("%s\n", &longFileName);
 					if (lastDir) {
 						direntry * o = malloc(sizeof(direntry));
 						o->next = res;
@@ -180,7 +188,7 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 
 						while (*curChar != '\\')
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -333,6 +341,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 							{
 								longFileName[len++] = e[i].ext[j];
 								j++;
+								if (j == 3)break;
 							}
 
 
@@ -346,7 +355,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 
 						while (*curChar)
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -368,7 +377,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 
 						while (*curChar != '\\')
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -594,7 +603,9 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 							{
 								longFileName[len++] = e[i].ext[j];
 								j++;
+								if (j == 3)break;
 							}
+
 
 
 						}
@@ -607,7 +618,7 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 
 						while (*curChar)
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -628,7 +639,7 @@ void * FAT32ReadFile(uint diskId, char * fileName)
 
 						while (*curChar != '\\')
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -951,7 +962,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 							while (!(e[i].ext[j] == ' ') && j < 3)
 							{
 								longFileName[len++] = e[i].ext[j];
-								j++;
+								j++; if (j == 3)break;
 							}
 
 
@@ -969,7 +980,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 
 						while (*curChar != '\\')
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;
@@ -1191,7 +1202,7 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 							while (!(e[i].ext[j] == ' ') && j < 3)
 							{
 								longFileName[len++] = e[i].ext[j];
-								j++;
+								j++; if (j == 3)break;
 							}
 
 
@@ -1209,7 +1220,7 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 
 						while (*curChar != '\\')
 						{
-							if (*curChar != longFileName[j])
+							if (upcase(*curChar) != upcase(longFileName[j]))
 							{
 								locF = 0;
 								break;

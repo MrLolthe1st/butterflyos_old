@@ -193,6 +193,7 @@ void _main(int argc, char ** argv)
 				if(!fp)
 				{
 					printTextToWindow(4,w,"%s isn't a command or executable file!\n",fname);
+					memcpy(dir, ucmd, 512);
 					continue;
 				}
 				runProcess(dir, cid, args, 1, ucmd);
