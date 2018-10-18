@@ -167,6 +167,11 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	fclose(fp);
 	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF(progq);
+	if (!entry)
+	{
+		free(progq);
+		return;
+	}
 	//progq = entry;
 	void * stack = malloc(stack_size);
 	procTable[procCount].stack = stack;
