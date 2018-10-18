@@ -3,6 +3,7 @@ utils/
 temp/
 .vs/
 images/
+documentation/
 compilers/
 ButterflyOS.zip
 binaries/

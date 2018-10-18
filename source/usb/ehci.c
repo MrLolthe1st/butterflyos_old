@@ -585,7 +585,7 @@ static void EhciProcessQH(EhciController *hc, EhciQH *qh)
 		t->success = false;
 		t->complete = true; 
 	}
-	else if (qh->nextLink & PTR_TERMINATE&& (~((EhciTD*)qh->tdHead)->token & TD_TOK_ACTIVE))
+	else if (qh->nextLink & PTR_TERMINATE)
 	{
 		if (~qh->token & TD_TOK_ACTIVE)
 		{
