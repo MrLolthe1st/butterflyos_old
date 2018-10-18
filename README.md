@@ -15,3 +15,4 @@
  - GFX
  - Sound support
  - Decoding JPEG and other
+ - Support other graphics modes and adaptation to it.
