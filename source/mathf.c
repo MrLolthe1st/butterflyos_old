@@ -1,50 +1,52 @@
-double eps=1e-9;
-void initCoProc()
-{
-	__asm__("finit\n\
-	fldln2");
+const double eps = 1e-9;
+
+void initCoProc() {
+	__asm__ __volatile__ ("finit \n\
+	fldln2"
+	::: "memory");
 }
-int max(int a, int b)
-{
-	if(a>b) return a;
-	else return b;
+
+int max(int a, int b) {
+	if (a >= b) 
+		return a;
+	else 
+		return b;
 }
-int min(int a, int b)
-{
-	if(a<b) return a;
-	else return b;
+
+int min(int a, int b) {
+	if (a <= b) 
+		return a;
+	else 
+		return b;
 }
-double sqrt(double z)
-{
-	double l = 0,r = (1 / eps)* 100;
-	double m = 0;
-	while(r-l>eps)
-	{
-		m = (l + r) / 2.0;
-		if(m * m > z) r = m;
-		else l = m;
-	}
-	return m;
-}
-double fabs(double x)
-{
-	if(x>0) return x;
-	return -x;
-}
-double fact(double n)
-{
-	double fac=1;
-	for (int i=1;i<=n;i++)
-		fac*=i;
+
+double fact(double n) {
+	double fac = 1;
+	for (int i = 1; i <= n; i++)
+		fac *= i;
 	return fac;
 }
 
-double sin(double x)
-{
-	double res;
-	__asm__("mov %0,%%eax \n fld (%%eax) \n fsin \n mov %0,%%eax \n fst (%%eax)"::"r"(&x));
-	return x;
+double sqrt(double x) {
+	double r;
+	__asm__ __volatile__ ("fsqrt": "=t"(r): "0"(x): "memory");
+	return r;
 }
-double cos(double x){
-	return x;
+
+double fabs(double x) {
+	double r;
+	__asm__ __volatile__ ("fabs": "=t"(r): "0"(x): "memory");
+	return r;
+}
+
+double sin(double x) { 
+	double r; 
+	__asm__ __volatile__ ("fsin": "=t"(r): "0"(x): "memory"); 
+	return r; 
+}
+
+double cos(double x) { 
+	double r; 
+	__asm__ __volatile__ ("fcos": "=t"(r): "0"(x): "memory"); 
+	return r; 
 }
