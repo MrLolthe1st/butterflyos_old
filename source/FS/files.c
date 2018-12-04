@@ -14,6 +14,7 @@ typedef struct __attribute__((packed)) _FHandler {
 	uint fsType;
 	uint rights;
 	uint size;
+	uint type;
 } FILE;
 typedef __attribute__((packed)) struct _feil
 {
@@ -161,6 +162,7 @@ FILE *fopen(const char *fname, const char *mode)
 	FILE * n = malloc(sizeof(FILE));
 	n->name = ups;
 	n->rights = 0;
+	n->type = 0;
 	n->diskId = ups[0] - 'A';
 	if (mode[0] == 'r')
 		n->rights |= 1;
@@ -199,10 +201,39 @@ FILE *fopen(const char *fname, const char *mode)
 	free(q);
 	return n;
 }
-direntry * DirectoryListing(char *z)
+direntry * DirectoryListing(char *fname)
 {
-	if (drives[z[0] - 'A'].type == 0)
-		return FAT32GetDir(z[0] - 'A', (uint)z + 3);
+	char * ups = malloc(512);
+
+	if (fname[1] != ':')
+	{
+		//Working dir
+
+		char * wdir = procTable[currentRunning].workingDir;
+		char * z = wdir;
+		char * p = ups;
+		while (*z)
+		{
+			*p = *z;
+			++z;
+			++p;
+		}
+
+		concatdir(ups, fname);
+		//
+	}
+	else {
+		char * p = ups;
+		char * z = fname;
+		while (*z)
+		{
+			*p = *z;
+			++p;
+			++z;
+		}
+	}
+	if (drives[fname[0] - 'A'].type == 0)
+		return FAT32GetDir(fname[0] - 'A', (uint)fname + 3);
 }
 uint fseek(FILE *stream, long offset, int origin) {
 	long long z = stream->currentByte;
@@ -241,6 +272,7 @@ void FileWrite(FILE * f, void * addr, uint cnt)
 uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
 {
 	//kprintf("%x %x!", stream->add2, stream->add3);
+	
 	FileWrite(stream, buf, size*count);
 	//stream->currentByte += size * count;
 }

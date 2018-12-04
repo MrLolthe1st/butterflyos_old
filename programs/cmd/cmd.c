@@ -22,6 +22,10 @@ char RecieveKey()
 		return z;
 	}
 }
+int min(int a, int b)
+{
+	return a<b?a:b;
+}
 void _main(int argc, char ** argv)
 {	
 	w=openWindow(720,480,0,&handle,"Command Shell");
@@ -139,6 +143,44 @@ void _main(int argc, char ** argv)
 					++u;
 					*u = '\\';
 				}
+			}
+			else
+			if (ucmd[0] == 'C'&&ucmd[1] == 'A' &&ucmd[2]=='T'&&ucmd[3]==' ')
+			{
+				char * fname = malloc(256);
+				char * z = (uint)cmd+4;
+				char *ff = fname;
+				while (*z&&*z != ' ')
+				{
+					*ff = *z;
+					++ff;
+					++z;
+
+				}
+				
+				memcpy(ucmd,dir , 512);
+				concatdir(dir, fname);
+				FILE * f = fopen(dir,"r");
+				memcpy(dir, ucmd, 512);
+				if(!f)
+				{
+					printTextToWindow(4,w,"File %s isn't exists\n",fname);
+					continue;
+				}
+				fseek(f, 0, 2);
+				int size=ftell(f);
+				rewind(f);
+				char * buf = malloc(4096);
+				int cb=0;
+				while(cb!=size)
+				{
+					fread(buf,min(size, cb + 4096)-cb,1,f);
+					printTextToWindow(7,w,"%s",buf);
+					cb=min(size, cb + 4096);
+					//break;
+				}
+				fclose(f);
+				free(buf);
 			}
 			else if (ucmd[0] == 'M'&&ucmd[1] == 'D'&&ucmd[2]==' ')
 			{

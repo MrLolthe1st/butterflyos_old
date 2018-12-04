@@ -315,45 +315,49 @@ void updateWindows()
 //Close window by id
 void closeWindowID(unsigned int id) {
 	Window * w = windows;
-	//First?
-	if (w->id == id) {
-		free(w->video);
-		free(w);
-		windows = w->next;
-		return;
-	}
-	unsigned int i = 0;
+	Window * prev = 0;
 	//Iterate through all windows
 	while (w) {
-		if (w->next->id == id) {
-			Window * ww = w->next;
-			free(ww->video);
-			w->next = ww->next;
-			free(ww);
+		if (w->id == id) {
+			if (activeWindow == w->id) {
+				if (prev)
+					activeWindow = prev->id;
+			}
+			if (prev)
+				prev->next = w->next;
+			else
+				windows = w->next;
+			free(w->video);
+			free(w);
+			break;
 		}
+		prev = w;
 		w = w->next;
 	}
 }
 
 //Close window 
 void closeWindow(Window * ws) {
-	Window * w = windows;
-	//First?
-	if (w->id == ws->id) {
-		free(w->video);
-		free(w);
-		windows = w->next;
+	if (!ws)
 		return;
-	}
-	unsigned int i = 0;
+	Window * w = windows;
+	Window * prev = 0;
 	//Iterate through all windows
 	while (w) {
-		if (w->next->id == ws->id) {
-			Window * ww = w->next;
-			free(ww->video);
-			w->next = ww->next;
-			free(ww);
+		if (w->id == ws->id) {
+			if (activeWindow == w->id) {
+				if(prev)
+					activeWindow = prev->id;
+			}
+			if (prev)
+				prev->next = w->next;
+			else
+				windows = w->next;
+			free(w->video);
+			free(w);
+			break;
 		}
+		prev = w;
 		w = w->next;
 	}
 }

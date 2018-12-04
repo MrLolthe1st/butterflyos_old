@@ -197,6 +197,7 @@ char usb_k_base[128] = {
 	[KEY_KP9] = '9',
 	[KEY_KP0] = '0',
 	[KEY_KPDOT] = '.'
+	
 };
 
 char usb_k_shift[128] = {

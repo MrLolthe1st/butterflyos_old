@@ -25,6 +25,7 @@ typedef struct __attribute__((packed)) _FHandler {
 	uint fsType;
 	uint rights;
 	uint size;
+	uint type;
 } FILE;
 typedef struct dentr_y
 {
