@@ -26,6 +26,7 @@ typedef struct __attribute__((packed)) _FHandler {
 	uint rights;
 	uint size;
 	uint type;
+	void * w;
 } FILE;
 typedef struct dentr_y
 {
@@ -44,3 +45,5 @@ uint fseek(FILE *stream, long offset, int origin);
 FILE *fopen(const char *fname, const char *mode);
 void mkdir(char *p, uint mode);
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * workingDir);
+void attachIoToWindow(void * w);
+void printf(char * text, ...);

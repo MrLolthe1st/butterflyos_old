@@ -130,6 +130,9 @@ void processEnd() {
 		free(procTable[currentRunning].argv[i]);
 	free(procTable[currentRunning].argv);
 	free(procTable[currentRunning].workingDir);
+	free(procTable[currentRunning].stdout);
+	free(procTable[currentRunning].stdin);
+	free(procTable[currentRunning].stderr);
 	memcpy(&procTable[currentRunning],&procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
@@ -198,6 +201,9 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	procTable[procCount].priority = 2;
 	procTable[procCount].priorityL = 2;
 	procTable[procCount].eflags = 0x216;
+	procTable[procCount].stdin = malloc(sizeof(FILE));
+	procTable[procCount].stdout = malloc(sizeof(FILE));
+	procTable[procCount].stderr = malloc(sizeof(FILE));
 	procTable[procCount].runnedFrom = currentRunning;
 	if(suspendIt)
 		procTable[currentRunning].state &= ~1;

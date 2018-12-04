@@ -29,11 +29,12 @@ int min(int a, int b)
 void _main(int argc, char ** argv)
 {	
 	w=openWindow(720,480,0,&handle,"Command Shell");
-	printTextToWindow(1,w,"\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
+	attachIoToWindow(w);
+	printf("\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
 	char * ucmd = malloc(512);
-	
+	printf("11");
 	dir[0] = 'A';
 	dir[1] = ':';
 	dir[2] = '\\';
@@ -42,7 +43,7 @@ void _main(int argc, char ** argv)
 	char key = 0;
 	for (;;)
 	{
-		printTextToWindow(6,w,"\n%s>", dir);
+		printf("\n%s>", dir);
 		cmdLen = 0;
 		key = 0;
 		for (int i = 0; i < 512; i++)
@@ -53,12 +54,12 @@ void _main(int argc, char ** argv)
 			if (key == 10) continue;
 			if (key == 0x9) continue;
 			if ((key==0x8&&cmdLen > 0)||key!=0x8)
-				printTextToWindow(6,w,"%c", key);
+				printf("%c", key);
 			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; continue; }
 			cmd[cmdLen] = key;
 			cmdLen++;
 		}
-		printTextToWindow(2,w,"\n");
+		printf("\n");
 		for(int i=0;i<512;i++)
 			ucmd[i]=0;
 		toUpper(cmd, ucmd);
@@ -86,7 +87,7 @@ void _main(int argc, char ** argv)
 					++op;
 				}
 
-				printTextToWindow(2,w,"%s", &d->name);
+				printf("%s", &d->name);
 				void *ii = d;
 				uint day = (d->modified & 0b11111);
 				uint month = ((d->modified >> 5) & 0b1111);
@@ -96,37 +97,37 @@ void _main(int argc, char ** argv)
 				uint hour = ((d->modified >> 27) & 0b11111);
 
 				while (len < 29) {
-					printTextToWindow(2,w," ");
+					printf(" ");
 					len++;
 				}
 
-				printTextToWindow(2,w," MOD. ");
+				printf(w," MOD. ");
 				if (day < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d.", day);
+					printf("0");
+				printf("%d.", day);
 				if (month < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d.%d ", month, year);
+					printf("0");
+				printf("%d.%d ", month, year);
 				if (hour < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d:", hour);
+					printf("0");
+				printf("%d:", hour);
 				if (minute < 10)
-					printTextToWindow(2,w,"0");
-				printTextToWindow(2,w,"%d ", minute);
+					printf("0");
+				printf("%d ", minute);
 				if (d->attrs & 0x10) {
 
-					printTextToWindow(2,w,"DIR\n");
+					printf("DIR\n");
 					dircnt++;
 				}
 				else {
-					printTextToWindow(2,w,"FILE %d KBytes\n", d->size >> 10);
+					printf("FILE %d KBytes\n", d->size >> 10);
 					filescnt++;
 				}
 				tsize += d->size;
 				d = d->next;
 				free(ii);
 			}
-			printTextToWindow(2,w,"Total %d KBytes in %d files and %d directories\n", tsize >> 10, filescnt, dircnt);
+			printf("Total %d KBytes in %d files and %d directories\n", tsize >> 10, filescnt, dircnt);
 		}
 		else
 			if (ucmd[0] == 'C'&&ucmd[1] == 'D' &&ucmd[2]==' ')
@@ -164,7 +165,7 @@ void _main(int argc, char ** argv)
 				memcpy(dir, ucmd, 512);
 				if(!f)
 				{
-					printTextToWindow(4,w,"File %s isn't exists\n",fname);
+					printf("File %s isn't exists\n",fname);
 					continue;
 				}
 				fseek(f, 0, 2);
@@ -175,7 +176,7 @@ void _main(int argc, char ** argv)
 				while(cb!=size)
 				{
 					fread(buf,min(size, cb + 4096)-cb,1,f);
-					printTextToWindow(7,w,"%s",buf);
+					printf("%s",buf);
 					cb=min(size, cb + 4096);
 					//break;
 				}
@@ -234,7 +235,7 @@ void _main(int argc, char ** argv)
 				FILE * fp = fopen(dir,"r");
 				if(!fp)
 				{
-					printTextToWindow(4,w,"%s isn't a command or executable file!\n",fname);
+					printf("%s isn't a command or executable file!\n",fname);
 					memcpy(dir, ucmd, 512);
 					continue;
 				}

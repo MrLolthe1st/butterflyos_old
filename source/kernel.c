@@ -7,7 +7,6 @@ to turn off debbuging messages
 
 */
 
-
 #define size_t unsigned int
 
 
@@ -47,6 +46,7 @@ void nope(int a, ...)
 }
 unsigned int nextS;
 #include "windowsEventsCodes.c"
+#include "stdarg.h"
 #include "structs.c"
 int ccnt = 0;
 int drawed = 0, lastButtonState = 0, lastInteractWinId = 0;
@@ -242,6 +242,9 @@ void k_main()
 	addGlobalVariable("LineVideo", &LineVideo); 
 	addGlobalVariable("BarVideo", &BarVideo);
 	addGlobalVariable("drawcharv", &drawcharv);
+	addGlobalVariable("getProcessSTDStream", &getProcessSTDStream);
+	addGlobalVariable("attachIoToWindow", &attachIoToWindow);
+	addGlobalVariable("printf", &printf);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;

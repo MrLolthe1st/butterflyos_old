@@ -188,13 +188,9 @@ char* formatString(char* str, va_list ap)
 	*t++ = 0;
 	return l;
 }
-//Print text to window
-void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 
-	va_list ap;
-	va_start(ap, text);
-	//Format string
-	text = formatString((char *)text, ap);
+void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
+
 	kprintf(text);
 	//Window != zero
 	if (w) {
@@ -281,6 +277,16 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 	}
 	w->cursorState = 1;
 	w->lastUpdate = *sec100;
+}
+
+//Print text to window
+void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
+
+	va_list ap;
+	va_start(ap, text);
+	//Format string
+	text = formatString((char *)text, ap);
+	printTextToWindowFormatted(color, w, text);
 	va_end(ap);
 }
 void updateWindows()

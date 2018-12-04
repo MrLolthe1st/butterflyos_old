@@ -66,7 +66,21 @@ typedef struct
 	void * entry;
 	processAlloc *allocs;
 } ELF_Process;
+typedef struct __attribute__((packed)) _FHandler {
+	char * name;
+	long long currentByte;
+	long long currentByteAppend;
 
+	unsigned int add1;
+	unsigned int add2;
+	unsigned int add3;
+	unsigned int diskId;
+	unsigned int fsType;
+	unsigned int rights;
+	unsigned int size;
+	unsigned int type;
+	Window * w;
+} FILE;
 typedef struct __attribute__((packed)) _E {
 	unsigned int eax;//4
 	unsigned int ebx;//8
@@ -90,9 +104,13 @@ typedef struct __attribute__((packed)) _E {
 	unsigned int argc;//264
 	unsigned int runnedFrom;//268
 	char * workingDir;//272
+	FILE * stdout;
+	FILE * stdin;
+	FILE * stderr;
 
 } Process;
 
 
 Process * procTable = 0;
 int currentRunning = 0, procCount = 0;
+char* formatString(char* str, va_list ap);

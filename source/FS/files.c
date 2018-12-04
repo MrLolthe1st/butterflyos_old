@@ -2,20 +2,7 @@
 #define FILE_RIGHTS_READ 1
 #define FILE_RIGHTS_WRITE 2
 #define FILE_RIGHTS_APPEND 4
-typedef struct __attribute__((packed)) _FHandler {
-	char * name;
-	long long currentByte;
-	long long currentByteAppend;
 
-	uint add1;
-	uint add2;
-	uint add3;
-	uint diskId;
-	uint fsType;
-	uint rights;
-	uint size;
-	uint type;
-} FILE;
 typedef __attribute__((packed)) struct _feil
 {
 	uint add1;
@@ -234,6 +221,38 @@ direntry * DirectoryListing(char *fname)
 	}
 	if (drives[fname[0] - 'A'].type == 0)
 		return FAT32GetDir(fname[0] - 'A', (uint)fname + 3);
+}
+
+void attachIoToWindow(Window * w)
+{
+
+	procTable[currentRunning].stdin->w = w;
+	procTable[currentRunning].stdout->w = w;
+	procTable[currentRunning].stderr->w = w;
+}
+
+void printf(char * text, ...)
+{
+	FILE * out = procTable[currentRunning].stdout;
+	va_list ap;
+	va_start(ap, text);
+	//Format string
+	text = formatString((char *)text, ap);
+	printTextToWindowFormatted(1, out->w, text);
+	va_end(ap);
+}
+#define stdin_stream 0
+#define stdout_stream 1
+#define stderr_stream 2
+FILE *  getProcessSTDStream(int id)
+{
+	if (id == stdin_stream)
+		return procTable[currentRunning].stdin;
+	if (id == stdout_stream)
+		return procTable[currentRunning].stdout;
+	if (id == stderr_stream)
+		return procTable[currentRunning].stderr;
+	return 0;
 }
 uint fseek(FILE *stream, long offset, int origin) {
 	long long z = stream->currentByte;

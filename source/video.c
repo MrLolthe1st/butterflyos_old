@@ -1,4 +1,4 @@
-#include "stdarg.h"
+
 int screenWidth = 80, screenHeight = 25;
 char * videoMem = (char*)0xB8000;
 int cursor = 0x0;
