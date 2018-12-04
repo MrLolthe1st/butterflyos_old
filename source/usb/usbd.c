@@ -601,6 +601,7 @@ static bool UsbDevInit(UsbDevice *dev)
 		REQ_GET_DESC, (USB_DESC_DEVICE << 8) | 0, 0,
 		8, &devDesc))
 	{
+		kprintf("11");
 		return false;
 	}
 	//return;

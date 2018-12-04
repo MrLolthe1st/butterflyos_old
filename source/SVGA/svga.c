@@ -107,7 +107,7 @@ void waitRetrace() {
 void swapBuffer() {
 	//Waits retrace
 	while (inportb(0x3DA) & 0x8) {};
-	while (!(inportb(0x3DA) & 0x8)) {}
+	while (!(inportb(0x3DA) & 0x8)) {};
 	__asm__("\
 		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\

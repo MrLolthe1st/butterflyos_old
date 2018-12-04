@@ -1,3 +1,12 @@
+//#define DEBUG 1 
+/*
+     ^
+	 | comment
+	 it
+to turn off debbuging messages
+
+*/
+
 
 #define size_t unsigned int
 
@@ -55,6 +64,7 @@ unsigned int usbPoll = 1;
 #include "globalVariables.c"
 #include "kprin.c"
 #include "time.c"
+
 void lockTaskSwitch(unsigned int id)
 {
 	locked += id;
@@ -243,10 +253,11 @@ void k_main()
 	PciInit();
 	mywin = openWindow(640, 680, 0, 0, "CPU Info");
 	mywin->handler = &Win1Handler;
-	initSVGA();
+	if(testForGUI()) initSVGA();
 	updateWindows();
 	SmpInit();
 	//NetInit();
+
 	runProcess("A:\\CMD.O", 2, 0, 0, "A:\\");
 	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
@@ -254,12 +265,14 @@ void k_main()
 	//smp_core(0);
 	if (g_activeCpuCount > 1)
 		for (;;) { 
-
 			UsbPoll();
 			NetPoll();
+			Wait(1);
 		}
+
+	if (!testForGUI())
+		for (;;);
 	WindowEvent we;
-	
 	we.data = malloc(2);
 	if (!(*((uchar*)0x3FF)))
 		for (;;)

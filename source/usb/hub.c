@@ -101,7 +101,8 @@ static void UsbHubProbe(UsbHub *hub)
 	{
 		Wait(5);
 		uint status = UsbHubResetPort(hub, port);
-
+		kprintf("Status: %x\n", status);
+		Wait(1000);
 		if (status & PORT_ENABLE)
 		{
 			uint speed = (status & PORT_SPEED_MASK) >> PORT_SPEED_SHIFT;

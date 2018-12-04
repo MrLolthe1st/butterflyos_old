@@ -73,6 +73,8 @@ uint readcapacity10(UsbStorage * s)
 	cbw->lun = 0;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->flags = 0x80;
 	cbw->xfer_len = 8;
 	cmd_rdcap_10_t * cmd = (uint)cbw + 15;
@@ -83,6 +85,11 @@ uint readcapacity10(UsbStorage * s)
 	t->len = 0x1f;
 	t->complete = false;
 	t->success = false;
+#ifdef DEBUG
+	kprintf("ReadCapacity CBW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	dev->hcIntr(dev, t);
 	unsigned char res[8];
 	t->endp = endpointIn;
@@ -92,6 +99,11 @@ uint readcapacity10(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	dev->hcIntr(dev, t);
+#ifdef DEBUG
+	kprintf("ReadCapacity DATA\n");
+	printMem(&res, 8);
+kprintf("\n");
+#endif // DEBUG
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -99,6 +111,11 @@ uint readcapacity10(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	dev->hcIntr(dev, t);
+#ifdef DEBUG
+	kprintf("ReadCapacity CSW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	free(cbw);
 	s->bytesPerBlock = (res[4] << 24) + (res[5] << 16) + (res[6] << 8) + res[7];
 	return (res[0] << 24) + (res[1] << 16) + (res[2] << 8) + res[3];
@@ -131,7 +148,8 @@ uint readcapacity16(UsbStorage * s)
 	t->data = &res;
 	t->len = 12;
 	t->complete = false;
-	t->success = false;
+	t->success = false; 
+
 	dev->hcIntr(dev, t);
 	t->endp = endpointIn;
 	t->req = 0;
@@ -184,18 +202,28 @@ typedef struct PACKED {
 	u8 type;
 	u8 ctrl;
 } identify_cmd;
+void clearHalt(UsbStorage * s)
+{
+	if (!UsbDevRequest(s->d, 0x2, 0x01, 0, s->endpointOut->desc->addr & 0xf, 0, 0)) {
+		kprintf("Can't clear halt for endpoint %x, exiting...\n", s->endpointOut->desc->addr & 0xf);
+		return 1;
+	}
 
+}
 void inquiryRequest(UsbStorage * s)
 {
+	clearHalt(s);
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 
 	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
-	cbw->tag = 0x10000;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
+
 
 	cbw->flags = 0x80;
 	cbw->xfer_len = 0x24;
@@ -209,6 +237,11 @@ void inquiryRequest(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	t->w = 1;
+#ifdef DEBUG
+	kprintf("Inquiry CBW\n");
+	printMem(cbw, 31); kprintf("\n");
+kprintf("\n");
+#endif // DEBUG
 	dev->hcIntr(dev, t);
 
 
@@ -230,18 +263,24 @@ void inquiryRequest(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-
+#ifdef DEBUG
+	kprintf("Inquiry CSW\n");
+	printMem(cbw, 13); kprintf("\n");
+kprintf("\n");
+#endif // DEBUG
 
 }
 
 u8 testUnitReady(UsbStorage * s)
 {
+	clearHalt(s);
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	cbw_t * cbw = malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
-	cbw->tag = 0x1000;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
 	cbw->flags = 0x00;
@@ -253,15 +292,13 @@ u8 testUnitReady(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	t->w = 1;
+#ifdef DEBUG
+	kprintf("TUR CBW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	dev->hcIntr(dev, t);
-	t->endp = endpointIn;
-	t->req = 0;
-	t->data = cbw;
-	t->len = 0;
-	t->complete = false;
-	t->success = false;
-	t->w = 1;
-	dev->hcIntr(dev, t);
+
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -270,6 +307,11 @@ u8 testUnitReady(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
+#ifdef DEBUG
+	kprintf("TUR CSW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	free(cbw);
 	return *((u8*)((uint)cbw + 12));
 }
@@ -284,7 +326,8 @@ void requestSense(UsbStorage * s)
 
 	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
-	cbw->tag = 0x1000;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
 
@@ -300,8 +343,13 @@ void requestSense(UsbStorage * s)
 	t->complete = false;
 	t->success = false;
 	t->w = 1;
+#ifdef DEBUG
+	kprintf("RequsetSense CBW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	dev->hcIntr(dev, t);
-	sense_data z;
+	char z[32];
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = &z;
@@ -310,6 +358,11 @@ void requestSense(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
+#ifdef DEBUG
+	kprintf("RequsetSense Data\n");
+	printMem(&z, 0x12);
+kprintf("\n");
+#endif // DEBUG
 	t->endp = endpointIn;
 	t->req = 0;
 	t->data = cbw;
@@ -318,8 +371,14 @@ void requestSense(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-	printMem(cbw, 14);
-		free(cbw);
+#ifdef DEBUG
+	kprintf("RequsetSense CSW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
+
+	
+	free(cbw);
 }
 
 void startStorage(UsbStorage * s)
@@ -330,7 +389,8 @@ void startStorage(UsbStorage * s)
 
 	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
-	cbw->tag = 0x1000;
+	cbw->tag = s->tag;
+	s->tag++;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
 
@@ -355,8 +415,6 @@ void startStorage(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-	kprintf("$");
-	printMem(cbw, 13); kprintf("$");
 	free(cbw);
 }
 
@@ -377,6 +435,8 @@ uint MassStorageReset(UsbDevice * dev, UsbEndpoint * out)
 
 void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
 {
+	
+	//clearHalt(s);
 	//Get device and endpoints
 	UsbDevice * dev = s->d; char *ut = buf;
 	UsbTransfer *t = s->t;
@@ -406,8 +466,12 @@ retry_read:;
 	t->complete = false;
 	t->success = false;
 	t->w = 1;// kprintf("{^%x}", lba);
+#ifdef DEBUG
+	kprintf("Read CBW\n");
+	printMem(cbw, 13);
+	kprintf("\n");
+#endif // DEBUG
 	dev->hcIntr(dev, t);
-	
 	
 	for (int i = 0; i < count*(s->bytesPerBlock / endpointIn->desc->maxPacketSize); i++)
 	{
@@ -419,6 +483,11 @@ retry_read:;
 		t->complete = false;
 		t->success = false;
 		dev->hcIntr(dev, t);
+#ifdef DEBUG
+		kprintf("Read Data\n");
+		printMem(buf, 13);
+kprintf("\n");
+#endif // DEBUG
 		buf += endpointIn->desc->maxPacketSize;
 	}
 	t->endp = endpointIn;
@@ -429,6 +498,11 @@ retry_read:;
 	t->success = false;
 	//Read CSW
 	dev->hcIntr(dev, t);
+#ifdef DEBUG
+	kprintf("Read CSW\n");
+	printMem(cbw, 13);
+kprintf("\n");
+#endif // DEBUG
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355) {
 		
@@ -663,13 +737,15 @@ void _storageInit(UsbDevice * dev)
 	else
 		endpointOut->desc = dev->intfDesc->endpoints;
 	//Reset MassStorage
+
 	if (MassStorageReset(dev, endpointOut))
 		return; //Haven't reseted, get out from here!
+	Wait(1600);
 	u8 lunCnt = 0;
 	if (!UsbDevRequest(dev, 0b10100001, 0xfe, 0, dev->intfDesc->intfIndex, 1, &lunCnt))
 		kprintf("Can't get LUN count!\n");
 	dev->drvPoll = &poll;
-	
+	Wait(1600);
 	kprintf("LUN count:%x\n", lunCnt);
 	//Preapare transfer
 	UsbTransfer *t = malloc(sizeof(UsbTransfer));
@@ -687,24 +763,24 @@ void _storageInit(UsbDevice * dev)
 	long long sectorCount = 0;
 	for (int lun = 0; lun <= lunCnt; ++lun) {
 		//Test for ready
+		//kprintf("inquiryRequest(storage);");
 		inquiryRequest(storage);
+		//kprintf("startStorage(storage);");
 		startStorage(storage);
+		//kprintf("testUnitReady(storage");
 		while (testUnitReady(storage)) {
 			//Request sense from device
+			//kprintf("requestSense(storage)");
 			requestSense(storage);
 		}
-		requestSense(storage);
+		//requestSense(storage);
 		sectorCount = readcapacity10(storage);
-		long long z = readcapacity16(storage);
-		if (z > 0) {
-			sectorCount = z;
-		}
-		else
-			storage->use16bcmds = 0;
-		inquiryRequest(storage);
+		//long long z = readcapacity16(storage);
+		
 	};
 	kprintf("Sectors count: %x\n", sectorCount);
 	storage->sectorsCount = sectorCount;
+	Wait(1000);//Wait some time, but for what?!
 	//Try read to clear chache
 	char * b = malloc(1024);
 	_read10usb(storage, 0, 2, b);

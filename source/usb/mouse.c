@@ -30,6 +30,7 @@ static void UsbMousePoll(UsbDevice *dev)
             UsbMouseProcess(mouse);
         }
 
+		t->w = 0;
         t->complete = false;
         dev->hcIntr(dev, t);
     }

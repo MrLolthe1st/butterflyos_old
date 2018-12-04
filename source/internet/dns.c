@@ -27,10 +27,7 @@ void DnsQueryHost(const char *host, uint id)
 {
     // Skip request if not configured
     if (Ipv4AddrEq(&g_dnsServer, &g_nullIpv4Addr))
-    {
         return;
-    }
-
     NetBuf *pkt = NetAllocBuf();
 
     DnsHeader *hdr = (DnsHeader *)pkt->start;
@@ -44,17 +41,13 @@ void DnsQueryHost(const char *host, uint id)
     u8 *q = pkt->start + sizeof(DnsHeader);
     uint hostLen = strlen(host);
     if (hostLen >= 256)
-    {
         return;
-    }
-
     // Convert hostname to DNS format
     u8 *labelHead = q++;
     const char *p = host;
     for (;;)
     {
         char c = *p++;
-
         if (c == '.' || c == '\0')
         {
             uint labelLen = q - labelHead - 1;
@@ -65,16 +58,13 @@ void DnsQueryHost(const char *host, uint id)
         *q++ = c;
 
         if (!c)
-        {
             break;
-        }
     }
 
     *(u16 *)q = NetSwap16(1);   // query type
     q += sizeof(u16);
     *(u16 *)q = NetSwap16(1);   // query class
     q += sizeof(u16);
-
     pkt->end = q;
     uint srcPort = NetEphemeralPort();
 
