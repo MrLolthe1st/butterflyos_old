@@ -196,7 +196,7 @@ void _main(int argc, char ** argv)
 					memcpy(dir, ucmd, 512);
 					continue;
 				}
-				runProcess(dir, cid, args, 1, ucmd);
+				runProcess(dir, cid, args, 0, ucmd);
 				memcpy(dir, ucmd, 512);
 			}
 			Wait(1);

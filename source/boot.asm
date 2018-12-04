@@ -39,13 +39,18 @@ lap:
 	mov es,ax
 	mov [es:0x0000],byte 1
 	mov di,0x0000
-	mov cx,0x118
+	mov dx,0x11e
+	retry1:
+	sub dx,3
+	mov cx,dx
 	mov ax,0x4F01
 	int 0x10
 	mov ax,0x4F02
-	mov bx,0x4118
+	mov bx,dx
+	or bx,0x4000
 	%if 1;Set it to 0, if you won't use GUI.
 	int 10h
+	jc retry1
 	pusha
 	xor ax,ax
 	mov es,ax

@@ -1,4 +1,5 @@
-
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 // ------------------------------------------------------------------------------------------------
 // Limits
@@ -578,7 +579,8 @@ void some()
 // ------------------------------------------------------------------------------------------------
 void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
-	UsbTransfer *t = qh->transfer; WWait(1);
+	UsbTransfer *t = qh->transfer; 
+	Wait(1);
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -642,11 +644,13 @@ void EhciProcessQH(EhciController *hc, EhciQH *qh)
 // ------------------------------------------------------------------------------------------------
 static void EhciWaitForQH(EhciController *hc, EhciQH *qh)
 {
-	UsbTransfer *t = qh->transfer; 
-	while (!t->complete)
+	int st = *sec100;
+	UsbTransfer *t = qh->transfer;
+	while ((!t->complete))
 	{
 		EhciProcessQH(hc, qh);
 	}
+	
 }
 // ------------------------------------------------------------------------------------------------
 static void EhciDevControl(UsbDevice *dev, UsbTransfer *t)
@@ -852,13 +856,15 @@ static void EhciControllerPollList(EhciController *hc, Link *list)
 {
 	EhciQH *qh;
 	EhciQH *next;
+	lockTaskSwitch(1);
 	ListForEachSafe(qh, next, *list, qhLink)
 	{
-		if (qh->transfer && !qh->transfer->w)
+		if (qh->transfer && (qh->transfer->w==0)&& (!qh->transfer->complete))
 		{
 			EhciProcessQH(hc, qh);
 		}
 	}
+	unlockTaskSwitch();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1081,3 +1087,4 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 
 	g_usbControllerList = controller;
 }
+#pragma GCC pop_options

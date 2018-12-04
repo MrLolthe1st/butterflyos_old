@@ -29,12 +29,11 @@ void InputOnKey(uint code, uint val)
 		// key press
 		//addKey(code);
 
-
-		if (code == KEY_MOD_LSHIFT)
+		if (code == 512)
 		{
 			s_flags |= KBD_LSHIFT;
 		}
-		else if (code == KEY_MOD_RSHIFT)
+		else if (code == 8192)
 		{
 			s_flags |= KBD_RSHIFT;
 		}
@@ -46,7 +45,6 @@ void InputOnKey(uint code, uint val)
 		{
 			s_flags ^= KBD_NUM_LOCK;
 		}
-
 		else
 		{
 			// character mapping
@@ -94,11 +92,11 @@ void InputOnKey(uint code, uint val)
 		// key release
 		//ConsoleOnKeyUp(code);
 
-		if (code == KEY_MOD_LSHIFT)
+		if (code == 512)
 		{
 			s_flags &= ~KBD_LSHIFT;
 		}
-		else if (code == KEY_MOD_RSHIFT)
+		else if (code == 8192)
 		{
 			s_flags &= ~KBD_RSHIFT;
 		}
@@ -149,6 +147,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 		}
 		else if (usage > 0)
 		{
+			//printTextToWindow(3, mywin, "[WWWW: %x!]", i);
 			error = true;
 		}
 	}
@@ -171,11 +170,10 @@ static void UsbKbdPoll(UsbDevice *dev)
 	{
 		if (t->success)
 		{
+			t->complete = false;
+			dev->hcIntr(dev, t);
 			UsbKbdProcess(kbd);
 		}
-
-		t->complete = false;
-		dev->hcIntr(dev, t);
 	}
 }
 

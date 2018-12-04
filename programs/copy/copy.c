@@ -3,7 +3,7 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
-#define buf_size 165536
+#define buf_size 265536
 void handle(int a)
 {
 	
@@ -26,7 +26,6 @@ void _main(int argc, char ** argv)
 		if((sz-i*buf_size)<buf_size)
 		{
 			fread(buf,sz-i*buf_size,1,z);
-		
 			fwrite(buf,sz-i*buf_size,1,u);
 		} else{
 			fread(buf,buf_size,1,z);

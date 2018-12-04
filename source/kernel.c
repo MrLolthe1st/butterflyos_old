@@ -10,6 +10,8 @@ to turn off debbuging messages
 
 #define size_t unsigned int
 
+
+short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 #define VMAlloc malloc
 #define KeysQueue 0x09810
 //PIC#0; port 0x20
@@ -253,8 +255,9 @@ void k_main()
 	PciInit();
 	mywin = openWindow(640, 680, 0, 0, "CPU Info");
 	mywin->handler = &Win1Handler;
-	if(testForGUI()) initSVGA();
+	initSVGA();
 	updateWindows();
+	//swapBuffer();
 	SmpInit();
 	//NetInit();
 
@@ -270,8 +273,6 @@ void k_main()
 			Wait(1);
 		}
 
-	if (!testForGUI())
-		for (;;);
 	WindowEvent we;
 	we.data = malloc(2);
 	if (!(*((uchar*)0x3FF)))

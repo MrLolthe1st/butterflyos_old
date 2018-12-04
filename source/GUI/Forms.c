@@ -41,12 +41,12 @@ void initWindows()
 void drawDesktop()
 {
 	//Draw background
-	CopyToVMemory(0, 0, 1024, 736, cat);
-	//Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
+	//CopyToVMemory(0, 0, 1024, 736, cat);
+	Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
 	//Task Panel
 	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
 	//Some text...
-	OutTextXY(width - 340, height - 19 - 32, "ButterflyOS alsmost stable build 0.0.1.0", 0xDD2C00, 1);
+	OutTextXY(width - 240, height - 19 - 32, "ButterflyOS stable build 0.1.0.0", 0xDD2C00, 1);
 }
 
 void printChars(unsigned char color, Window * w, char * text)
@@ -299,7 +299,7 @@ void updateWindows()
 	time[2] = ':';
 	time[5] = ':';
 	time[8] = 0;
-	OutTextXY(950, 746, &time, 0xFFFFFF, 1);
+	OutTextXY(width-74, height-22, &time, 0xFFFFFF, 1);
 	//__itoa(*sec100 % 1000, 10, &time);
 	//OutTextXY(900, 746, &time, 0xFFFFFF, 1);
 	Window * w = windows;

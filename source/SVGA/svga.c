@@ -3,8 +3,8 @@ typedef struct __attribute__((packed)) _Pixel {
 	unsigned char g;
 	unsigned char r;
 }Pixel;
-#define width 1024
-#define height 768
+int width = 1024;
+int height = 768;
 #define widthf 1024.0
 #define heightf 768.0
 #define vSizeDw 589824
@@ -106,8 +106,8 @@ void waitRetrace() {
 //Copies video buffer to video memory
 void swapBuffer() {
 	//Waits retrace
-	while (inportb(0x3DA) & 0x8) {};
 	while (!(inportb(0x3DA) & 0x8)) {};
+	while (inportb(0x3DA) & 0x8) {};
 	__asm__("\
 		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
@@ -617,8 +617,9 @@ void loadFontPointer() {
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
 
 	OutTextXY(220, 332, "Please wait, desktop is loading...", 0xFFFFFF, 2);
-	//return;
+	//
 	swapBuffer();
+	return;
 	FILE * f = fopen("A:\\WP.BMP", "r");
 	kprintf("###%x###", f);
 	if (!f)
@@ -679,11 +680,16 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 	}
 }
 void initSVGA() {
-	bpp = (unsigned int) * (((unsigned char *)0x50000 + 0x19)) / 8;
-
-	ccnt = 36864;
+	//__asm__("movl $70999993,%eax\njmp %eax");
+	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;
+	width = (unsigned int) * (((unsigned short *)(0x50000 + 18))) ;
+	height = (unsigned int) * (((unsigned short *)(0x50000 + 20))) ;
+	//kprintf("!!%x %x!!!", width, height);
+	//	Wait(10000);
+	mouseX = width / 2, mouseY = height / 2, mouse_cycle = 0, lastX = width / 2, lastY = height / 2;
+	ccnt = (width*height/64)*3;
 	if (bpp == 4) {
-		ccnt = 49152;
+		ccnt = (width * height) / 16;
 		ok = 0;
 	}
 	videoBuffer = malloc(width * height * 4 + 32 + 4096 + 4096 + 4096);

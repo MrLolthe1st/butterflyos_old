@@ -33,6 +33,7 @@ void smp_core(uint procId)
 						currentActive->handler(&we);
 					}
 				}
+
 				//Wait(1);
 			}
 			CopyFromVMemory(width / 2, height / 2, 17, 17, under);
