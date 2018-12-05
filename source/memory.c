@@ -60,8 +60,8 @@ void * memchr(const void * buf, int c, size_t n) {
 }
 
 unsigned int count_memory(void) {
-	register unsigned long long * mem;
-	unsigned long long mem_count, a;
+	register unsigned int * mem;
+	unsigned  int  mem_count, a;
 	unsigned int memkb;
 	unsigned char irq1, irq2;
 	unsigned long long cr0;
@@ -91,7 +91,7 @@ unsigned int count_memory(void) {
 	do {
 		memkb++;
 		mem_count += 1024 * 1024 * 1;
-		mem = (unsigned long long *) mem_count;
+		mem = (unsigned int *) mem_count;
 
 		a = *mem; *mem = 0x55AA55AA;
 
@@ -199,7 +199,7 @@ nalloc:;
 void addProcessAlloc(ELF_Process * p, void * addr)
 {
 	void * z = p->allocs;
-	p->allocs = malloc(sizeof(processAlloc));
+	p->allocs = (processAlloc*) malloc(sizeof(processAlloc));
 	p->allocs->addr = addr;
 	p->allocs->next = z;
 }
@@ -216,7 +216,7 @@ void mm_init(uint32_t kernel_end) {
 }
 
 void mm_print_out() {
-	_abc();
+	
 	/*kprintf("Memory used: %d bytes\n", memory_used);
 	kprintf("Memory free: %d bytes\n", heap_end - heap_begin - memory_used);
 	kprintf("Heap size: %d bytes\n", heap_end - heap_begin);
@@ -232,7 +232,7 @@ void free(void * mem) {
 }
 
 void pfree(void * mem) {
-	if (mem < pheap_begin || mem > pheap_end) return;
+	if ((size_t*)mem < (size_t*)pheap_begin || (size_t*)mem >(size_t*) pheap_end) return;
 	/* Determine which page is it */
 	uint32_t ad = (uint32_t)mem;
 	ad -= pheap_begin;

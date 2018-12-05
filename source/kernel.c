@@ -12,7 +12,7 @@ to turn off debbuging messages
 
 short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 #define VMAlloc malloc
-#define KeysQueue 0x09810
+#define KeysQueue (int)0x09810
 //PIC#0; port 0x20
 #define IRQ_HANDLER(func) char func = 0x90;\
 __asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
@@ -22,14 +22,16 @@ unsigned int g_pitTicks = 0;
 #define IRQ_HANDLER1(func) char func = 0x90;\
 __asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
 void _## func()
+void printChar(char s);
+void outportb(unsigned short portid, unsigned char value);
 //Достает символ из очереди
 char pcidone = 0;
 char getKey()
 {
 
-	unsigned char * keysInQueue = KeysQueue;
-	unsigned char * queueFirst = KeysQueue + 1;
-	unsigned char * queueLast = KeysQueue + 2;
+	unsigned char * keysInQueue = (unsigned char *) KeysQueue;
+	unsigned char * queueFirst = (unsigned char *)(KeysQueue + 1);
+	unsigned char * queueLast = (unsigned char *)(KeysQueue + 2);
 
 	if ((*keysInQueue) == 0) return 0;
 	(*keysInQueue)--;
@@ -47,6 +49,7 @@ void nope(int a, ...)
 unsigned int nextS;
 #include "windowsEventsCodes.c"
 #include "stdarg.h"
+void __kprintf_va_list(char* str, va_list ap);
 #include "structs.c"
 int ccnt = 0;
 int drawed = 0, lastButtonState = 0, lastInteractWinId = 0;
@@ -99,6 +102,7 @@ void unlockTaskSwitch()
 #include "usb\hub.c"
 #include "internet\internet.c"
 #include "internet\rtl8139.c"
+#include "hooks\hooks.c"
 u8 g_netTrace;
 void * hher;
 void Win1Handler(void * ev)
@@ -191,15 +195,15 @@ void k_main()
 	initKeys();
 	void * processTable = malloc(sizeof(Process) * 1024);
 	procTable = processTable;
-	*((unsigned int*)0x09921) = processTable;
+	*((unsigned int*)0x09921) = (size_t)processTable;
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
 	procTable[0].priorityL = 1;
 	procCount = 1;
-	stacks = malloc(65536 * 16);
-	*((unsigned int*)0x09925) = stacks;
-	*((unsigned int*)0x09929) = stacks;
-	*((unsigned int*)0x09933) = &smp_core;
+	stacks = (size_t*)malloc(65536 * 16);
+	*((unsigned int*)0x09925) = (size_t)stacks;
+	*((unsigned int*)0x09929) = (size_t)stacks;
+	*((unsigned int*)0x09933) = (size_t)&smp_core;
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
@@ -269,7 +273,7 @@ void k_main()
 	//FAT32ReadFile(0, "BINARIES\\QQ.O");
 	//kprintf("%x!", &videoMemory);
 	//smp_core(0);
-	if (g_activeCpuCount > 1)
+	if (*g_activeCpuCount > 1)
 		for (;;) { 
 			UsbPoll();
 			NetPoll();

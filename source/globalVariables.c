@@ -2,7 +2,7 @@ GlobalVariable * globalTableFirst;
 void initGlobals()
 {
 	globalTableFirst = (GlobalVariable*)malloc(12);
-	*((unsigned int*)0x09917) = globalTableFirst;
+	*((unsigned int*)0x09917) = (size_t)globalTableFirst;
 	globalTableFirst->next = 0;
 	globalTableFirst->name = "@globalInit";
 
@@ -15,8 +15,8 @@ void addGlobalVariable(char * name, void * addr)
 	w->next = (GlobalVariable*)malloc(12);
 	w = w->next;
 	w->next = 0;
-	w->name = (int)name;
-	w->ptr = (int)addr;
+	w->name = name;
+	w->ptr = (int) addr;
 }
 unsigned int getVariableAddress(char * name)
 {

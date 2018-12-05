@@ -82,7 +82,7 @@ int formattedLength(char* str, va_list ap)
 				int c = va_arg(ap, int);
 				char str[32] = { 0 };
 				__itoa_s(c, 10, str);
-				char * s = &str;
+				char * s = (char*) &str;
 				while (*s != 0) { a++; s++; };
 				i++;
 				continue;
@@ -91,7 +91,7 @@ int formattedLength(char* str, va_list ap)
 				int c = va_arg(ap, int);
 				char str[32] = { 0 };
 				__itoa(c, 16, str);
-				char * s = &str;
+				char * s = (char*) &str;
 				while (*s != 0) { a++; s++; };
 				i++;
 				continue;

@@ -454,8 +454,8 @@ void PciGetBar(PciBar *bar, unsigned int id, unsigned int index)
 		unsigned int maskHigh;
 		PciReadBar(id, index + 1, &addressHigh, &maskHigh);
 
-		bar->u.address = (void *)((addressHigh << 32) | (addressLow & ~0xf));
-		bar->size = ~((maskHigh << 32) | (maskLow & ~0xf)) + 1;
+		bar->u.address = (void *)((0) | (addressLow & ~0xf));
+		bar->size = ~((0) | (maskLow & ~0xf)) + 1;
 		bar->flags = addressLow & 0xf;
 	}
 	else if (addressLow & PCI_BAR_IO)
