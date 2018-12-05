@@ -23,7 +23,7 @@ Hook * SetHook(unsigned int hookType, void * handler)
 	if (!hookChain)
 	{
 		//Hook chain isn't exists, just create a new one
-		hookChain = malloc(sizeof(Hook));
+		hookChain = (Hook *)malloc(sizeof(Hook));
 		if (!hookChain)
 			return 0;
 		hookChain->next = 0;
@@ -32,7 +32,7 @@ Hook * SetHook(unsigned int hookType, void * handler)
 		hookChain->handler = handler;
 		return hookChain;
 	}
-	Hook * nhook = malloc(sizeof(Hook));
+	Hook * nhook = (Hook *) malloc(sizeof(Hook));
 	if (!nhook)
 		return 0;
 	if (!hookChain->prev)

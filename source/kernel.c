@@ -24,6 +24,7 @@ __asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n
 void _## func()
 void printChar(char s);
 void outportb(unsigned short portid, unsigned char value);
+void inst(unsigned char interruptID, void * address, unsigned char flags);
 //Достает символ из очереди
 char pcidone = 0;
 char getKey()

@@ -561,6 +561,11 @@ void get_mmio_space_size(struct pci_func *pci_device)
 	sysOutLong(0xCF8, address);
 	sysOutLong(0xCFC, pci_device->mmio_reg_addr);
 }
+
+void _rtl39_init(uint id, PciDeviceInfo *info);
+void _ide_irq();
+void _ehci_init(uint id, PciDeviceInfo *info);
+
 int pci_scan_bus(struct pci_func *pci_device)
 {
 	int bus;
