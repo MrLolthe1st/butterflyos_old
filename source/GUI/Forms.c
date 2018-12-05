@@ -1,3 +1,5 @@
+//refactor it
+
 #define COLOR_PURPLE 0x6A1B9A
 #define COLOR_RED 0xC62828
 #define COLOR_BLUE 0x1565C0
