@@ -61,7 +61,7 @@ void multiHandler() {
 	if (!locked) {
 		if (procTable[currentRunning].priorityL > 0)
 			procTable[currentRunning].priorityL--;
-		
+
 		if (procTable[currentRunning].priorityL == 0) {
 			procTable[currentRunning].priorityL = procTable[currentRunning].priority;
 			currentRunning = (currentRunning + 1) % procCount;
@@ -94,7 +94,7 @@ IDT_HANDLERM(multitasking) {
 	__asm__("movb $0x20, %al \n\
 		outb %al, $0x20\n\
 		");
-	*((uint*)((uint)g_localApicAddr+0xb0))=0;
+	*((uint*)((uint)g_localApicAddr + 0xb0)) = 0;
 	*sec100 = (*sec100) + 1; // % 100;
 	__asm__("\
 	call _multiHandler");
@@ -133,7 +133,7 @@ void processEnd() {
 	free(procTable[currentRunning].stdout);
 	free(procTable[currentRunning].stdin);
 	free(procTable[currentRunning].stderr);
-	memcpy(&procTable[currentRunning],&procTable[procCount - 1], sizeof(Process));
+	memcpy(&procTable[currentRunning], &procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
 	//printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
@@ -157,9 +157,9 @@ typedef struct {
 
 }
 rel;
-uint stack_size = 65536*2;
+uint stack_size = 65536 * 2;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
-	FILE * fp=fopen(fileName, "r");
+	FILE * fp = fopen(fileName, "r");
 	fseek(fp, 0, 2);
 	if (!fp)
 		return;
@@ -183,34 +183,35 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	addProcessAlloc(entry, stack);
 	procTable[procCount].argc = argc;
 	procTable[procCount].argv = argv;
-	
+
 	procTable[procCount].workingDir = malloc(512);
 	char * zz = dir;
 	uint ooo = 0;
 	while (*zz)
 	{
-		procTable[procCount].workingDir[ooo++]=*zz;
+		procTable[procCount].workingDir[ooo++] = *zz;
 		++zz;
 	}
 	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = (uint)stack + stack_size-12;
+	procTable[procCount].esp = (uint)stack + stack_size - 12;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
 	procTable[procCount].startAddr = progq;
-//	procTable[procCount].eax = entry;
+	//	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 2;
 	procTable[procCount].priorityL = 2;
 	procTable[procCount].eflags = 0x216;
 	procTable[procCount].stdin = malloc(sizeof(FILE));
+
 	procTable[procCount].stdout = malloc(sizeof(FILE));
 	procTable[procCount].stderr = malloc(sizeof(FILE));
 	procTable[procCount].runnedFrom = currentRunning;
-	if(suspendIt)
+	if (suspendIt)
 		procTable[currentRunning].state &= ~1;
-	*((unsigned int *)(stack + stack_size-4)) = (uint)argv;
-	*((unsigned int *)(stack + stack_size-8)) = argc;
+	*((unsigned int *)(stack + stack_size - 4)) = (uint)argv;
+	*((unsigned int *)(stack + stack_size - 8)) = argc;
 	//*((unsigned int *)(stack + 8180)) = 0x08;
-	*((unsigned int *)(stack + stack_size-12)) = &processEnd;
+	*((unsigned int *)(stack + stack_size - 12)) = &processEnd;
 	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
 	procTable[procCount].state = 1;
@@ -639,7 +640,7 @@ IRQ_HANDLER1(nirq1) {
 }
 IDT_HANDLER(idt_std)
 {
-	
+
 }
 
 
@@ -763,38 +764,38 @@ u8 *g_ioApicAddr;
 // ------------------------------------------------------------------------------------------------
 static void IoApicOut(u8 *base, u8 reg, u32 val)
 {
-    MmioWrite32(base + IOREGSEL, reg);
-    MmioWrite32(base + IOWIN, val);
+	MmioWrite32(base + IOREGSEL, reg);
+	MmioWrite32(base + IOWIN, val);
 }
 
 // ------------------------------------------------------------------------------------------------
 static u32 IoApicIn(u8 *base, u8 reg)
 {
-    MmioWrite32(base + IOREGSEL, reg);
-    return MmioRead32(base + IOWIN);
+	MmioWrite32(base + IOREGSEL, reg);
+	return MmioRead32(base + IOWIN);
 }
 
 // ------------------------------------------------------------------------------------------------
 void IoApicSetEntry(u8 *base, u8 index, u64 data)
 {
-    IoApicOut(base, IOREDTBL + index * 2, (u32)data);
-    IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
+	IoApicOut(base, IOREDTBL + index * 2, (u32)data);
+	IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
 }
 
 // ------------------------------------------------------------------------------------------------
 void IoApicInit()
 {
-    // Get number of entries supported by the IO APIC
-    u32 x = IoApicIn(g_ioApicAddr, IOAPICVER);
-    uint count = ((x >> 16) & 0xff) + 1;    // maximum redirection entry
+	// Get number of entries supported by the IO APIC
+	u32 x = IoApicIn(g_ioApicAddr, IOAPICVER);
+	uint count = ((x >> 16) & 0xff) + 1;    // maximum redirection entry
 
-    kprintf("I/O APIC pins = %d\n", count);
+	kprintf("I/O APIC pins = %d\n", count);
 
-    // Disable all entries
-    for (uint i = 0; i < count; ++i)
-    {
-        IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
-    }
+	// Disable all entries
+	for (uint i = 0; i < count; ++i)
+	{
+		IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
+	}
 }
 
 #pragma GCC pop_options

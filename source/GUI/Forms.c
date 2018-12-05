@@ -295,7 +295,7 @@ void updateWindows()
 	drawDesktop();
 	char time[9];
 	//Current time calculation
-	int sec = (*sec100 / ticksPerSecond) % 60, min = (*sec100 / (60* ticksPerSecond)) % 60, hour = (*sec100 / (3600* ticksPerSecond)) % 24;
+	int sec = (*sec100 / ticksPerSecond) % 60, min = (*sec100 / (60 * ticksPerSecond)) % 60, hour = (*sec100 / (3600 * ticksPerSecond)) % 24;
 	time[0] = (hour / 10 % 10) + 48;
 	time[3] = (min / 10 % 10) + 48;
 	time[6] = (sec / 10 % 10) + 48;
@@ -305,13 +305,13 @@ void updateWindows()
 	time[2] = ':';
 	time[5] = ':';
 	time[8] = 0;
-	OutTextXY(width-74, height-22, &time, 0xFFFFFF, 1);
+	OutTextXY(width - 74, height - 22, &time, 0xFFFFFF, 1);
 	//__itoa(*sec100 % 1000, 10, &time);
 	//OutTextXY(900, 746, &time, 0xFFFFFF, 1);
 	Window * w = windows;
 	//Active window is on top of windows list
 	while (w) {
-		if(w->lastUpdate)
+		if (w->lastUpdate)
 			Draw(w);
 		w = w->next;
 	}
@@ -352,7 +352,7 @@ void closeWindow(Window * ws) {
 	while (w) {
 		if (w->id == ws->id) {
 			if (activeWindow == w->id) {
-				if(prev)
+				if (prev)
 					activeWindow = prev->id;
 			}
 			if (prev)
@@ -371,7 +371,7 @@ void closeWindow(Window * ws) {
 //Opens a window
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
-	
+
 	Window * win = malloc(sizeof(Window));
 	Window * node = windows;
 	//Get active window pointer
@@ -402,6 +402,10 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->y = startY;								//Starting Y
 	startX += 20;									//add 20 for 'cascade'
 	startY += 20;
+	if (currentRunning && !procTable[currentRunning].stdin->w)
+	{
+		attachIoToWindow(win);
+	}
 	win->lastUpdate = *sec100;						//Last time window updated
 	if (startX > 200) startX = 30;
 	if (startY > 200) startY = 30;
@@ -416,7 +420,7 @@ void Draw(Window * toDraw) {
 
 	CopyToVMemory(toDraw->x, toDraw->y, toDraw->wwidth, toDraw->wheight, toDraw->video);
 	Rect(toDraw->x - 1, toDraw->y - 1, toDraw->wwidth + 1, toDraw->wheight + 1, 0x1976D2);
-	if (*sec100 - (toDraw->lastUpdate) > 10000 - cursorSpeed*10) {
+	if (*sec100 - (toDraw->lastUpdate) > 10000 - cursorSpeed * 10) {
 		toDraw->lastUpdate = *sec100;
 		toDraw->cursorState = 1 - toDraw->cursorState;
 	}

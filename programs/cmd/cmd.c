@@ -27,9 +27,8 @@ int min(int a, int b)
 	return a<b?a:b;
 }
 void _main(int argc, char ** argv)
-{	
+{
 	w=openWindow(720,480,0,&handle,"Command Shell");
-	attachIoToWindow(w);
 	printf("\nCommand line for ButterflyOS\nWritten by @MrLolthe1st 2018(C)\n");
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
@@ -87,7 +86,7 @@ void _main(int argc, char ** argv)
 					++op;
 				}
 
-				printf("%s", &d->name);
+				printf("%s", d->name);
 				void *ii = d;
 				uint day = (d->modified & 0b11111);
 				uint month = ((d->modified >> 5) & 0b1111);
@@ -101,7 +100,7 @@ void _main(int argc, char ** argv)
 					len++;
 				}
 
-				printf(w," MOD. ");
+				printf(" MOD. ");
 				if (day < 10)
 					printf("0");
 				printf("%d.", day);

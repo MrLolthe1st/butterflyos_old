@@ -22,7 +22,7 @@ uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
 {
 	if (drives[f->diskId].type == 0)
 	{
-		return FAT32Append(f->diskId, f->add2,f->add3,bytes,cnt);
+		return FAT32Append(f->diskId, f->add2, f->add3, bytes, cnt);
 	}
 }
 uint FileClear(FILE * f)
@@ -40,7 +40,7 @@ void FileCreate(uint diskId, void * f)
 void concatdir(char * dir, char * cmd)
 {
 	if (cmd[0] == '\\') {
-		for (int i = 3; i<512; i++)
+		for (int i = 3; i < 512; i++)
 			dir[i] = 0;
 		++cmd;
 	}
@@ -114,9 +114,9 @@ void concatdir(char * dir, char * cmd)
 }
 FILE *fopen(const char *fname, const char *mode)
 {
-	
+
 	char * ups = malloc(512);
-	
+
 	if (fname[1] != ':')
 	{
 		//Working dir
@@ -168,7 +168,7 @@ FILE *fopen(const char *fname, const char *mode)
 
 	FileInfo * q = FileSeek(ups[0] - 'A', (uint)ups + 3);
 	uint ut = 0;
-	if (!q&&!(n->rights&2)) {
+	if (!q && !(n->rights & 2)) {
 		free(n);
 		return 0;
 	}
@@ -183,7 +183,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add3 = q->add3;
 	n->size = q->size;
 	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
-	if (n->rights & 2&&!ut)
+	if (n->rights & 2 && !ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);
 	return n;
@@ -225,7 +225,6 @@ direntry * DirectoryListing(char *fname)
 
 void attachIoToWindow(Window * w)
 {
-
 	procTable[currentRunning].stdin->w = w;
 	procTable[currentRunning].stdout->w = w;
 	procTable[currentRunning].stderr->w = w;
@@ -291,7 +290,7 @@ void FileWrite(FILE * f, void * addr, uint cnt)
 uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
 {
 	//kprintf("%x %x!", stream->add2, stream->add3);
-	
+
 	FileWrite(stream, buf, size*count);
 	//stream->currentByte += size * count;
 }
