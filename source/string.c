@@ -76,7 +76,7 @@ int lastIndexOf(char * s, char * d) {
 	//printHex(f,1);
 	return f;
 }
-unsigned int strlen(char * s) {
+unsigned int strlen(const char * s) {
 	int i = 0;
 	while (s[i] != 0) i++;
 	return i;

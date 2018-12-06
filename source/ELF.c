@@ -37,11 +37,11 @@ typedef struct
 } ESHeader;
 
 static inline EHeader *elf_sheader(EHeader *hdr) {
-	return (ESHeader*)((int)hdr + hdr->e_shoff);
+	return (EHeader*)((int)hdr + hdr->e_shoff);
 }
 
 static inline ESHeader *elf_section(EHeader *hdr, int idx) {
-	return &elf_sheader(hdr)[idx];
+	return (ESHeader *)&elf_sheader(hdr)[idx];
 }
 
 typedef struct {
@@ -55,7 +55,7 @@ typedef struct {
 unsigned int getSymAdr(EHeader *hdr, int table, unsigned int idx)
 {
 	//if(table == SHN_UNDEF || idx == SHN_UNDEF) return 0;
-	ESHeader *symtab = (int)hdr + (hdr->e_shoff) + 0x28 * table;
+	ESHeader *symtab = (ESHeader *)((int)hdr + (hdr->e_shoff) + 0x28 * table);
 
 	unsigned int symtab_entries = symtab->sh_size / symtab->sh_entsize;
 
@@ -69,7 +69,7 @@ unsigned int getSymAdr(EHeader *hdr, int table, unsigned int idx)
 	}
 	else if (symbol->st_shndx < 0xFFF0)
 	{
-		ESHeader *target = (int)hdr + (hdr->e_shoff) + 0x28 * symbol->st_shndx;
+		ESHeader *target = (ESHeader *)((int)hdr + (hdr->e_shoff) + 0x28 * symbol->st_shndx);
 		//printTextToWindow(4,mywin,"****%x***",(target->sh_offset)) + symbol->st_value ;
 		return symbol->st_value + (int)hdr + target->sh_offset;
 	}
@@ -107,17 +107,17 @@ ELF_Process *  relocELF(void * p)
 	if (elf->magic == 0x464c457f)
 	{
 		unsigned int TText = 0;
-		ELF_Process * proc = malloc(sizeof(ELF_Process));
+		ELF_Process * proc = (ELF_Process*)malloc(sizeof(ELF_Process));
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
-			ESHeader *sh = 0x28 * i + (int)elf + elf->e_shoff;
+			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
 			if (sh->sh_type == 8)
 			{
 				if (!sh->sh_size) continue;
 				if (sh->sh_flags & 2)
 				{
-					unsigned int mem = malloc(sh->sh_size);
-					memset(mem, 0, sh->sh_size);
+					unsigned int mem = (unsigned int)malloc(sh->sh_size);
+					memset((char*)mem, 0, sh->sh_size);
 					sh->sh_offset = (int)mem - (int)elf;
 				}
 			}
@@ -126,48 +126,46 @@ ELF_Process *  relocELF(void * p)
 		unsigned int commonSectionLength = 0;
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
-			ESHeader *sh = 0x28 * i + (int)elf + elf->e_shoff;
+			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
 			if (sh->sh_type == 2)
 			{
-				ESymbol * st = sh->sh_offset + (int)elf;
+				ESymbol * st = (ESymbol *)(sh->sh_offset + (int)elf);
 				for (int i = 0; i < sh->sh_size / 0x10; i++)
 					if (st[i].st_shndx == 0xFFF2)
 					{
 						commonSectionLength += st[i].st_size;
-					//	kprintf("z");
+						//	kprintf("z");
 					}
 			}
 		}
 		//Find undefined functions and variables
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
-			ESHeader *sh = 0x28 * i + (int)elf + elf->e_shoff;
+			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
 			if (sh->sh_type == 2)
 			{
-				ESymbol * st = sh->sh_offset + (int)elf;
-				ESHeader * names = sh->sh_link * 0x28 + (int)elf + elf->e_shoff;
+				ESymbol * st = (ESymbol *)(sh->sh_offset + (int)elf);
+				ESHeader * names = (ESHeader *)(sh->sh_link * 0x28 + (int)elf + elf->e_shoff);
 				for (int i = 1; i < sh->sh_size / 0x10; i++)
 				{
 					if (st[i].st_shndx == 0x0)
 					{
-						char * varName = names->sh_offset + st[i].st_name + (int)elf;
+						char * varName = (char*)(names->sh_offset + st[i].st_name + (int)elf);
 						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;
-						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = getVariableAddress((int)varName + 1);
-					//	kprintf("%s\n", (int)varName + 1);
-
+						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = getVariableAddress((char*)((int)varName + 1));
 					}
 				}
 			}
 		}
-		unsigned int commonSectionPtr = malloc(commonSectionLength + 4);//Allocate common section
+		unsigned int commonSectionPtr = (uint)malloc(commonSectionLength + 4);//Allocate common section
 		addProcessAlloc(proc, commonSectionPtr);
 		unsigned int comId = 0;
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
-			ESHeader *sh = 0x28 * i + (int)elf + elf->e_shoff;
+			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
 			if (sh->sh_type == 2)
 			{
-				ESymbol * st = sh->sh_offset + (int)elf;
+				ESymbol * st = (ESymbol*)(sh->sh_offset + (int)elf);
 				for (int i = 0; i < sh->sh_size / 0x10; i++)
 				{
 					if (st[i].st_shndx == 0xFFF2)
@@ -184,15 +182,15 @@ ELF_Process *  relocELF(void * p)
 
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
-			ESHeader *section = 0x28 * i + (int)elf + elf->e_shoff;
+			ESHeader *section = (ESHeader*)(0x28 * i + (int)elf + elf->e_shoff);
 			if (section->sh_type == 0x09)
 			{
-				RelTab * relocTable = section->sh_offset + (int)elf;
+				RelTab * relocTable = (RelTab*)(section->sh_offset + (int)elf);
 				unsigned int RelocationCount = section->sh_size / 0x08;
 				unsigned int sectionForId = section->sh_info;
-				ESHeader *relocSection = 0x28 * sectionForId + (int)elf + elf->e_shoff;
+				ESHeader *relocSection = (ESHeader*)(0x28 * sectionForId + (int)elf + elf->e_shoff);
 				unsigned int relocSectionOffset = relocSection->sh_offset + (int)elf;
-				
+
 				for (int j = 0; j < RelocationCount; j++)
 				{
 					unsigned int relocationSymbol = relocTable[j].r_info >> 8;
@@ -205,11 +203,11 @@ ELF_Process *  relocELF(void * p)
 						*((unsigned int*)(sectionOffset + (int)relocSectionOffset)) = *((unsigned int*)(sectionOffset + (int)relocSectionOffset)) + additional;
 					else if (relocTable[j].r_info & 2)
 						*((int*)(sectionOffset + (int)relocSectionOffset)) = *((int*)(sectionOffset + (int)relocSectionOffset)) + additional - (sectionOffset + (int)relocSectionOffset) - 4;
-					
+
 				}
 			}
 		}
-		proc->entry = (uint)elf + 0x34;
+		proc->entry = (void*)((uint)elf + 0x34);
 		return proc;
 	}
 	else

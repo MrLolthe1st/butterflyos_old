@@ -45,11 +45,11 @@ void _UsbMouseInit(UsbDevice *dev)
     {
         printTextToWindow(2, mywin, "      Initializing Mouse\n");
 		//return;
-        UsbMouse *mouse = malloc(sizeof(UsbMouse));
+        UsbMouse *mouse = (UsbMouse*) malloc(sizeof(UsbMouse));
 		//return;
         dev->drv = mouse;
         dev->drvPoll = UsbMousePoll;
-		UsbEndpoint * endp = malloc(sizeof(UsbEndpoint));
+		UsbEndpoint * endp = (UsbEndpoint*) malloc(sizeof(UsbEndpoint));
 		endp->toggle=1;
 		endp->desc = dev->intfDesc->endpoints;
         // Prepare transfer

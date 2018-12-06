@@ -32,7 +32,7 @@ const NetRoute *NetFindRoute(const Ipv4Addr *dst)
 // ------------------------------------------------------------------------------------------------
 void NetAddRoute(const Ipv4Addr *dst, const Ipv4Addr *mask, const Ipv4Addr *gateway, NetIntf *intf)
 {
-    NetRoute *route = VMAlloc(sizeof(NetRoute));
+    NetRoute *route = (NetRoute *)VMAlloc(sizeof(NetRoute));
     LinkInit(&route->link);
     route->dst = *dst;
     route->mask = *mask;

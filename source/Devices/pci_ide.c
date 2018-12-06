@@ -466,7 +466,7 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive, unsig
 				__asm__("popw %ds");
 				edi += (words * 2);
 			}
-			ide_write(channel, ATA_REG_COMMAND, (char[]) {
+			ide_write(channel, ATA_REG_COMMAND, (unsigned char[]) {
 				ATA_CMD_CACHE_FLUSH,
 					ATA_CMD_CACHE_FLUSH,
 					ATA_CMD_CACHE_FLUSH_EXT

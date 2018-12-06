@@ -33,11 +33,11 @@ NetBuf *NetAllocBuf()
 
     if (ListIsEmpty(&s_netFreeBufs))
     {
-        buf = VMAlloc(NET_BUF_SIZE);
+        buf = (NetBuf*) VMAlloc(NET_BUF_SIZE);
     }
     else
     {
-        buf = LinkData(s_netFreeBufs.next, NetBuf, link);
+        buf = (NetBuf*)LinkData(s_netFreeBufs.next, NetBuf, link);
         LinkRemove(&buf->link);
     }
 

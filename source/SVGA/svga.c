@@ -191,8 +191,8 @@ void CopyFromVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	int startY = max(0, y1);
 	int endY = min(height, y1 + h);
 	int mmw = min(x1 + w, width) - x1;
-	int buf = videoMemory + startY * width * bpp + x1 * bpp;
-	int bb2 = b;
+	int buf = (unsigned int)videoMemory + startY * width * bpp + x1 * bpp;
+	int bb2 = (unsigned int)b;
 
 	if (bpp == 3) {
 		for (j = startY; j < endY; j++, buf += width + width + width, bb2 += w * 3) {
@@ -612,7 +612,7 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 }
 void * cat;
 void loadFontPointer() {
-	fontPointer = 0x50000 + 256;
+	fontPointer = (unsigned char*)( 0x50000 + 256);
 	///Bar(0, 0, 600, 600, 0xFF0000);
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
 
@@ -693,12 +693,10 @@ void initSVGA() {
 		ok = 0;
 	}
 	videoBuffer = malloc(width * height * 4 + 32 + 4096 + 4096 + 4096);
-	videoBuffer = (((unsigned int)videoBuffer) / 16) * 16 + 4096;
-	videoMemory = *((unsigned char *)0x50000 + 40) +
-		(*((unsigned char *)0x50000 + 41) << 8) + (*((unsigned char *)0x50000 + 42) << 16) + (*((unsigned char *)0x50000 + 43) << 24);
-	VBE4F07 = *((unsigned int *)(0x50000 + 256 * 17));
-	char * mm = malloc(12);
-	__itoa(((unsigned int)VBE4F07), 16, mm);
+	videoBuffer = (unsigned char*)((((unsigned int)videoBuffer) / 16) * 16 + 4096);
+	videoMemory = (unsigned char*)(*((unsigned char *)0x50000 + 40) +
+		(*((unsigned char *)0x50000 + 41) << 8) + (*((unsigned char *)0x50000 + 42) << 16) + (*((unsigned char *)0x50000 + 43) << 24));
+	//VBE4F07 = *((unsigned int *)(0x50000 + 256 * 17));
 	loadFontPointer();
 
 	//swapBuffer();

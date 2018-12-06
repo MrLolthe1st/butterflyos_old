@@ -8,7 +8,7 @@
 char codes[] = { 0,0,'1','2','3','4','5','6','7','8','9','0','-','=',8,'\t','q','w','e','r','t','y','u','i','o','p','[',']','\n',0,'a','s','d','f','g','h','j','k','l',';','\'','`',0,'\\','z','x','c','v','b','n','m',',','.','/',0,'*',0,' ',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,'-',0,0,0,'+',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 char codes_sh[] = { 0,0,'!','@','#','$','%','^','&','*','(',')','_','+',8,'\t','Q','W','E','R','T','Y','U','I','O','P','{','}','\n',0,'A','S','D','F','G','H','J','K','L',':','"','~',0,'|','Z','X','C','V','B','N','M','<','>','?',0,'*',0,' ',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,'-',0,0,0,'+',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 //0x90 - nop
-#define IDT_HANDLER(func) char func = 0x90;\
+#define IDT_HANDLER(func) unsigned char func = 0x90;\
 __asm__(#func ": \npusha \n call __"# func " \n  popa  \n iret \n");\
 void _## func()
 
@@ -46,7 +46,7 @@ add $4,%esp\
 void _## func()
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
-	__asm__("movl %%esp,%0\n\ movl _sugg,%1": "=r" (stack), "=r" (s2) : );
+	__asm__("movl %%esp,%0\n movl _sugg,%1": "=r" (stack), "=r" (s2) : );
 	stack = s2;
 	procTable[currentRunning].ebp = *((int *)(stack));
 	procTable[currentRunning].edi = *((int *)(stack + 4));
@@ -56,7 +56,7 @@ void multiHandler() {
 	procTable[currentRunning].ebx = *((int *)(stack + 20));
 	procTable[currentRunning].eax = *((int *)(stack + 24));
 	procTable[currentRunning].esp = stack + 44;
-	procTable[currentRunning].currentAddr = *((unsigned int *)(stack + 32));
+	procTable[currentRunning].currentAddr = (void*)*((unsigned int *)(stack + 32));
 	procTable[currentRunning].eflags = *((unsigned int *)(stack + 40));
 	if (!locked) {
 		if (procTable[currentRunning].priorityL > 0)
@@ -133,7 +133,7 @@ void processEnd() {
 	free(procTable[currentRunning].stdout);
 	free(procTable[currentRunning].stdin);
 	free(procTable[currentRunning].stderr);
-	memcpy(&procTable[currentRunning], &procTable[procCount - 1], sizeof(Process));
+	memcpy((char*)&procTable[currentRunning], (char*)&procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
 	//printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
@@ -165,18 +165,19 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 		return;
 	uint z = ftell(fp);
 	rewind(fp);
-	void(*progq)() = malloc(z);// FAT32ReadFileATA(0, "OO.O");
-	fread(progq, z, 1, fp);
+	void(*progq)() = (void*)malloc(z);// FAT32ReadFileATA(0, "OO.O");
+	fread((void*)progq, z, 1, fp);
 	fclose(fp);
 	//kprintf("%x\n", &getKey);
-	ELF_Process *  entry = relocELF(progq);
+	ELF_Process *  entry = relocELF((void*)progq);
 	printTextToWindow(5, mywin, "Elf");
 	if (!entry)
 	{
 		printTextToWindow(5, mywin, "~");
-		free(progq);
+		free((void*)progq);
 		return;
 	}
+	procTable[procCount].state = 0;
 	//progq = entry;
 	void * stack = malloc(stack_size);
 	procTable[procCount].stack = stack;
@@ -196,33 +197,35 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	procTable[procCount].esp = (uint)stack + stack_size - 12;
 	procTable[procCount].currentAddr = entry->entry;
 	//kprintf("!%x %x!",entry, entry->entry);
-	procTable[procCount].startAddr = progq;
+	procTable[procCount].startAddr = (void*)progq;
 	//	procTable[procCount].eax = entry;
 	procTable[procCount].priority = 2;
 	procTable[procCount].priorityL = 2;
 	procTable[procCount].eflags = 0x216;
-	procTable[procCount].stdin = malloc(sizeof(FILE));
-
-	procTable[procCount].stdout = malloc(sizeof(FILE));
-	procTable[procCount].stderr = malloc(sizeof(FILE));
+	procTable[procCount].stdin =(FILE*) malloc(sizeof(FILE));
+	procTable[procCount].stdout = (FILE*) malloc(sizeof(FILE));
+	procTable[procCount].stderr =(FILE*)malloc(sizeof(FILE));
+	procTable[procCount].stdin->w = procTable[currentRunning].stdin->w;
+	procTable[procCount].stdout->w = procTable[currentRunning].stdout->w;
+	procTable[procCount].stderr->w = procTable[currentRunning].stderr->w;
 	procTable[procCount].runnedFrom = currentRunning;
 	if (suspendIt)
 		procTable[currentRunning].state &= ~1;
 	*((unsigned int *)(stack + stack_size - 4)) = (uint)argv;
 	*((unsigned int *)(stack + stack_size - 8)) = argc;
 	//*((unsigned int *)(stack + 8180)) = 0x08;
-	*((unsigned int *)(stack + stack_size - 12)) = &processEnd;
+	*((unsigned int *)(stack + stack_size - 12)) = (uint)&processEnd;
 	//*((unsigned int *)(stack + 8180)) = &processEnd;
 	//progq();
-	procTable[procCount].state = 1;
 	procCount++;
+	procTable[procCount-1].state = 1;
 }
 //Можно трогать : - )
 //Утсановка прерывания
 //interruptID - Номер прерывания(0-255)
 //address - адрес обработчика
 void inst(unsigned char interruptID, void * address, unsigned char flags) {
-	char * it = IT;
+	char * it = (char*)IT;
 	unsigned char i;
 	unsigned char a[8];
 	a[0] = (unsigned int)address & 0x000000FF;
@@ -237,8 +240,8 @@ void inst(unsigned char interruptID, void * address, unsigned char flags) {
 		* (it + interruptID * 8 + k) = a[k];
 }
 void int_l() {
-	unsigned short * limit = IR;
-	unsigned int * place = IR + 2; *limit = 256 * 8 - 1; *place = IT;
+	unsigned short * limit = (short*)IR;
+	unsigned int * place = (uint*)(IR + 2); *limit = 256 * 8 - 1; *place = IT;
 	__asm__("lidt 0(,%0,)"::"a" (IR));
 }
 IDT_HANDLER(irq_ex) {
@@ -559,16 +562,16 @@ char shift = 0;
 
 //Инициализвация очереди
 void initKeys() {
-	unsigned char * keysInQueue = KeysQueue;
-	unsigned char * queueFirst = KeysQueue + 1;
-	unsigned char * queueLast = KeysQueue + 2; *keysInQueue = 0; *queueFirst = 0; *queueLast = 0;
+	unsigned char * keysInQueue = (uchar*)KeysQueue;
+	unsigned char * queueFirst = (uchar*)(KeysQueue + 1);
+	unsigned char * queueLast = (uchar*)(KeysQueue + 2); *keysInQueue = 0; *queueFirst = 0; *queueLast = 0;
 }
 //Добавляет символ в очередь
 void addKey(char c) {
 	if (c == 0) return;
-	unsigned char * keysInQueue = KeysQueue;
-	unsigned char * queueFirst = KeysQueue + 1;
-	unsigned char * queueLast = KeysQueue + 2;
+	unsigned char * keysInQueue = (uchar*)KeysQueue;
+	unsigned char * queueFirst = (uchar*)(KeysQueue + 1);
+	unsigned char * queueLast = (uchar*)(KeysQueue + 2);
 	(*keysInQueue)++; *((unsigned char *)KeysQueue + 3 + (*queueLast)) = c; *queueLast = ((*queueLast) + 1) % 256;
 }
 //Не сам обработчик клавы;)
@@ -643,8 +646,68 @@ IDT_HANDLER(idt_std)
 
 }
 
+// Разрешаем прерывания
+void int_e() {
+	__asm__("sti");
+}
 
+// Запрещаем прерывания
+void int_d() {
+	__asm__("cli");
+}
 
+// ------------------------------------------------------------------------------------------------
+// Globals
+u8 *g_ioApicAddr;
+
+// ------------------------------------------------------------------------------------------------
+// Memory mapped registers for IO APIC register access
+#define IOREGSEL                        0x00
+#define IOWIN                           0x10
+
+// ------------------------------------------------------------------------------------------------
+// IO APIC Registers
+#define IOAPICID                        0x00
+#define IOAPICVER                       0x01
+#define IOAPICARB                       0x02
+#define IOREDTBL                        0x10
+
+// ------------------------------------------------------------------------------------------------
+static void IoApicOut(u8 *base, u8 reg, u32 val)
+{
+	MmioWrite32(base + IOREGSEL, reg);
+	MmioWrite32(base + IOWIN, val);
+}
+
+// ------------------------------------------------------------------------------------------------
+static u32 IoApicIn(u8 *base, u8 reg)
+{
+	MmioWrite32(base + IOREGSEL, reg);
+	return MmioRead32(base + IOWIN);
+}
+
+// ------------------------------------------------------------------------------------------------
+void IoApicSetEntry(u8 *base, u8 index, u64 data)
+{
+	IoApicOut(base, IOREDTBL + index * 2, (u32)data);
+	IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
+}
+
+// ------------------------------------------------------------------------------------------------
+void IoApicInit()
+{
+	// Get number of entries supported by the IO APIC
+	u32 x = IoApicIn(g_ioApicAddr, IOAPICVER);
+	uint count = ((x >> 16) & 0xff) + 1;    // maximum redirection entry
+
+	kprintf("I/O APIC pins = %d\n", count);
+
+	// Disable all entries
+	for (uint i = 0; i < count; ++i)
+	{
+		IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
+	}
+}
 void iint() {
 	mouse_cur = malloc(16 * 16 * 4 + 16);
 	for (int i = 0; i < 16 * 16 * 4; i++)
@@ -736,66 +799,6 @@ void iint() {
 
 }
 //int qwye[8192];
-	// Разрешаем прерывания
-void int_e() {
-	__asm__("sti");
-}
 
-// Запрещаем прерывания
-void int_d() {
-	__asm__("cli");
-}
-// ------------------------------------------------------------------------------------------------
-// Globals
-u8 *g_ioApicAddr;
-
-// ------------------------------------------------------------------------------------------------
-// Memory mapped registers for IO APIC register access
-#define IOREGSEL                        0x00
-#define IOWIN                           0x10
-
-// ------------------------------------------------------------------------------------------------
-// IO APIC Registers
-#define IOAPICID                        0x00
-#define IOAPICVER                       0x01
-#define IOAPICARB                       0x02
-#define IOREDTBL                        0x10
-
-// ------------------------------------------------------------------------------------------------
-static void IoApicOut(u8 *base, u8 reg, u32 val)
-{
-	MmioWrite32(base + IOREGSEL, reg);
-	MmioWrite32(base + IOWIN, val);
-}
-
-// ------------------------------------------------------------------------------------------------
-static u32 IoApicIn(u8 *base, u8 reg)
-{
-	MmioWrite32(base + IOREGSEL, reg);
-	return MmioRead32(base + IOWIN);
-}
-
-// ------------------------------------------------------------------------------------------------
-void IoApicSetEntry(u8 *base, u8 index, u64 data)
-{
-	IoApicOut(base, IOREDTBL + index * 2, (u32)data);
-	IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
-}
-
-// ------------------------------------------------------------------------------------------------
-void IoApicInit()
-{
-	// Get number of entries supported by the IO APIC
-	u32 x = IoApicIn(g_ioApicAddr, IOAPICVER);
-	uint count = ((x >> 16) & 0xff) + 1;    // maximum redirection entry
-
-	kprintf("I/O APIC pins = %d\n", count);
-
-	// Disable all entries
-	for (uint i = 0; i < count; ++i)
-	{
-		IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
-	}
-}
 
 #pragma GCC pop_options

@@ -101,6 +101,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "smp", "smp", "{FAC91504-45B
 		source\smp\smp.c = source\smp\smp.c
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{E423C709-C78A-4326-88F8-422A41180E05}"
+	ProjectSection(SolutionItems) = preProject
+		source\hooks\hooks.c = source\hooks\hooks.c
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,6 +119,7 @@ Global
 		{D9CE8A36-BE4C-4589-86BC-3135B7716B26} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 		{130317C1-1723-4E33-B56A-915649AA7D18} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 		{FAC91504-45BE-4163-9450-12DC4E965FA5} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
+		{E423C709-C78A-4326-88F8-422A41180E05} = {68902D8E-3BBF-4E4D-B6E0-2BF59DB1D80F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6F4CB408-3EA0-4854-8E28-15F23A83F7CF}

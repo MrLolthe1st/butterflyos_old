@@ -7,7 +7,7 @@
 #define MOUSE_WRITE  0xD4
 #define MOUSE_F_BIT  0x20
 #define MOUSE_V_BIT  0x08
-;
+
 char mouse_byte[3];
 void * under, *under2;
 void mouse_wait(unsigned char a_type) {

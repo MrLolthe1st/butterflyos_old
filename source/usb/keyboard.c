@@ -186,7 +186,7 @@ void _UsbKbdInit(UsbDevice *dev)
 	{
 		printTextToWindow(2, mywin, "      Initializing Keyboard\n");
 
-		UsbKbd *kbd = malloc(sizeof(UsbKbd));
+		UsbKbd *kbd = (UsbKbd*)malloc(sizeof(UsbKbd));
 		memset(kbd->lastData, 0, 8);
 
 		dev->drv = kbd;
@@ -199,7 +199,7 @@ void _UsbKbdInit(UsbDevice *dev)
 			RT_HOST_TO_DEV | RT_CLASS | RT_INTF,
 			REQ_SET_IDLE, 0, intfIndex,
 			0, 0);*/
-		UsbEndpoint * endp = malloc(sizeof(UsbEndpoint));
+		UsbEndpoint * endp = (UsbEndpoint*) malloc(sizeof(UsbEndpoint));
 		endp->toggle = 0;
 		endp->desc = dev->intfDesc->endpoints;
 

@@ -1,3 +1,5 @@
+//refactor it
+
 #define COLOR_PURPLE 0x6A1B9A
 #define COLOR_RED 0xC62828
 #define COLOR_BLUE 0x1565C0
@@ -372,7 +374,7 @@ void closeWindow(Window * ws) {
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
 
-	Window * win = malloc(sizeof(Window));
+	Window * win = (Window*) malloc(sizeof(Window));
 	Window * node = windows;
 	//Get active window pointer
 	while (node != 0 && node->next != 0) node = node->next;
@@ -386,7 +388,7 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 
 	win->next = 0;									//Next from us is zero!
 	win->caption = caption;							//Caption pointer
-	win->handler = handler;							//Event handler
+	win->handler = (void*)handler;					//Event handler
 	win->wwidth = wwidth;							//Window width
 	win->wheight = wheight;							//Window height
 	win->video = malloc(wwidth * (wheight) * 3);	//Video memory
@@ -402,7 +404,7 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->y = startY;								//Starting Y
 	startX += 20;									//add 20 for 'cascade'
 	startY += 20;
-	if (currentRunning && !procTable[currentRunning].stdin->w)
+	if (currentRunning && procTable[currentRunning].stdin->w==procTable[procTable[currentRunning].runnedFrom].stdin->w)
 	{
 		attachIoToWindow(win);
 	}

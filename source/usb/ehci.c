@@ -941,7 +941,7 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	}
 	//return;
 	// Controller initialization
-	EhciController *hc = VMAlloc(sizeof(EhciController));
+	EhciController *hc = (EhciController *) VMAlloc(sizeof(EhciController));
 	hc->capRegs = (EhciCapRegs *)(uintptr_t)bar.u.address;
 	hc->ehcibase2 = (uint)bar.u.address;
 	hc->opRegs = (EhciOpRegs *)(uintptr_t)(bar.u.address + hc->capRegs->capLength);

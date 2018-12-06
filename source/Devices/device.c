@@ -21,7 +21,7 @@ void initDevices() {
 	devicesCount = 0;
 	//memset(&devices, 0, 64 * sizeof(device));
 	printString("Devices module initialized!\n");
-};
+}
 unsigned int last = 0;
 unsigned int GenerateUID() {
 	unsigned int id = (last + 1);
@@ -38,7 +38,7 @@ device addDevice(unsigned short port, unsigned char bits, unsigned char deviceTy
 
 	kprintf(" at port 0x%x UID = 0x%x", port, UID);
 	printString(" DevType: ");
-	printString(&a[deviceType + 1]);
+	printString((char*)&a[deviceType + 1]);
 	printString("\n");
 	devices[devicesCount].port = port;
 	devices[devicesCount].UID = UID;

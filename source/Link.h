@@ -38,8 +38,6 @@ void nopee(uint a)
 #define true 1
 #define false 0
 
-#define KB 1024
-#define MB (1024 * 1024)
 // ------------------------------------------------------------------------------------------------
 typedef struct Link
 {

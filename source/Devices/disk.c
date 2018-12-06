@@ -1,7 +1,14 @@
 #define ATA_DEV_BUSY 0x80
 #define ATA_DEV_DRQ 0x08
 
-
+void _write10usb(void * ss, uint lba, uint count, void * buf);
+void _read10usb(void * ss, uint lba, uint count, void * buf);
+void ide_read_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
+	unsigned short es, unsigned int edi);
+void WriteToDisk(unsigned long long LBA, uint count, void * buf, char letter);
+void ReadFromDisk(unsigned long long LBA, uint count, void * buf, char letter);
+void ide_write_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
+	unsigned short es, unsigned int edi);
 unsigned int AHCI_BASE = 0;
 
 #define HBA_PxCMD_ST    0x0001
@@ -363,7 +370,7 @@ DiskDev diskDevices[64];
 char deviceCount = 0, dcount = 0;
 unsigned short returned[256];
 
-
+void detectAta();
 void ATAInit() {
 	deviceCount = 0;
 	dcount = 0;
@@ -371,7 +378,10 @@ void ATAInit() {
 	detectAta();
 	//kprintf("0x%x ",diskDevices[0].readSectors);
 }
-
+void ataRead28(char drive_id, unsigned long long LBA, char cnt, void * addr);
+void ataWrite28(char drive_id, unsigned long long LBA, char cnt, void * addr);
+void ataWrite48(char drive_id, unsigned long long LBA, char cnt, void * addr);
+void ataRead48(char drive_id, unsigned long long LBA, char cnt, void * addr);
 //Чтение
 void ataRead(char drive_id, unsigned long long LBA, char cnt, void * addr) {
 	if (ATADevices[drive_id].isLBA48Supported == 1)
@@ -490,7 +500,7 @@ void ataRead48(char drive_id, unsigned long long LBA, char cnt, void * addr) {
 	}
 
 }
-
+void checkDiskPatritions(uint i);
 int detect_devtype(int port, int slavebit) {
 
 	//Выбираем диск
@@ -510,7 +520,7 @@ int detect_devtype(int port, int slavebit) {
 	}
 	if (x == 0 || x & 1) {
 		//Диска нету/ошибка
-		return;
+		return 0;
 	}
 	unsigned short u = inportw(port);
 	returned[0] = u;
@@ -520,17 +530,17 @@ int detect_devtype(int port, int slavebit) {
 	}
 	ATADevices[deviceCount].port = port;
 	ATADevices[deviceCount].slavebit = slavebit;
-	if (returned[83] & (1 << 10) ) {
+	if (returned[83] & (1 << 10)) {
 		ATADevices[deviceCount].isLBA48Supported = 1;
-		ATADevices[deviceCount].LBA48 = (returned[103] << 48) + (returned[102] << 32) + (returned[101] << 16) + returned[100];
+		ATADevices[deviceCount].LBA48 = ((long long)returned[103] << 48) + ((long long)returned[102] << 32) + ((long long)returned[101] << 16) + (long long)returned[100];
 		diskDevices[dcount].sectorsCount = ATADevices[deviceCount].LBA48;
-		
+
 		//	diskDevices[dcount].readSectors = &ReadController;
 		//	diskDevices[dcount].writeSectors = &WriteController;
 		diskDevices[dcount].structNo = deviceCount;
 		diskDevices[dcount].type = DISK_TYPE_SATA;
 		if (ATADevices[deviceCount].LBA48 == 0)
-			return;
+			return 0;
 	}
 	else {
 		ATADevices[deviceCount].isLBA48Supported = 0;
@@ -541,12 +551,13 @@ int detect_devtype(int port, int slavebit) {
 		diskDevices[dcount].structNo = deviceCount;
 		diskDevices[dcount].type = DISK_TYPE_SATA;
 		if (ATADevices[deviceCount].LBA28 == 0)
-			return;
+			return 0;
 	}
 
 	checkDiskPatritions(dcount);
 	dcount++;
 	deviceCount++;
+	return 1;
 }
 
 
@@ -559,7 +570,9 @@ void detectAta() {
 	for (int i = 0; i < deviceCount; i++)
 		addDevice(ATADevices[i].port, ATADevices[i].slavebit, 0);
 }
-
+void start_cmd(HBA_PORT *port);
+void stop_cmd(HBA_PORT *port);
+int find_cmdslot(HBA_PORT *m_port);
 HBA_MEM * abar;
 void port_rebase(HBA_PORT *port, int portno)
 {
@@ -569,14 +582,14 @@ void port_rebase(HBA_PORT *port, int portno)
 					// Command list entry size = 32
 					// Command list entry maxim count = 32
 					// Command list maxim size = 32*32 = 1K per port
-	port->clb = malloc(1024 + 4196);
+	port->clb = (uint)malloc(1024 + 4196);
 	port->clb = (((uint)port->clb) / 2048) * 2048 + 2048;
 	port->clbu = 0;
 	memset((void*)(port->clb), 0, 1024);
 
 	// FIS offset: 32K+256*portno
 	// FIS entry size = 256 unsigned chars per port
-	port->fb = malloc(256 + 4196);
+	port->fb = (uint)malloc(256 + 4196);
 	port->fb = (((uint)port->fb) / 2048) * 2048 + 2048;
 	port->fbu = 0;
 	memset((void*)(port->fb), 0, 256);
@@ -589,7 +602,7 @@ void port_rebase(HBA_PORT *port, int portno)
 		cmdheader[i].prdtl = 8;	// 8 prdt entries per command table
 								// 256 unsigned chars per command table, 64+16+48+16*8
 								// Command table offset: 40K + 8K*portno + cmdheader_index*256
-		cmdheader[i].ctba = malloc(256 + 4196);
+		cmdheader[i].ctba = (uint)malloc(256 + 4196);
 		cmdheader[i].ctba = (((uint)cmdheader[i].ctba) / 2048) * 2048 + 2048;
 		cmdheader[i].ctbau = 0;
 		memset((void*)cmdheader[i].ctba, 0, 256);
@@ -710,7 +723,7 @@ bool _read(HBA_PORT *port, unsigned long long starth, unsigned long long count, 
 			break;
 		if (port->is & HBA_PxIS_TFES)	// Task file error
 		{
-			kprintf("Read disk error %x\n",(uint)starth);
+			kprintf("Read disk error %x\n", (uint)starth);
 			return 0;
 		}
 	}
@@ -922,8 +935,9 @@ typedef struct PACKED identify_data
 	uint16_t unused9[137];
 } identify_data;
 
-void _probe_port(HBA_MEM *abar_temp)
+void _probe_port(void *abar_temp1)
 {
+	HBA_MEM *abar_temp = (HBA_MEM *)abar_temp1;
 	// Search disk in impelemented ports
 	uint pi = abar_temp->pi;
 	int i = 0;
@@ -940,7 +954,7 @@ void _probe_port(HBA_MEM *abar_temp)
 				abar = abar_temp;
 
 
-				unsigned short * buf = malloc(16 * 512);
+				unsigned short * buf = (unsigned short *)malloc(16 * 512);
 				buf[0] = 1;
 				int res = 0;
 				int jj = 0;
@@ -960,7 +974,7 @@ void _probe_port(HBA_MEM *abar_temp)
 					diskDevices[dcount].structNo = AHCICount;
 					diskDevices[dcount].sectorsCount = ((identify_data*)buf)->sectors_48;
 					AHCIDevices[AHCICount].port = &abar_temp->ports[i];
-					
+
 					diskDevices[dcount].type = DISK_TYPE_SATA_AHCI;
 					AHCICount++;
 
@@ -1012,17 +1026,17 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		 _read(AHCIDevices[diskDevices[param].structNo].port, (long long)LBA, cnt, (uint16_t*)addr);
+		_read(AHCIDevices[diskDevices[param].structNo].port, (long long)LBA, cnt, (uint16_t*)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
 		_read10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		
+
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		ide_read_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
+		ide_read_sectors(diskDevices[param].structNo, (uchar)cnt, (uint)LBA, 0x8, (uint)addr);
 	}
 	readingInProcess = 0;
 
@@ -1043,17 +1057,17 @@ void WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		write_port(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint16_t*)addr);
+		write_port(AHCIDevices[diskDevices[param].structNo].port, LBA, (unsigned long long)cnt, (uint)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
 	{
 		uint z = LBA & 0xFFFFFFFF;
 		_write10usb(diskDevices[param].link, (uint)z, (uint)cnt, addr);
-		
+
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		ide_write_sectors(diskDevices[param].structNo,(uchar)cnt, (uint)LBA, 0x8, addr);
+		ide_write_sectors(diskDevices[param].structNo, (uchar)cnt, (uint)LBA, 0x8, (uint)addr);
 	}
 	writingInProcess = 0;
 
@@ -1081,8 +1095,8 @@ LogicDrive drives[26];
 void checkFS(uint di)
 {
 	char bootSect[512];
-	ReadFromDisk((long long)0,1,&bootSect,di);
-	printTextToWindow(7, mywin, "%x %x",di,*((uint*)((uint)&bootSect+ 0x52)));
+	ReadFromDisk((long long)0, 1, &bootSect, di);
+	printTextToWindow(7, mywin, "%x %x", di, *((uint*)((uint)&bootSect + 0x52)));
 	if (bootSect[0x52] == 'F'&&bootSect[0x53] == 'A'&&bootSect[0x54] == 'T'&&bootSect[0x55] == '3')
 	{
 		char sectorsPerCluster = bootSect[0x0D];
@@ -1092,18 +1106,19 @@ void checkFS(uint di)
 		uint SectorsPerFat = *((uint*)&bootSect[0x24]);
 		uint FatStart = SectorsPerFat * FATTableCount + reserved;
 		f32drives[di].FatStart = FatStart;
-		f32drives[di].FATTable = malloc(512 * SectorsPerFat);
+		f32drives[di].FATTable = (uint*)malloc(512 * SectorsPerFat);
 		f32drives[di].reserved = reserved;
 		f32drives[di].RootEntry = RootEntry;
 		uint lost = SectorsPerFat;
 		for (int i = 0; i < SectorsPerFat >> 4; i++) {
-			ReadFromDisk((unsigned long long)reserved+(long long)i*16, lost<16?lost:16,(uint)i*16*512+ (uint)f32drives[di].FATTable, di);
+			ReadFromDisk((unsigned long long)reserved + (long long)i * 16, lost < 16 ? lost : 16, (void*)((uint)i * 16 * 512 + (uint)f32drives[di].FATTable), di);
 			lost -= 16;
 		}
 		//kprintf("((((((%x %x)))))))", f32drives[di].FATTable[0x2bc], SectorsPerFat);
 		//Wait(10000);
-	} else
-	drives[di].type = 0xff;
+	}
+	else
+		drives[di].type = 0xff;
 }
 uint lastLetter = 0, bootedFrom = 999;
 void printMem(unsigned char * a, uint c)
@@ -1126,15 +1141,15 @@ int checkPatrition(uint startSec, uint did)
 	uchar * bootSect = malloc(512);
 	uint res = ReadController(startSec, 1, bootSect, did); //printMem(bootSect, 512);
 	if (!res)
-		return;
+		return 0;
 
-	uint * q = bootSect;
+	unsigned int * q = (uint*)bootSect;
 	//kprintf("%x\n", bootSect[0]);
 	uint found = 0;
 	for (int j = 0; j < 4; j++)
 	{
 
-		if(!((uchar)bootSect[0]==0xEB))
+		if (!((uchar)bootSect[0] == 0xEB))
 		{
 			if (*((uint*)((uint)q + 454 + j * 16)) > 0) {
 				if (1)
@@ -1145,8 +1160,8 @@ int checkPatrition(uint startSec, uint did)
 							uy = lt;
 							break;
 						}
-					
-					kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (*((uint*)&bootSect[446 + j * 16 + 12]))>>11);
+
+					kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (*((uint*)&bootSect[446 + j * 16 + 12])) >> 11);
 					found = 1;
 					drives[uy].avaliable = 1;
 					drives[uy].diskId = did;
@@ -1154,7 +1169,7 @@ int checkPatrition(uint startSec, uint did)
 					drives[uy].size = (*((uint*)&bootSect[446 + j * 16 + 12]));
 					drives[uy].type = 0;
 					checkFS(uy);
-					if(uy==lastLetter)
+					if (uy == lastLetter)
 						lastLetter++;
 				}
 			}
@@ -1169,7 +1184,7 @@ void ReadFromDisk(unsigned long long LBA, uint count, void * buf, char letter)
 	if (drives[letter].avaliable)
 		ReadController(drives[letter].diskOffset + LBA, count, buf, drives[letter].diskId);
 	else
-		kprintf("No drive%x!",letter);
+		kprintf("No drive%x!", letter);
 }
 void WriteToDisk(unsigned long long LBA, uint count, void * buf, char letter)
 {
@@ -1187,7 +1202,7 @@ void checkDiskPatritions(uint i)
 		}
 
 	char bootSect[512];
-	uint *q = &bootSect;
+	uint *q = (uint*)&bootSect;
 	checkPatrition(0, i);
 	//kprintf("!%d, %d!", ll, lastLetter);
 
@@ -1195,12 +1210,12 @@ void checkDiskPatritions(uint i)
 
 	if (*((unsigned long long *)&bootSect) == 0x5452415020494645ULL)
 	{
-		q = &bootSect;;
+		q = (uint*)&bootSect;
 		unsigned long long sect = *((unsigned long long*)((uint)q + 0x48));
 		uint count = *((uint*)((uint)&bootSect + 0x50));
 		for (int j = 0; j < count; j++) {
 			ReadController(sect + ((j) >> 2), 1, &bootSect, i);
-			ulon startLBA = *((ulon*)((uint)&bootSect + 0x20 + (j<<7)));
+			ulon startLBA = *((ulon*)((uint)&bootSect + 0x20 + (j << 7)));
 			ulon  endLBA = *((ulon*)((uint)&bootSect + 0x28 + (j << 7)));
 			//kprintf("%x %x\n", (uint)startLBA, (uint)endLBA);
 			ulon  attrs = *((ulon*)((uint)&bootSect + 0x30 + (j << 7)));
@@ -1218,18 +1233,18 @@ void checkDiskPatritions(uint i)
 					uy = lt;
 					break;
 				}
-			kprintf("%x", drives[0].avaliable);	
-			kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (endLBA - startLBA + 1)>>11);
+			kprintf("%x", drives[0].avaliable);
+			kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, (endLBA - startLBA + 1) >> 11);
 			drives[uy].avaliable = 1;
 			drives[uy].diskId = i;
 			drives[uy].diskOffset = startLBA;
 			drives[uy].size = endLBA - startLBA + 1; drives[uy].type = 0; checkFS(uy);
-			if(uy==lastLetter)
+			if (uy == lastLetter)
 				lastLetter++;
 
 		}
 	}
-	else if(!drives[uty].avaliable)
+	else if (!drives[uty].avaliable)
 	{
 		int uy = 0;
 		for (int lt = 0; lt < 26; lt++)
@@ -1237,7 +1252,7 @@ void checkDiskPatritions(uint i)
 				uy = lt; break;
 			}
 
-		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, diskDevices[i].sectorsCount>>11);
+		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, diskDevices[i].sectorsCount >> 11);
 		drives[uy].avaliable = 1;
 		drives[uy].diskId = i;
 		drives[uy].diskOffset = 0;
@@ -1258,7 +1273,7 @@ void checkDiskPatritions(uint i)
 													kprintf("We are booted from that patrition!\n");
 													bootedFrom = uy;
 												}
-		if(uy==lastLetter)
+		if (uy == lastLetter)
 			lastLetter++;
 	}
 }

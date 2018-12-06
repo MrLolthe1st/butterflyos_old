@@ -454,8 +454,8 @@ void PciGetBar(PciBar *bar, unsigned int id, unsigned int index)
 		unsigned int maskHigh;
 		PciReadBar(id, index + 1, &addressHigh, &maskHigh);
 
-		bar->u.address = (void *)((addressHigh << 32) | (addressLow & ~0xf));
-		bar->size = ~((maskHigh << 32) | (maskLow & ~0xf)) + 1;
+		bar->u.address = (void *)((0) | (addressLow & ~0xf));
+		bar->size = ~((0) | (maskLow & ~0xf)) + 1;
 		bar->flags = addressLow & 0xf;
 	}
 	else if (addressLow & PCI_BAR_IO)
@@ -561,6 +561,12 @@ void get_mmio_space_size(struct pci_func *pci_device)
 	sysOutLong(0xCF8, address);
 	sysOutLong(0xCFC, pci_device->mmio_reg_addr);
 }
+
+void _rtl39_init(uint id, PciDeviceInfo *info);
+void _ide_irq();
+void _ehci_init(uint id, PciDeviceInfo *info);
+void _uhci_init(unsigned int id, PciDeviceInfo *info);
+void EthIntelInit(uint id, PciDeviceInfo *info);
 int pci_scan_bus(struct pci_func *pci_device)
 {
 	int bus;
@@ -681,6 +687,7 @@ struct mem_req {
 	uint64_t phys_addr, dest_addr;
 	size_t len;
 };
+void _probe_port(void *abar_temp);
 // ------------------------------------------------------------------------------------------------
 void PciInit()
 {
@@ -702,7 +709,7 @@ void PciInit()
 	//return;
 	kprintf("AHCI initialization...\n");
 	unsigned int q = PciRead32(iddd, 0x24);
-	_probe_port(q);
+	_probe_port((void*)q);
 	pcidone = 1;
 
 }

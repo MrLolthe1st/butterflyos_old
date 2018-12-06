@@ -267,7 +267,7 @@ static TcpConn *TcpAlloc()
     }
     else
     {
-        return VMAlloc(sizeof(TcpConn));
+        return (TcpConn*)VMAlloc(sizeof(TcpConn));
     }
 }
 
