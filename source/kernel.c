@@ -14,12 +14,12 @@ short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 #define VMAlloc malloc
 #define KeysQueue (int)0x09810
 //PIC#0; port 0x20
-#define IRQ_HANDLER(func) char func = 0x90;\
+#define IRQ_HANDLER(func) unsigned char func = 0x90;\
 __asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
 void _## func()
 unsigned int g_pitTicks = 0;
 //PIC#1; port 0xA0
-#define IRQ_HANDLER1(func) char func = 0x90;\
+#define IRQ_HANDLER1(func) unsigned char func = 0x90;\
 __asm__(#func ": \n push %esp \n pusha \n call __"# func " \n movb $0x20, %al \n outb %al, $0xA0 \n outb %al, $0x20 \n popa \n pop %esp\n iret \n");\
 void _## func()
 void printChar(char s);
@@ -52,6 +52,9 @@ unsigned int nextS;
 #include "stdarg.h"
 void __kprintf_va_list(char* str, va_list ap);
 #include "structs.c"
+#include "mathf.c"
+void printTextToWindowFormatted(unsigned char color, Window * w, char * text);
+void printTextToWindow(unsigned char color, Window * w, char * text, ...);
 int ccnt = 0;
 int drawed = 0, lastButtonState = 0, lastInteractWinId = 0;
 Window * windows = 0;
@@ -62,7 +65,6 @@ unsigned int usbPoll = 1;
 #include "Link.h"
 #include "devices/fpu.c"
 #include "usb_key_layout.c"
-#include "mathf.c"
 #include "string.c"
 #include "video.c"
 #include "Devices/ports.c"
@@ -219,36 +221,36 @@ void k_main()
 	char b[512];
 	//Wait(50);
 	initGlobals();
-	addGlobalVariable("malloc", &malloc);
-	addGlobalVariable("free", &free);
-	addGlobalVariable("printTextToWindow", &printTextToWindow);
-	addGlobalVariable("closeWindow", &closeWindow);
-	addGlobalVariable("openWindow", &openWindow);
-	addGlobalVariable("fopen", &fopen);
-	addGlobalVariable("clearScreen", &clearScreen);
-	addGlobalVariable("fclose", &fclose);
-	addGlobalVariable("Wait", &Wait);
-	addGlobalVariable("fread", &fread);
-	addGlobalVariable("ftell", &ftell);
-	addGlobalVariable("fwrite", &fwrite);
-	addGlobalVariable("fseek", &fseek);
-	addGlobalVariable("rewind", &rewind);
-	addGlobalVariable("kprintf", &kprintf);
-	addGlobalVariable("memcpy", &memcpy);
-	addGlobalVariable("getKey", &getKey);
-	addGlobalVariable("DirectoryListing", &DirectoryListing);
-	addGlobalVariable("lockTaskSwitch", &lockTaskSwitch);
-	addGlobalVariable("unlockTaskSwitch", &unlockTaskSwitch);
-	addGlobalVariable("mkdir", &mkdir);
-	addGlobalVariable("runProcess", &runProcess);
-	addGlobalVariable("testForGUI", &testForGUI);
-	addGlobalVariable("ReadFromDisk", &ReadFromDisk);
-	addGlobalVariable("putPixelVideo", &putPixelVideo);
-	addGlobalVariable("LineVideo", &LineVideo); 
-	addGlobalVariable("BarVideo", &BarVideo);
-	addGlobalVariable("drawcharv", &drawcharv);
-	addGlobalVariable("getProcessSTDStream", &getProcessSTDStream);
-	addGlobalVariable("attachIoToWindow", &attachIoToWindow);
+	addGlobalVariable("malloc", (void*)&malloc);
+	addGlobalVariable("free", (void*)&free);
+	addGlobalVariable("printTextToWindow", (void*)&printTextToWindow);
+	addGlobalVariable("closeWindow", (void*)&closeWindow);
+	addGlobalVariable("openWindow", (void*)&openWindow);
+	addGlobalVariable("fopen", (void*)&fopen);
+	addGlobalVariable("clearScreen", (void*)&clearScreen);
+	addGlobalVariable("fclose", (void*)&fclose);
+	addGlobalVariable("Wait", (void*)&Wait);
+	addGlobalVariable("fread", (void*)&fread);
+	addGlobalVariable("ftell", (void*)&ftell);
+	addGlobalVariable("fwrite", (void*)&fwrite);
+	addGlobalVariable("fseek", (void*)&fseek);
+	addGlobalVariable("rewind", (void*)&rewind);
+	addGlobalVariable("kprintf", (void*)&kprintf);
+	addGlobalVariable("memcpy", (void*)&memcpy);
+	addGlobalVariable("getKey", (void*)&getKey);
+	addGlobalVariable("DirectoryListing", (void*)&DirectoryListing);
+	addGlobalVariable("lockTaskSwitch", (void*)&lockTaskSwitch);
+	addGlobalVariable("unlockTaskSwitch", (void*)&unlockTaskSwitch);
+	addGlobalVariable("mkdir", (void*)&mkdir);
+	addGlobalVariable("runProcess", (void*)&runProcess);
+	addGlobalVariable("testForGUI", (void*)&testForGUI);
+	addGlobalVariable("ReadFromDisk", (void*)&ReadFromDisk);
+	addGlobalVariable("putPixelVideo", (void*)&putPixelVideo);
+	addGlobalVariable("LineVideo", (void*)&LineVideo);
+	addGlobalVariable("BarVideo", (void*)&BarVideo);
+	addGlobalVariable("drawcharv", (void*)&drawcharv);
+	addGlobalVariable("getProcessSTDStream", (void*)&getProcessSTDStream);
+	addGlobalVariable("attachIoToWindow", (void*)&attachIoToWindow);
 	addGlobalVariable("printf", &printf);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);

@@ -33,7 +33,7 @@ Link g_netIntfList = { &g_netIntfList, &g_netIntfList };
 // ------------------------------------------------------------------------------------------------
 NetIntf *NetIntfCreate()
 {
-    NetIntf *intf = VMAlloc(sizeof(NetIntf));
+    NetIntf *intf = (NetIntf *)VMAlloc(sizeof(NetIntf));
     memset(intf, 0, sizeof(NetIntf));
     LinkInit(&intf->link);
 

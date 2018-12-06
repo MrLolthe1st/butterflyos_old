@@ -69,7 +69,7 @@ uint readcapacity10(UsbStorage * s)
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 66);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 10;
@@ -126,7 +126,7 @@ uint readcapacity16(UsbStorage * s)
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 66);
+	cbw_t * cbw = (cbw_t*) malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 16;
@@ -217,7 +217,7 @@ void inquiryRequest(UsbStorage * s)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -277,7 +277,7 @@ u8 testUnitReady(UsbStorage * s)
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 66);
+	cbw_t * cbw =(cbw_t*) malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -324,7 +324,7 @@ void requestSense(UsbStorage * s)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -387,7 +387,7 @@ void startStorage(UsbStorage * s)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -432,10 +432,9 @@ uint MassStorageReset(UsbDevice * dev, UsbEndpoint * out)
 	}
 	return 0;
 }
-
-void _read10usb(UsbStorage * s, uint lba, uint count, void * buf)
+void _read10usb(void * ss, uint lba, uint count, void * buf)
 {
-	
+	UsbStorage * s = (UsbStorage*)ss;
 	//clearHalt(s);
 	//Get device and endpoints
 	UsbDevice * dev = s->d; char *ut = buf;
@@ -521,7 +520,7 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*) malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = 0x10011;
 	cbw->sig = 0x43425355;
@@ -580,7 +579,7 @@ void _write16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = 0x10012;
 	cbw->sig = 0x43425355;
@@ -628,8 +627,10 @@ void _write16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	free(cbw);
 }
 
-void _write10usb(UsbStorage * s, uint lba, uint count, void * buf)
+void _write10usb(void * ss, uint lba, uint count, void * buf)
 {
+
+	UsbStorage * s = (UsbStorage*)ss;
 	//Get device and endpoints
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
@@ -722,14 +723,14 @@ void _storageInit(UsbDevice * dev)
 	printTextToWindow(1, mywin, "Initializing mass storage device....\n");
 	//Check out for endpoints for in/out
 	UsbEndpoint * endpointIn, *endpointOut;
-	endpointIn = malloc(sizeof(UsbEndpoint));
+	endpointIn = (UsbEndpoint*)malloc(sizeof(UsbEndpoint));
 	endpointIn->toggle = 0;//Initial toggle state is zero(In spec no information about,
 	//but it works and do not touch it!
 	if (dev->intfDesc->endpoints->addr & 0x80)
 		endpointIn->desc = dev->intfDesc->endpoints;
 	else
 		endpointIn->desc = dev->intfDesc->endpoints->next;
-	endpointOut = malloc(sizeof(UsbEndpoint));
+	endpointOut = (UsbEndpoint*)malloc(sizeof(UsbEndpoint));
 	endpointOut->toggle = 0;//Initial toggle state is zero(In spec no information about,
 	//but it works and do not touch it!
 	if (dev->intfDesc->endpoints->addr & 0x80)
@@ -748,9 +749,9 @@ void _storageInit(UsbDevice * dev)
 	Wait(1600);
 	kprintf("LUN count:%x\n", lunCnt);
 	//Preapare transfer
-	UsbTransfer *t = malloc(sizeof(UsbTransfer));
+	UsbTransfer *t = (UsbTransfer*) malloc(sizeof(UsbTransfer));
 	//Allocate memory for storage structures
-	UsbStorage * storage = malloc(sizeof(UsbStorage));
+	UsbStorage * storage = (UsbStorage*) malloc(sizeof(UsbStorage));
 	dev->drv = storage;
 	dev->onDisconnect = &storageDisconnect;
 	t->w = 1;

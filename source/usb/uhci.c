@@ -611,7 +611,7 @@ void _uhci_init(unsigned int id, PciDeviceInfo *info)
 	}
 	unsigned int ioAddr = bar.u.port;
 	//printTextToWindow(4,mywin,"I/O Address: %x\n",ioAddr);
-	UhciController *hc = VMAlloc(sizeof(UhciController));
+	UhciController *hc = (UhciController *)VMAlloc(sizeof(UhciController));
 	hc->ioAddr = ioAddr;
 	hc->frameList = VMAlloc(1024 * sizeof(u32) + 8292);
 	hc->frameList = ((int)hc->frameList / 4096) * 4096 + 4096;

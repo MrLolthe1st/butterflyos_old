@@ -71,7 +71,7 @@ void printInt(unsigned int x, char digCount)
 		pow /= 10;
 	}
 }
-void printString(char *s)
+void printString(const char *s)
 {
 	int i = 0;
 	while (s[i] != 0)

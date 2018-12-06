@@ -565,7 +565,8 @@ void get_mmio_space_size(struct pci_func *pci_device)
 void _rtl39_init(uint id, PciDeviceInfo *info);
 void _ide_irq();
 void _ehci_init(uint id, PciDeviceInfo *info);
-
+void _uhci_init(unsigned int id, PciDeviceInfo *info);
+void EthIntelInit(uint id, PciDeviceInfo *info);
 int pci_scan_bus(struct pci_func *pci_device)
 {
 	int bus;
@@ -686,6 +687,7 @@ struct mem_req {
 	uint64_t phys_addr, dest_addr;
 	size_t len;
 };
+void _probe_port(void *abar_temp);
 // ------------------------------------------------------------------------------------------------
 void PciInit()
 {
@@ -707,7 +709,7 @@ void PciInit()
 	//return;
 	kprintf("AHCI initialization...\n");
 	unsigned int q = PciRead32(iddd, 0x24);
-	_probe_port(q);
+	_probe_port((void*)q);
 	pcidone = 1;
 
 }

@@ -3,7 +3,7 @@
 #define FILE_RIGHTS_WRITE 2
 #define FILE_RIGHTS_APPEND 4
 
-typedef __attribute__((packed)) struct _feil
+typedef  struct __attribute__((packed)) _feil
 {
 	uint add1;
 	uint add2;
@@ -15,7 +15,7 @@ FileInfo * FileSeek(uint diskId, char * f)
 	//kprintf("[%x %s]", diskId, f);
 	if (drives[diskId].type == 0)
 	{
-		return FAT32Seek(diskId, f);
+		return (FileInfo*)FAT32Seek(diskId, f);
 	}
 }
 uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
@@ -37,14 +37,14 @@ void FileCreate(uint diskId, void * f)
 	if (drives[diskId].type == 0)
 		FAT32CreateFile(diskId, f);
 }
-void concatdir(char * dir, char * cmd)
+void concatdir(char * dir, const char * cmd)
 {
 	if (cmd[0] == '\\') {
 		for (int i = 3; i < 512; i++)
 			dir[i] = 0;
 		++cmd;
 	}
-	char * cu = (uint)cmd;
+	const char * cu = cmd;
 	uint chdisk = 0;
 	while (*cu)
 	{
@@ -61,7 +61,7 @@ void concatdir(char * dir, char * cmd)
 	if (!chdisk) {
 		--cu;
 
-		cu = (uint)cmd;
+		cu = cmd;
 		char * z = dir;
 		while (*z)
 			++z;
@@ -72,7 +72,7 @@ void concatdir(char * dir, char * cmd)
 			++z;
 			++cu;
 		}
-		char * lslash = (uint)dir + 2, *llslash = (uint)dir + 2;
+		const char * lslash = (char*)((uint)dir + 2), *llslash = (char*)((uint)dir + 2);
 		cu = dir;
 		uint zz = -1;
 		while (*cu)
@@ -80,7 +80,7 @@ void concatdir(char * dir, char * cmd)
 			//printTextToWindow(2,w,"%c %x %x %d\n",(uint)*cu,(uint)((uint)lslash-(uint)dir),(uint)((uint)llslash-(uint)dir),(uint)zz);
 			if (*cu == '.'&&cu[1] == '.')
 			{
-				z = (uint)llslash + 1;
+				z = (char*)((uint)llslash + 1);
 				++cu;
 				++cu;
 				++cu;
@@ -94,8 +94,8 @@ void concatdir(char * dir, char * cmd)
 					if (*cu)
 						++cu;
 				}
-				cu = dir; lslash = (uint)dir + 2;
-				llslash = (uint)dir + 2;
+				cu = dir; lslash = (char*)((uint)dir + 2);
+				llslash = (char*)((uint)dir + 2);
 				zz = -1;
 			}
 			if (*cu == '\\') {
@@ -136,7 +136,7 @@ FILE *fopen(const char *fname, const char *mode)
 	}
 	else {
 		char * p = ups;
-		char * z = fname;
+		const char * z = fname;
 		while (*z)
 		{
 			*p = *z;
@@ -146,7 +146,7 @@ FILE *fopen(const char *fname, const char *mode)
 	}
 	if (!drives[ups[0] - 'A'].avaliable)
 		return 0;
-	FILE * n = malloc(sizeof(FILE));
+	FILE * n = (FILE*) malloc(sizeof(FILE));
 	n->name = ups;
 	n->rights = 0;
 	n->type = 0;
@@ -166,15 +166,15 @@ FILE *fopen(const char *fname, const char *mode)
 	n->currentByte = 0;
 
 
-	FileInfo * q = FileSeek(ups[0] - 'A', (uint)ups + 3);
+	FileInfo * q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 	uint ut = 0;
 	if (!q && !(n->rights & 2)) {
 		free(n);
 		return 0;
 	}
 	else if ((n->rights & 2) && !q) {
-		FileCreate(n->diskId, (uint)ups + 3);
-		q = FileSeek(ups[0] - 'A', (uint)ups + 3);
+		FileCreate(n->diskId, (char*)((uint)ups + 3));
+		q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 		ut = 1;
 	}
 
@@ -220,7 +220,7 @@ direntry * DirectoryListing(char *fname)
 		}
 	}
 	if (drives[fname[0] - 'A'].type == 0)
-		return FAT32GetDir(fname[0] - 'A', (uint)fname + 3);
+		return FAT32GetDir(fname[0] - 'A', (char*)((uint)fname + 3));
 }
 
 void attachIoToWindow(Window * w)
@@ -237,7 +237,8 @@ void printf(char * text, ...)
 	va_start(ap, text);
 	//Format string
 	text = formatString((char *)text, ap);
-	printTextToWindowFormatted(1, out->w, text);
+	if(out->w)
+		printTextToWindowFormatted(1, out->w, text);
 	va_end(ap);
 }
 #define stdin_stream 0
@@ -273,11 +274,12 @@ long ftell(FILE * f)
 		return -1;
 	return f->currentByte;
 }
-void rewind(FILE * f)
+int rewind(FILE * f)
 {
 	if (!f)
 		return 0;
 	f->currentByte = 0;
+	return 1;
 }
 
 void FileWrite(FILE * f, void * addr, uint cnt)
@@ -287,7 +289,7 @@ void FileWrite(FILE * f, void * addr, uint cnt)
 		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
 }
-uchar fwrite(const void *buf, uint size, uint count, FILE *stream)
+uchar fwrite(void *buf, uint size, uint count, FILE *stream)
 {
 	//kprintf("%x %x!", stream->add2, stream->add3);
 
@@ -313,15 +315,16 @@ uchar fread(void * addr, uint size, uint count, FILE *f)
 	FileRead(f, addr, f->currentByte, size*count);
 	f->currentByte += size * count;
 }
-void fclose(FILE * f)
+int fclose(FILE * f)
 {
 	if (!f)
 		return 0;
 	free(f);
+	return 1;
 }
 
 void mkdir(char *p, uint mode)
 {
 	if (drives[p[0] - 'A'].type == 0)
-		FAT32CreateDirectory(p[0] - 'A', (uint)p + 3);
+		FAT32CreateDirectory(p[0] - 'A', (char*)((uint)p + 3));
 }

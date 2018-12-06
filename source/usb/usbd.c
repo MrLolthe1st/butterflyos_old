@@ -387,7 +387,7 @@ UsbDevice *g_usbDeviceList;
 UsbDevice *UsbDevCreate()
 {
 	// Initialize structure
-	UsbDevice *dev = malloc(sizeof(UsbDevice));
+	UsbDevice *dev = (UsbDevice*) malloc(sizeof(UsbDevice));
 	if (dev)
 	{
 		dev->parent = 0;
@@ -708,7 +708,7 @@ static bool UsbDevInit(UsbDevice *dev)
 			case USB_DESC_INTF:
 			{
 				//printTextToWindow(1, mywin, "  De:\n");
-				UsbIntfDesc *intfDesc = malloc(sizeof(UsbIntfDesc));
+				UsbIntfDesc *intfDesc = (UsbIntfDesc*)malloc(sizeof(UsbIntfDesc));
 				memcpy(intfDesc, data, sizeof(UsbIntfDesc) - 8);
 				intfDesc->next = 0;
 				intfDesc->endpoints = 0;
@@ -731,7 +731,7 @@ static bool UsbDevInit(UsbDevice *dev)
 			case USB_DESC_ENDP:
 			{
 				//Currently I'm checking last interface, add that endpoint to it.
-				UsbEndpDesc *endp_desc = malloc(sizeof(UsbEndpDesc));
+				UsbEndpDesc *endp_desc = (UsbEndpDesc*) malloc(sizeof(UsbEndpDesc));
 				memcpy(endp_desc, data, sizeof(UsbEndpDesc) - 4);
 				endp_desc->next = 0;
 				//UsbPrintEndpDesc(endp_desc);

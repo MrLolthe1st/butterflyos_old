@@ -104,15 +104,15 @@ static void AcpiParseFacp(AcpiFadt *facp)
         kprintf("ACPI already enabled\n");
     }
 }
-volatile uint  *g_localApicAddr = 0x2550;
-volatile uint  *g_activeCpuCount =0x2555;
+volatile uint  *g_localApicAddr = (uint*) 0x2550;
+volatile uint  *g_activeCpuCount = (uint*) 0x2555;
 // ------------------------------------------------------------------------------------------------
 static void AcpiParseApic(AcpiMadt *madt)
 {
     s_madt = madt;
 
     kprintf("Local APIC Address = 0x%x\n", madt->localApicAddr);
-    *g_localApicAddr = (u8 *)(uintptr_t)madt->localApicAddr;
+    *g_localApicAddr = (uintptr_t)madt->localApicAddr;
 
     u8 *p = (u8 *)(madt + 1);
     u8 *end = (u8 *)madt + madt->header.length;
@@ -162,7 +162,7 @@ static void AcpiParseDT(AcpiHeader *header)
     u32 signature = header->signature;
 
     char sigStr[5];
-    memcpy(sigStr, &signature, 4);
+    memcpy(sigStr, (char*)&signature, 4);
     sigStr[4] = 0;
     kprintf("!%s 0x%x\n", &sigStr, signature);
 
@@ -220,10 +220,10 @@ static bool AcpiParseRsdp(u8 *p)
         kprintf("Checksum failed\n");
         return false;
     }
-	printMem(p,0x2c);
+	//printMem(p,0x2c);
     // Print OEM
     char oem[7];
-    memcpy(&oem, (uint)p + 9, 6);
+    memcpy((char*)&oem, (char*)((uint)p + 9), 6);
     oem[6] = '\0';
     kprintf("OEM = %s\n", &oem);
 
@@ -234,7 +234,7 @@ static bool AcpiParseRsdp(u8 *p)
         kprintf("Version 1\n");
 
         u32 rsdtAddr = *(u32 *)((uint)p + 16);
-		printMem((uint)p+16,4);
+		//printMem((uint)p+16,4);
         AcpiParseRsdt((AcpiHeader *)(uintptr_t)rsdtAddr);
     }
     else if (revision == 2)
@@ -373,13 +373,13 @@ kprintf("%x*",madt);
 // ------------------------------------------------------------------------------------------------
 static u32 LocalApicIn(uint reg)
 {
-    return MmioRead32(*g_localApicAddr + reg);
+    return MmioRead32((uint*)(*g_localApicAddr + reg));
 }
 
 // ------------------------------------------------------------------------------------------------
 static void LocalApicOut(uint reg, u32 data)
 {
-    MmioWrite32(*g_localApicAddr + reg, data);
+    MmioWrite32((uint*)(*g_localApicAddr + reg), data);
 }
 
 // ------------------------------------------------------------------------------------------------

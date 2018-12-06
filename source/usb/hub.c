@@ -237,7 +237,7 @@ void _usbhubinit(UsbDevice *dev)
 
 		UsbPrintHubDesc(&desc);
 
-		UsbHub *hub = malloc(sizeof(UsbHub));
+		UsbHub *hub = (UsbHub*) malloc(sizeof(UsbHub));
 		hub->dev = dev;
 		hub->desc = desc;
 

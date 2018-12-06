@@ -314,8 +314,8 @@ void EthIntelInit(uint id, PciDeviceInfo *info)
     MmioRead32(mmioAddr + REG_ICR);
 
     // Allocate memory
-    RecvDesc *rxDescs = VMAlloc(RX_DESC_COUNT * sizeof(RecvDesc));
-    TransDesc *txDescs = VMAlloc(TX_DESC_COUNT * sizeof(TransDesc));
+    RecvDesc *rxDescs = (RecvDesc *) VMAlloc(RX_DESC_COUNT * sizeof(RecvDesc));
+    TransDesc *txDescs = (TransDesc *)VMAlloc(TX_DESC_COUNT * sizeof(TransDesc));
 
     s_device.rxDescs = rxDescs;
     s_device.txDescs = txDescs;
