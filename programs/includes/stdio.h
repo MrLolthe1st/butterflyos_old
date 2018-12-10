@@ -40,6 +40,7 @@ typedef struct dentr_y
 	unsigned char attrs;
 	struct dentr_y * next;
 } direntry;
+void Wait(unsigned int n);
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);
 unsigned char fread(void * addr, uint size, uint count, FILE *f);
 void fclose(FILE * f);

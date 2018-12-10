@@ -7,7 +7,7 @@ void Wait(unsigned int n)
 	unsigned int ls = (*sec100);
 	while ((*sec100) - ls < n)
 	{
-		__asm__("int $0x40");//Continue execution
+		__asm__("int $0x41");//Continue execution
 		//((void*)(_multitasking2))();
 	}
 }
@@ -16,7 +16,7 @@ void WWait(unsigned int n)
 	unsigned int ls = (*sec100);
 	while ((*sec100) - ls < n)
 	{
-		__asm__("int $0x40");//Continue execution
+		__asm__("int $0x41");//Continue execution
 							 //((void*)(_multitasking2))();
 	}
 }

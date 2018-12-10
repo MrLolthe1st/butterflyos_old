@@ -4,6 +4,7 @@ typedef struct UsbKbd
 	UsbTransfer dataTransfer;
 	u8 data[8];
 	u8 lastData[8];
+	unsigned int lastUpdate;
 } UsbKbd;
 
 #define KBD_LSHIFT                      0x01
@@ -83,7 +84,7 @@ void InputOnKey(uint code, uint val)
 					}
 				}
 
-				addKey(ch);
+				addKey(0, ch, 0);
 			}
 		}
 	}
@@ -108,6 +109,8 @@ static void UsbKbdProcess(UsbKbd *kbd)
 {
 	u8 *data = kbd->data;
 	bool error = false;
+	printTextToWindow(3, mywin, "%08llx\n", *((unsigned long long*)data));
+	
 	// Modifier keys
 	uint modDelta = data[0] ^ kbd->lastData[0];
 	for (uint i = 0; i < 8; ++i)
@@ -143,6 +146,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 			if (!memchr(kbd->lastData + 2, usage, 6))
 			{
 				InputOnKey(usage, 1);
+				kbd->lastUpdate = *sec100;
 			}
 		}
 		else if (usage > 0)
@@ -155,7 +159,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 	// Update keystate
 	if (!error)
 	{
-		memcpy(kbd->lastData, data, 8);
+		memcpy(kbd->lastData, data, 8); 
 	}
 }
 
@@ -163,7 +167,22 @@ static void UsbKbdProcess(UsbKbd *kbd)
 static void UsbKbdPoll(UsbDevice *dev)
 {
 	UsbKbd *kbd = dev->drv;
+	if ((*sec100) - kbd->lastUpdate > 2000)
+	{
+		for (uint i = 2; i < 8; ++i)
+		{
+			uint usage = kbd->lastData[i];
 
+			if (usage >= 4)
+			{
+				InputOnKey(usage, 1);
+				
+			}
+			
+		}
+		kbd->lastUpdate = *sec100;
+		return;
+	}
 	UsbTransfer *t = &kbd->dataTransfer;
 
 	if (t->complete)
@@ -191,7 +210,7 @@ void _UsbKbdInit(UsbDevice *dev)
 
 		dev->drv = kbd;
 		dev->drvPoll = UsbKbdPoll;
-
+		kbd->lastUpdate = 0;
 		uint intfIndex = dev->intfDesc->intfIndex;
 		kprintf("IntfIndex: %x", intfIndex);
 		// Only send interrupt report when data changes

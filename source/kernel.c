@@ -240,6 +240,8 @@ void k_main()
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
+	initSVGA();
+	mywin = openWindow(640, 680, 0, 0, "System Info");
 	AcpiInit();
 	iint();
 	//Wait(1000);
@@ -294,9 +296,7 @@ void k_main()
 	//CpuDetect();
 	//for(;;);
 	//
-	mywin = openWindow(640, 680, 0, 0, "System Info");
 	mywin->handler = &Win1Handler;
-	initSVGA();
 	PciInit();
 	updateWindows();
 	//swapBuffer();
@@ -304,7 +304,7 @@ void k_main()
 	NetInit();
 	NetPrintRouteTable();
 	CmdHttp("127.0.0.1", "/");
-	printTextToWindow(4, mywin, "\nListing of connected devices:\n");
+	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n",(uint)'а');
 	{
 		printTextToWindow(4, mywin, "USB Devices:\n");
 		

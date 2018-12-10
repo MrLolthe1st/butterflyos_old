@@ -78,7 +78,7 @@ void smp_core(uint procId)
 				}
 				drawed = 0;
 				//draw3D(640, 680, tttt, mywin->video);
-				
+				while (locked);
 				updateWindows();
 				int a = mouseX, b = mouseY;
 				lastX = a; lastY = b;

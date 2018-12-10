@@ -192,8 +192,9 @@ char* formatString(char* str, va_list ap)
 }
 
 void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
-
+	
 	kprintf(text);
+
 	//Window != zero
 	if (w) {
 		while (*text != 0) {
@@ -277,6 +278,8 @@ void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 		}
 		free(text);
 	}
+
+	w->updating = 0;
 	w->cursorState = 1;
 	w->lastUpdate = *sec100;
 }
@@ -409,6 +412,7 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	{
 		attachIoToWindow(win);
 	}
+	win->updating = 0;
 	win->lastUpdate = *sec100;						//Last time window updated
 	if (startX > 200) startX = 30;
 	if (startY > 200) startY = 30;

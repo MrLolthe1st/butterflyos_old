@@ -46,10 +46,10 @@ void _main(int argc, char ** argv)
 		key = 0;
 		for (int i = 0; i < 512; i++)
 			cmd[i] = 0;
-		while (key != 10)
+		while (key != 13)
 		{
 			while ((key = RecieveKey()) == 0) { Wait(1); };
-			if (key == 10) continue;
+			if (key == 13) continue;
 			if (key == 0x9) continue;
 			if ((key==0x8&&cmdLen > 0)||key!=0x8)
 				printf("%c", key);

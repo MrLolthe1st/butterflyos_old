@@ -43,5 +43,5 @@ copy images\disk.img images\boot.img
 chcp 65001
 utils\dd.exe if=images\boot.img of=e:\butterflyos\images\dq.vhd
 #$ping 127.0.0.1 -n 16 > nul
-qemu\qemu-system-x86_64.exe -trace usb_host  -smp cpus=3,cores=3 -m 120 -drive id=disk,file=images\boot.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0  -no-reboot -vga std -D aa.txt -monitor stdio -usbdevice mouse -netdev user,id=n1,ipv6=off -device e1000,netdev=n1,mac=52:54:98:76:54:32
+qemu\qemu-system-x86_64.exe -trace usb_host  -smp cpus=3,cores=3 -m 120 -drive id=disk,file=images\boot.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0  -no-reboot -vga std -D aa.txt -monitor stdio -usbdevice keyboard -netdev user,id=n1,ipv6=off -device e1000,netdev=n1,mac=52:54:98:76:54:32
 pause

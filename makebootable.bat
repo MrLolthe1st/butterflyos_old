@@ -1,3 +1,3 @@
 
 pause
-utils\bootmaker binaries\bootloadder.bin images\disk.img  0
+utils\bootmaker binaries\bootloader.bin images\disk.img  0

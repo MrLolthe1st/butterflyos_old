@@ -34,6 +34,7 @@ char F32OkName(char q)
 {
 	if ((q >= 'A'&&q <= 'Z') ||
 		(q >= 'a'&&q <= 'z') ||
+		(q >= '0'&&q <= '9') ||
 		(q >= 128 && q <= 228) ||
 		(q >= 230 && q <= 255) ||
 		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' || q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' || q == '}' || q == '~'))
@@ -824,7 +825,7 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 	uint ofs = 0;
 	lastCluster = 0;
 	ReadFromDisk(FatStart + startingCluster - 2, sectorsPerCluster, cluster, diskId);
-	F32E * entrs = (F32E*) cluster;
+	F32E * entrs = (F32E*)cluster;
 	currentCluster = entrs[clustIndex].clusterLo + (entrs[clustIndex].clusterHi << 16); uint sz = entrs[clustIndex].size;
 	//printTextToWindow(2, mywin, "Starting cluster %x\n", currentCluster);
 	//kprintf("Starting at: %x\n", currentCluster);

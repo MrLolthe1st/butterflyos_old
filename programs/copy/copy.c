@@ -12,6 +12,11 @@ void _main(int argc, char ** argv)
 	
 	FILE * z = fopen(argv[0],"r");
 	FILE * u = fopen(argv[1],"w");
+	if(!z)
+	{
+		printf("Can't find file %s!\n", argv[0]);
+		return;
+	}
 	fseek(z,0,2);
 	uint sz = ftell(z);
 	rewind(z);
@@ -42,6 +47,8 @@ void _main(int argc, char ** argv)
 			}
 		}
 		k=(int)((i+1)*1.0/(sz*1.00/buf_size*1.0)*100.0);
+		if(k>100)
+			k=100;
 		printf("%d done!",k);
 	}
 	free(buf);

@@ -1,7 +1,9 @@
 
 typedef struct __attribute__((packed)) {
-	uint8_t status;
+	uint32_t status;
 	uint32_t size;
+	uint32_t a1;
+	uint32_t a2;
 } alloc_t;
 #define MAX_PAGE_ALIGNED_ALLOCS 32
 
@@ -165,9 +167,10 @@ unsigned int count_memory(void) {
 char * malloc(size_t size) {
 	if (!size) { return 0;
 	}
-	
+	lockTaskSwitch(1);
 	/* Loop through blocks and find a block sized the same or bigger */
 	uint8_t * mem = (uint8_t *)heap_begin;
+	size = (size / 16) * 16 + 16;
 	while ((uint32_t)mem < last_alloc) {
 		alloc_t * a = (alloc_t *)mem;
 		/* If the alloc has no size, we have reaced the end of allocation */
@@ -180,7 +183,6 @@ char * malloc(size_t size) {
 		if (a->status) {
 			mem += a->size;
 			mem += sizeof(alloc_t);
-			mem += 4;
 			continue;
 		}
 		/* If the is not allocated, and its size is bigger or equal to the
@@ -192,7 +194,7 @@ char * malloc(size_t size) {
 
 			//kprintf("RE:Allocated %d bytes from 0x%x to 0x%x\n", size, mem + sizeof(alloc_t), mem + sizeof(alloc_t) + size);
 			memset(mem + sizeof(alloc_t), 0, size);
-			memory_used += size + sizeof(alloc_t);
+			memory_used += size + sizeof(alloc_t); unlockTaskSwitch();
 			return (char *)(mem + sizeof(alloc_t));
 		}
 		/* If it isn't allocated, but the size is not good, then
@@ -201,13 +203,12 @@ char * malloc(size_t size) {
 		 */
 		mem += a->size;
 		mem += sizeof(alloc_t);
-		mem += 4;
 	}
 
 nalloc:;
 	if (last_alloc + size + sizeof(alloc_t) >= heap_end) {
 		//set_task(0);
-		printString("Cannot allocate %d bytes! Out of memory.\n");
+		printString("Cannot allocate %d bytes! Out of memory.\n"); unlockTaskSwitch();
 	}
 	alloc_t * alloc = (alloc_t *)last_alloc;
 	alloc->status = 1;
@@ -215,10 +216,10 @@ nalloc:;
 
 	last_alloc += size;
 	last_alloc += sizeof(alloc_t);
-	last_alloc += 4;
 	//kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
-	memory_used += size + 4 + sizeof(alloc_t);
+	memory_used += size  + sizeof(alloc_t);
 	memset((char *)((uint32_t)alloc + sizeof(alloc_t)), 0, size);
+	unlockTaskSwitch();
 	return (char *)((uint32_t)alloc + sizeof(alloc_t));
 	/*
 		char* ret = (char*)last_alloc;
@@ -263,7 +264,7 @@ void mm_print_out() {
 
 void free(void * mem) {
 	alloc_t * alloc = (mem - sizeof(alloc_t));
-	memory_used -= alloc->size + sizeof(alloc_t);
+	memory_used -= alloc->size + sizeof(alloc_t) ;
 	alloc->status = 0;
 }
 

@@ -388,7 +388,7 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 
 		case 's':
 		{
-			char *s = va_arg(args, char *);
+			 char *s = va_arg(args, char *);
 			if (!s)
 			{
 				s = "(null)";
@@ -399,18 +399,35 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 				char *p = s;
 				while (*p)
 				{
-				
 					++p;
 				}
 
 				
 				if(ww)
 				{
-					char wz=s[f.width];
-					s[f.width] = 0;
-					f.width=-1;
-					OutputString(&f, s);
-					s[f.width]=wz;
+					int width = f.width;
+					//printTextToWindow(1,mywin,"[%d]", f.width);
+					char padChar = f.flags & PAD_ZERO ? '0' : ' ';
+
+					if ((f.flags & PAD_LEFT))
+					{
+						while (--width >= 0)
+						{
+							OutputChar(&f, padChar);
+						}
+					}
+
+					while (*s&&width>0)
+					{
+						OutputChar(&f, *s++);
+						width--;
+
+					}
+
+					while (--width >= 0)
+					{
+						OutputChar(&f, padChar);
+					}
 					
 				} else { 
 					f.width -= p - s;
