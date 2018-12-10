@@ -221,11 +221,11 @@ static void TcpPrint(const NetBuf *pkt)
     //const u8 *data = (pkt->start + hdrLen);
     uint dataLen = (pkt->end - pkt->start) - hdrLen;
 
-    ConsolePrint("  TCP: src=%s:%d dst=%s:%d\n",
+    printTextToWindow(4,mywin,"  TCP: src=%s:%d dst=%s:%d\n",
             srcAddrStr, srcPort, dstAddrStr, dstPort);
-    ConsolePrint("  TCP: seq=%u ack=%u dataLen=%u\n",
+    printTextToWindow(4,mywin,"  TCP: seq=%u ack=%u dataLen=%u\n",
             seq, ack, dataLen);
-    ConsolePrint("  TCP: flags=%02x window=%u urgent=%u checksum=%u%c\n",
+    printTextToWindow(4,mywin,"  TCP: flags=%02x window=%u urgent=%u checksum=%u%c\n",
             hdr->flags, windowSize, urgent, checksum,
             checksum2 ? '!' : ' ');
 
@@ -239,7 +239,7 @@ static void TcpPrint(const NetBuf *pkt)
 
         if (opt.mss)
         {
-            ConsolePrint("  TCP: mss=%u\n", opt.mss);
+            printTextToWindow(4,mywin,"  TCP: mss=%u\n", opt.mss);
         }
     }
 }
@@ -260,6 +260,7 @@ static void TcpSetState(TcpConn *conn, uint state)
 static TcpConn *TcpAlloc()
 {
     Link *p = s_freeConns.next;
+	
     if (p != &s_freeConns)
     {
         LinkRemove(p);

@@ -39,7 +39,7 @@ void IcmpPrint(const NetBuf *pkt)
 
     uint checksum2 = NetChecksum(pkt->start, pkt->end);
 
-    ConsolePrint("  ICMP: type=%d code=%d id=%d sequence=%d len=%d checksum=%d%c\n",
+    printTextToWindow(4,mywin,"  ICMP: type=%d code=%d id=%d sequence=%d len=%d checksum=%d%c\n",
             type, code, id, sequence, pkt->end - pkt->start, checksum,
             checksum2 ? '!' : ' ');
 }
@@ -123,7 +123,7 @@ void IcmpRecv(NetIntf *intf, const Ipv4Header *ipHdr, NetBuf *pkt)
         char srcAddrStr[IPV4_ADDR_STRING_SIZE];
         Ipv4AddrToStr(srcAddrStr, sizeof(srcAddrStr), &ipHdr->src);
 
-        ConsolePrint("Echo request from %s\n", srcAddrStr);
+        printTextToWindow(4,mywin,"Echo request from %s\n", srcAddrStr);
         IcmpEchoReply(&ipHdr->src, id, sequence, data + 8, pkt->end);
     }
     else if (type == ICMP_TYPE_ECHO_REPLY)
@@ -131,6 +131,6 @@ void IcmpRecv(NetIntf *intf, const Ipv4Header *ipHdr, NetBuf *pkt)
         char srcAddrStr[IPV4_ADDR_STRING_SIZE];
         Ipv4AddrToStr(srcAddrStr, sizeof(srcAddrStr), &ipHdr->src);
 
-        ConsolePrint("Echo reply from %s\n", srcAddrStr);
+        printTextToWindow(4,mywin,"Echo reply from %s\n", srcAddrStr);
     }
 }

@@ -96,6 +96,7 @@ IDT_HANDLERM(multitasking) {
 		");
 	*((uint*)((uint)g_localApicAddr + 0xb0)) = 0;
 	*sec100 = (*sec100) + 1; // % 100;
+	
 	__asm__("\
 	call _multiHandler");
 
@@ -170,10 +171,10 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	fclose(fp);
 	//kprintf("%x\n", &getKey);
 	ELF_Process *  entry = relocELF((void*)progq);
-	printTextToWindow(5, mywin, "Elf");
+	//printTextToWindow(5, mywin, "Elf");
 	if (!entry)
 	{
-		printTextToWindow(5, mywin, "~");
+		//printTextToWindow(5, mywin, "~");
 		free((void*)progq);
 		return;
 	}
@@ -295,24 +296,34 @@ char pointIn(int a, int b, int c, int d, int e, int f) {
 		return 0;
 }
 int wox = 0, woy = 0, dragging = 0;
+void makeMouseHook(uint event, uint ev2)
+{
+	HookEvent he;
+	he.data = (void*)malloc(12);
+	uint * w = (uint *)he.data;
+	w[0] = ev2;
+	w[1] = mouseX;
+	w[2] = mouseY;
+	hookEvent(event, &he);
+	free(he.data);
+}
 void mouseHandler()
 {
-	if (mouseX < 2) {
-		mouseX = 2;
+	if (mouseX < 0) {
+		mouseX = 0;
 	}
-	if (mouseX >= width - 18) {
-		mouseX = width - 18;
+	if (mouseX >= width - 2) {
+		mouseX = width - 2;
 	}
-
 	if ((1 << 5) & mouse_byte[0] != 0)
 		mouseY += mouse_byte[2];
 	else
 		mouseY -= mouse_byte[2];
-	if (mouseY < 2) {
-		mouseY = 2;
+	if (mouseY < 1) {
+		mouseY = 1;
 	}
-	if (mouseY >= height - 18) {
-		mouseY = height - 18;
+	if (mouseY >= height - 3) {
+		mouseY = height - 3;
 	}
 	if (drawed) {
 		CopyToVMemoryD(lastX - 1, lastY - 1, 19, 19, under);
@@ -339,16 +350,22 @@ void mouseHandler()
 				// we.data = w;
 				if ((buttons & 1) < (lastButtonState & 1)) {
 					we.code = WINDOWS_MOUSE_LEFT_BUTTON_UP;
+					we.data = ((mouseX - w->x) << 16) + (mouseY - w->y);
+					makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_LEFT_BUTTON_UP);
 					w->handler(&we);
 				}
 
 				if ((buttons & 4) < (lastButtonState & 4)) {
 					we.code = WINDOWS_MOUSE_MIDDLE_BUTTON_UP;
+					we.data = ((mouseX - w->x) << 16) + (mouseY - w->y);
+					makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_MIDDLE_BUTTON_UP);
 					w->handler(&we);
 				}
 
 				if ((buttons & 2) < (lastButtonState & 2)) {
-					we.code = WINDOWS_MOUSE_MIDDLE_BUTTON_UP;
+					we.code = WINDOWS_MOUSE_RIGHT_BUTTON_UP;
+					we.data = ((mouseX - w->x) << 16) + (mouseY - w->y);
+					makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_RIGHT_BUTTON_UP);
 					w->handler(&we);
 				}
 			}
@@ -419,16 +436,21 @@ void mouseHandler()
 			}
 			if ((buttons & 1) > (lastButtonState & 1) && dragging == 0) {
 				we.code = WINDOWS_MOUSE_LEFT_BUTTON_DOWN;
+				we.data = ((mouseX - w->x) << 16) + (mouseY - w->y);
+				makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_LEFT_BUTTON_DOWN);
 				clickedIn->handler(&we);
 			}
 
 			if ((buttons & 4) > (lastButtonState & 4) && dragging == 0) {
 				we.code = WINDOWS_MOUSE_MIDDLE_BUTTON_DOWN;
+				we.data = ((mouseX - w->x) << 16) + (mouseY - w->y);
+				makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_MIDDLE_BUTTON_DOWN);
 				clickedIn->handler(&we);
 			}
 
 			if ((buttons & 2) > (lastButtonState & 2) && dragging == 0) {
-				we.code = WINDOWS_MOUSE_MIDDLE_BUTTON_DOWN;
+				we.code = WINDOWS_MOUSE_RIGHT_BUTTON_DOWN;
+				makeMouseHook(HOOK_MOUSE_CLICK, WINDOWS_MOUSE_RIGHT_BUTTON_DOWN);
 				clickedIn->handler(&we);
 			}
 		}

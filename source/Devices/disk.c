@@ -350,6 +350,7 @@ typedef struct __attribute__((packed)) tDiskDev {
 	unsigned char type;
 	unsigned char structNo;
 	void * link;
+	char data[512];
 }
 DiskDev;
 typedef struct __attribute__((packed)) tATA {
@@ -552,6 +553,10 @@ int detect_devtype(int port, int slavebit) {
 		diskDevices[dcount].type = DISK_TYPE_SATA;
 		if (ATADevices[deviceCount].LBA28 == 0)
 			return 0;
+	}
+	for (int oou1 = 0; oou1 < 256; oou1++) {
+		diskDevices[dcount].data[oou1 * 2] = returned[oou1] >> 8;
+		diskDevices[dcount].data[oou1 * 2 + 1] = returned[oou1] & 0xFF;
 	}
 
 	checkDiskPatritions(dcount);
@@ -973,6 +978,11 @@ void _probe_port(void *abar_temp1)
 					//					diskDevices[dcount].ReadController = &ReadController;
 					diskDevices[dcount].structNo = AHCICount;
 					diskDevices[dcount].sectorsCount = ((identify_data*)buf)->sectors_48;
+					
+					for (int oou1 = 0; oou1 < 256; oou1++) {
+						diskDevices[dcount].data[oou1 * 2] = buf[oou1] >> 8;
+						diskDevices[dcount].data[oou1 * 2+1] = buf[oou1] & 0xFF;
+					}
 					AHCIDevices[AHCICount].port = &abar_temp->ports[i];
 
 					diskDevices[dcount].type = DISK_TYPE_SATA_AHCI;
@@ -1096,7 +1106,7 @@ void checkFS(uint di)
 {
 	char bootSect[512];
 	ReadFromDisk((long long)0, 1, &bootSect, di);
-	printTextToWindow(7, mywin, "%x %x", di, *((uint*)((uint)&bootSect + 0x52)));
+	//printTextToWindow(7, mywin, "%x %x", di, *((uint*)((uint)&bootSect + 0x52)));
 	if (bootSect[0x52] == 'F'&&bootSect[0x53] == 'A'&&bootSect[0x54] == 'T'&&bootSect[0x55] == '3')
 	{
 		char sectorsPerCluster = bootSect[0x0D];

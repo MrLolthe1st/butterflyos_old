@@ -3,24 +3,20 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
-#define buf_size 265536
-void handle(int a)
-{
-	
-}
+#define buf_size 65536
 void _main(int argc, char ** argv)
 {	
 
 	if(argc!=2)
 		return;
-	Window * w = openWindow(200,100,0,&handle,"Copying files");
+	
 	FILE * z = fopen(argv[0],"r");
 	FILE * u = fopen(argv[1],"w");
 	fseek(z,0,2);
 	uint sz = ftell(z);
 	rewind(z);
 	char * buf = malloc(buf_size);
-	
+	int k=0;
 	for(uint i=0;i<=sz/buf_size;i++)
 	{
 		if((sz-i*buf_size)<buf_size)
@@ -31,9 +27,23 @@ void _main(int argc, char ** argv)
 			fread(buf,buf_size,1,z);
 			fwrite(buf,buf_size,1,u);
 		}
-		printTextToWindow(2,w,"%d done!\n",(int)(i*1.0/(sz*1.00/buf_size*1.0)*100.0));
+		
+		int kk=k;
+		if(i>0)
+		{
+			for(int oo=0;oo<6;oo++)
+				printf("%c", 8);
+			while(k>0||k==0)
+			{
+				printf("%c",8);
+				k/=10;
+				if(k==0)
+					break;
+			}
+		}
+		k=(int)((i+1)*1.0/(sz*1.00/buf_size*1.0)*100.0);
+		printf("%d done!",k);
 	}
-	closeWindow(w);
 	free(buf);
 	fclose(z);
 	fclose(u);

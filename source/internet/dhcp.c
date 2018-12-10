@@ -147,7 +147,7 @@ static bool DhcpParseOptions(DhcpOptions *opt, const NetBuf *pkt)
                 opt->parameterEnd = next;
                 break;
             default:
-                ConsolePrint("   DHCP: unknown option (%d)\n", type);
+                printTextToWindow(4,mywin,"   DHCP: unknown option (%d)\n", type);
                 break;
             }
 
@@ -197,7 +197,7 @@ static void DhcpRequest(NetIntf *intf, const DhcpHeader *hdr, const DhcpOptions 
 
     char requestedIpAddrStr[IPV4_ADDR_STRING_SIZE];
     Ipv4AddrToStr(requestedIpAddrStr, sizeof(requestedIpAddrStr), requestedIpAddr);
-    ConsolePrint("DHCP requesting lease for %s\n", requestedIpAddrStr);
+    printTextToWindow(4,mywin,"DHCP requesting lease for %s\n", requestedIpAddrStr);
 
     NetBuf *pkt = NetAllocBuf();
 
@@ -306,21 +306,21 @@ void DhcpRecv(NetIntf *intf, const NetBuf *pkt)
     switch (opt.messageType)
     {
     case DHCP_OFFER:
-        ConsolePrint("DHCP offer received for %s\n", yourIpAddrStr);
+        printTextToWindow(4,mywin,"DHCP offer received for %s\n", yourIpAddrStr);
         DhcpRequest(intf, hdr, &opt);
         break;
 
     case DHCP_ACK:
-        ConsolePrint("DHCP ack received for %s\n", yourIpAddrStr);
+        printTextToWindow(4,mywin,"DHCP ack received for %s\n", yourIpAddrStr);
         DhcpAck(intf, hdr, &opt);
         break;
 
     case DHCP_NAK:
-        ConsolePrint("DHCP nak received for %s\n", yourIpAddrStr);
+        printTextToWindow(4,mywin,"DHCP nak received for %s\n", yourIpAddrStr);
         break;
 
     default:
-        ConsolePrint("DHCP message unhandled\n");
+        printTextToWindow(4,mywin,"DHCP message unhandled\n");
         break;
     }
 }
@@ -328,7 +328,7 @@ void DhcpRecv(NetIntf *intf, const NetBuf *pkt)
 // ------------------------------------------------------------------------------------------------
 void DhcpDiscover(NetIntf *intf)
 {
-    ConsolePrint("DHCP discovery\n");
+    printTextToWindow(4,mywin,"DHCP discovery\n");
 
     NetBuf *pkt = NetAllocBuf();
 
@@ -380,12 +380,12 @@ void DhcpPrint(const NetBuf *pkt)
     Ipv4AddrToStr(gatewayIpAddrStr, sizeof(gatewayIpAddrStr), &hdr->gatewayIpAddr);
     EthAddrToStr(clientEthAddrStr, sizeof(clientEthAddrStr), &hdr->clientEthAddr);
 
-    ConsolePrint("   DHCP: opcode=%d htype=%d hlen=%d hopCount=%d xid=%d secs=%d flags=%d len=%d\n",
+    printTextToWindow(4,mywin,"   DHCP: opcode=%d htype=%d hlen=%d hopCount=%d xid=%d secs=%d flags=%d len=%d\n",
         hdr->opcode, hdr->htype, hdr->hlen, hdr->hopCount,
         NetSwap32(hdr->xid), NetSwap16(hdr->secCount), NetSwap16(hdr->flags), pkt->end - pkt->start);
-    ConsolePrint("   DHCP: client=%s your=%s server=%s gateway=%s\n",
+    printTextToWindow(4,mywin,"   DHCP: client=%s your=%s server=%s gateway=%s\n",
         clientIpAddrStr, yourIpAddrStr, serverIpAddrStr, gatewayIpAddrStr);
-    ConsolePrint("   DHCP: eth=%s serverName=%s bootFilename=%s\n",
+    printTextToWindow(4,mywin,"   DHCP: eth=%s serverName=%s bootFilename=%s\n",
         clientEthAddrStr, hdr->serverName, hdr->bootFilename);
 
     DhcpOptions opt;
@@ -398,46 +398,46 @@ void DhcpPrint(const NetBuf *pkt)
 
     if (opt.messageType)
     {
-        ConsolePrint("   DHCP: message type: %d\n", opt.messageType);
+        printTextToWindow(4,mywin,"   DHCP: message type: %d\n", opt.messageType);
     }
 
     if (opt.subnetMask)
     {
         Ipv4AddrToStr(ipv4AddrStr, sizeof(ipv4AddrStr), opt.subnetMask);
-        ConsolePrint("   DHCP: subnetMask: %s\n", ipv4AddrStr);
+        printTextToWindow(4,mywin,"   DHCP: subnetMask: %s\n", ipv4AddrStr);
     }
 
     for (const Ipv4Addr *addr = opt.routerList; addr != opt.routerEnd; ++addr)
     {
         Ipv4AddrToStr(ipv4AddrStr, sizeof(ipv4AddrStr), addr);
-        ConsolePrint("   DHCP: router: %s\n", ipv4AddrStr);
+        printTextToWindow(4,mywin,"   DHCP: router: %s\n", ipv4AddrStr);
     }
 
     for (const Ipv4Addr *addr = opt.dnsList; addr != opt.dnsEnd; ++addr)
     {
         Ipv4AddrToStr(ipv4AddrStr, sizeof(ipv4AddrStr), addr);
-        ConsolePrint("   DHCP: dns: %s\n", ipv4AddrStr);
+        printTextToWindow(4,mywin,"   DHCP: dns: %s\n", ipv4AddrStr);
     }
 
     if (opt.requestedIpAddr)
     {
         Ipv4AddrToStr(ipv4AddrStr, sizeof(ipv4AddrStr), opt.requestedIpAddr);
-        ConsolePrint("   DHCP: requested ip: %s\n", ipv4AddrStr);
+        printTextToWindow(4,mywin,"   DHCP: requested ip: %s\n", ipv4AddrStr);
     }
 
     if (opt.leaseTime)
     {
-        ConsolePrint("   DHCP: lease time: %d\n", opt.leaseTime);
+        printTextToWindow(4,mywin,"   DHCP: lease time: %d\n", opt.leaseTime);
     }
 
     if (opt.serverId)
     {
         Ipv4AddrToStr(ipv4AddrStr, sizeof(ipv4AddrStr), opt.serverId);
-        ConsolePrint("   DHCP: server id: %s\n", ipv4AddrStr);
+        printTextToWindow(4,mywin,"   DHCP: server id: %s\n", ipv4AddrStr);
     }
 
     for (const u8 *p = opt.parameterList; p != opt.parameterEnd; ++p)
     {
-        ConsolePrint("   DHCP: parameter request: %d\n", *p);
+        printTextToWindow(4,mywin,"   DHCP: parameter request: %d\n", *p);
     }
 }

@@ -342,6 +342,11 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 
 		// Parse width
 		f.width = -1;
+		int ww = 0;
+		if(c=='.'){
+			ww=1;
+			c = *fmt++;
+		}
 		if (IsDigit(c))
 		{
 			int width = 0;
@@ -366,7 +371,8 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 				isLongLong = true;
 			}
 		}
-
+		
+		
 		// Process type specifier
 		char type = c;
 		switch (type)
@@ -393,13 +399,25 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 				char *p = s;
 				while (*p)
 				{
+				
 					++p;
 				}
 
-				f.width -= p - s;
-			}
-
-			OutputString(&f, s);
+				
+				if(ww)
+				{
+					char wz=s[f.width];
+					s[f.width] = 0;
+					f.width=-1;
+					OutputString(&f, s);
+					s[f.width]=wz;
+					
+				} else { 
+					f.width -= p - s;
+					OutputString(&f, s);
+				}
+			} else
+				OutputString(&f, s);
 		}
 		break;
 

@@ -33,7 +33,6 @@ void _main(int argc, char ** argv)
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
 	char * ucmd = malloc(512);
-	printf("11");
 	dir[0] = 'A';
 	dir[1] = ':';
 	dir[2] = '\\';
@@ -238,7 +237,7 @@ void _main(int argc, char ** argv)
 					memcpy(dir, ucmd, 512);
 					continue;
 				}
-				runProcess(dir, cid, args, 0, ucmd);
+				runProcess(dir, cid, args, 1, ucmd);
 				memcpy(dir, ucmd, 512);
 			}
 			Wait(1);

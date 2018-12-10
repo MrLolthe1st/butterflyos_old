@@ -657,12 +657,12 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 					// This is a Parallel IDE Controller which uses IRQs 14 and 15.
 				inst(0x3E, &irq_ideMast, 0x8e);
 				inst(0x3E, &irq_ideSlave, 0x8e);
-			//	ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+				ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
 			}
 		}
 	}
-	kprintf("%x:%x:%d 0x%x/0x%x: %s\n",
-		(int)bus, (int)dev, (int)func,
+	printTextToWindow(4,mywin,"%x:%x:%d 0x%x/0x%x: %s\n",
+		(int)info.classCode, (int)info.subclass, (int)info.progIntf,
 		(int)info.vendorId, (int)info.deviceId,
 		(uint)PciClassName(info.classCode, info.subclass, info.progIntf)
 	);

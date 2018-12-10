@@ -96,6 +96,6 @@ void UdpPrint(const NetBuf *pkt)
     u16 len = NetSwap16(hdr->len);
     u16 checksum = NetSwap16(hdr->checksum);
 
-    ConsolePrint("  UDP: src=%d dst=%d len=%d checksum=%d\n",
+    printTextToWindow(4,mywin,"  UDP: src=%d dst=%d len=%d checksum=%d\n",
         srcPort, dstPort, len, checksum);
 }

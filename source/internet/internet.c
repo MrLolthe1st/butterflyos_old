@@ -70,6 +70,7 @@ void NetInit()
     NetIntf *intf;
     ListForEach(intf, g_netIntfList, link)
     {
+		//printTextToWindow(4,mywin,"1111111111111111111111");
         // Check if interface needs IP address dynamically assigned
         if (!intf->ipAddr.u.bits)
         {

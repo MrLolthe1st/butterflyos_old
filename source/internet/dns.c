@@ -91,13 +91,13 @@ static const u8 *DnsPrintHost(const NetBuf *pkt, const u8 *p, bool first)
         {
             if (!first)
             {
-                ConsolePrint(".");
+                printTextToWindow(4,mywin,".");
             }
 
             char buf[64];
             memcpy(buf, p, count);
             buf[count] = '\0';
-            ConsolePrint(buf);
+            printTextToWindow(4,mywin,buf);
 
             p += count;
             first = false;
@@ -112,14 +112,14 @@ static const u8 *DnsPrintHost(const NetBuf *pkt, const u8 *p, bool first)
 // ------------------------------------------------------------------------------------------------
 static const u8 *DnsPrintQuery(const NetBuf *pkt, const u8 *p)
 {
-    ConsolePrint("    Query: ");
+    printTextToWindow(4,mywin,"    Query: ");
     p = DnsPrintHost(pkt, p, true);
 
     u16 queryType = (p[0] << 8) | p[1];
     u16 queryClass = (p[2] << 8) | p[3];
     p += 4;
 
-    ConsolePrint(" type=%d class=%d\n", queryType, queryClass);
+    printTextToWindow(4,mywin," type=%d class=%d\n", queryType, queryClass);
 
     return p;
 }
@@ -127,7 +127,7 @@ static const u8 *DnsPrintQuery(const NetBuf *pkt, const u8 *p)
 // ------------------------------------------------------------------------------------------------
 static const u8 *DnsPrintRR(const char *hdr, const NetBuf *pkt, const u8 *p)
 {
-    ConsolePrint("    %s: ", hdr);
+    printTextToWindow(4,mywin,"    %s: ", hdr);
     p = DnsPrintHost(pkt, p, true);
 
     u16 queryType = (p[0] << 8) | p[1];
@@ -138,7 +138,7 @@ static const u8 *DnsPrintRR(const char *hdr, const NetBuf *pkt, const u8 *p)
 
     const u8 *data = p;
 
-    ConsolePrint(" type=%d class=%d ttl=%d dataLen=%d ", queryType, queryClass, ttl, dataLen);
+    printTextToWindow(4,mywin," type=%d class=%d ttl=%d dataLen=%d ", queryType, queryClass, ttl, dataLen);
 
     if (queryType == 1 && dataLen == 4)
     {
@@ -146,14 +146,14 @@ static const u8 *DnsPrintRR(const char *hdr, const NetBuf *pkt, const u8 *p)
         char addrStr[IPV4_ADDR_STRING_SIZE];
 
         Ipv4AddrToStr(addrStr, sizeof(addrStr), addr);
-        ConsolePrint("%s", addrStr);
+        printTextToWindow(4,mywin,"%s", addrStr);
     }
     else if (queryType == 2)
     {
         DnsPrintHost(pkt, data, true);
     }
 
-    ConsolePrint("\n");
+    printTextToWindow(4,mywin,"\n");
 
     return p + dataLen;
 }
@@ -170,7 +170,7 @@ void DnsPrint(const NetBuf *pkt)
     u16 authorityCount = NetSwap16(hdr->authorityCount);
     u16 additionalCount = NetSwap16(hdr->additionalCount);
 
-    ConsolePrint("   DNS: id=%d flags=%04x questions=%d answers=%d authorities=%d additional=%d\n",
+    printTextToWindow(4,mywin,"   DNS: id=%d flags=%04x questions=%d answers=%d authorities=%d additional=%d\n",
         id, flags, questionCount, answerCount, authorityCount, additionalCount);
 
     const u8 *p = pkt->start + sizeof(DnsHeader);

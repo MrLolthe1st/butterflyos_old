@@ -11,6 +11,7 @@ to turn off debbuging messages
 
 
 short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
+int cday, cmonth, cyear;
 #define VMAlloc malloc
 #define KeysQueue (int)0x09810
 //PIC#0; port 0x20
@@ -69,6 +70,7 @@ unsigned int usbPoll = 1;
 #include "video.c"
 #include "Devices/ports.c"
 #include "memory.c"
+#include "hooks\hooks.c"
 #include "globalVariables.c"
 #include "kprin.c"
 #include "time.c"
@@ -105,7 +107,6 @@ void unlockTaskSwitch()
 #include "usb\hub.c"
 #include "internet\internet.c"
 #include "internet\rtl8139.c"
-#include "hooks\hooks.c"
 u8 g_netTrace;
 void * hher;
 void Win1Handler(void * ev)
@@ -156,14 +157,18 @@ static void HttpOnTcpState(TcpConn *conn, uint oldState, uint newState)
 		TcpClose(conn);
 	}
 }
-static void HttpOnTcpData(TcpConn *conn, const u8 *data, uint len)
+
+
+#include "smp\smp.c"
+
+void HttpOnTcpData(TcpConn *conn, const u8 *data, uint len)
 {
 	uint col = 0;
 
 	for (uint i = 0; i < len; ++i)
 	{
 		char c = data[i];
-		printTextToWindow(3,mywin,"%c",c);
+		printTextToWindow(4, mywin, "%c", c);
 		++col;
 		if (c == '\n')
 		{
@@ -171,19 +176,44 @@ static void HttpOnTcpData(TcpConn *conn, const u8 *data, uint len)
 		}
 		else if (col == 80)
 		{
-			printTextToWindow(3, mywin, "\n");
+			printTextToWindow(4, mywin, "\n");
 			col = 0;
 		}
 	}
 }
+void CmdHttp(char * a1, char *a2)
+{
+		printTextToWindow(4, mywin, "Usage: http <dest ipv4 address> <path>\n");
+		
+	Ipv4Addr dstAddr;
+	if (!StrToIpv4Addr(&dstAddr, a1))
+	{
 
-#include "smp\smp.c"
+		printTextToWindow(4, mywin, "Failed to parse destination address\n");
+		return;
+	}
 
+	u16 port = 80;
+	static char buf[256];
+
+	snprintf(buf, sizeof(buf), "GET %s HTTP/1.0\r\n\r\n", a2);
+
+	TcpConn *conn = TcpCreate();
+	conn->ctx = buf;
+	conn->onState = HttpOnTcpState;
+	conn->onData = HttpOnTcpData;
+
+	TcpConnect(conn, &dstAddr, port);
+}
 void k_main()
 {
 	//hubinit=&_usbHubInit;
 	initCoProc();
 	memset(&drives, 0, sizeof(LogicDrive) * 26);
+	for (int i = 0; i < 64; i++)
+	{
+		diskDevices[i].sectorsCount = 0;
+	}
 	currentRunning = 0;
 	setCursor(0);
 	clearScreen();
@@ -251,7 +281,9 @@ void k_main()
 	addGlobalVariable("drawcharv", (void*)&drawcharv);
 	addGlobalVariable("getProcessSTDStream", (void*)&getProcessSTDStream);
 	addGlobalVariable("attachIoToWindow", (void*)&attachIoToWindow);
+	addGlobalVariable("memcpy1", (void*)&memcpy1);
 	addGlobalVariable("printf", &printf);
+	addGlobalVariable("memset", &memset);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
@@ -262,20 +294,42 @@ void k_main()
 	//CpuDetect();
 	//for(;;);
 	//
-	PciInit();
-	mywin = openWindow(640, 680, 0, 0, "CPU Info");
+	mywin = openWindow(640, 680, 0, 0, "System Info");
 	mywin->handler = &Win1Handler;
 	initSVGA();
+	PciInit();
 	updateWindows();
 	//swapBuffer();
 	SmpInit();
-	//NetInit();
+	NetInit();
+	NetPrintRouteTable();
+	CmdHttp("127.0.0.1", "/");
+	printTextToWindow(4, mywin, "\nListing of connected devices:\n");
+	{
+		printTextToWindow(4, mywin, "USB Devices:\n");
+		
+		for (UsbDevice *dev = g_usbDeviceList; dev; dev = dev->next)
+		{
+			printTextToWindow(3, mywin, "Product='%s' Vendor='%s' Serial=%s\n", &dev->productStr, &dev->vendorStr, &dev->serialStr);
+		}
+		printTextToWindow(4, mywin, "Disk Devices:\n");
+		for (int i = 0; i < 64; i++)
+		{
+			if (diskDevices[i].sectorsCount > 0)
+			{
+				((identify_data*)&diskDevices[i].data)->model[39] = 0;
+				if(diskDevices[i].type== DISK_TYPE_SATA_AHCI)
+					printTextToWindow(3, mywin, "SATA AHCI Drive Model: %s\n", &((identify_data*)&diskDevices[i].data)->model);
 
+				if (diskDevices[i].type == DISK_TYPE_SATA)
+					printTextToWindow(3, mywin, "ATA Drive Model: %s\n", &((identify_data*)&diskDevices[i].data)->model);
+			}
+		}
+	}
 	runProcess("A:\\CMD.O", 2, 0, 0, "A:\\");
-	//kprintf("Size: %x, add1 %x, add2 %x", f->size, f->add1, f->add2);
-	//FAT32ReadFile(0, "BINARIES\\QQ.O");
-	//kprintf("%x!", &videoMemory);
-	//smp_core(0);
+	DateTime dtt;
+	RtcGetTime(&dtt);
+	printTextToWindow(7, mywin, "ButterflyOS started! Current time and date: %02d.%02d.%04d %02d:%02d\n", dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
 	if (*g_activeCpuCount > 1)
 		for (;;) { 
 			UsbPoll();
@@ -310,9 +364,9 @@ void k_main()
 			UsbPoll();
 			NetPoll();
 			Wait(1);
-		}kprintf("qq");
+		}
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
-	kprintf("qq");
+	
 
 	char * mo = malloc(12);
 	int tttt = 0;

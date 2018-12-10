@@ -139,7 +139,7 @@ void EthSendIntf(NetIntf *intf, const void *dstAddr, u16 etherType, NetBuf *pkt)
     // Skip packets without a destination
     if (!dstEthAddr)
     {
-        ConsolePrint("Dropped packet\n");
+        printTextToWindow(4,mywin,"Dropped packet\n");
         return;
     }
 
@@ -174,6 +174,6 @@ void EthPrint(NetBuf *pkt)
         EthAddrToStr(srcStr, sizeof(srcStr), &ep.hdr->src);
 
         uint len = pkt->end - pkt->start - ep.hdrLen;
-        ConsolePrint("ETH: dst=%s src=%s et=%04x len=%d\n", dstStr, srcStr, ep.etherType, len);
+        printTextToWindow(4,mywin,"ETH: dst=%s src=%s et=%04x len=%d\n", dstStr, srcStr, ep.etherType, len);
     }
 }

@@ -179,7 +179,7 @@ static void EthIntelPoll(NetIntf *intf)
     {
         if (desc->errors)
         {
-            ConsolePrint("Packet Error: (0x%x)\n", desc->errors);
+            printTextToWindow(4,mywin,"Packet Error: (0x%x)\n", desc->errors);
         }
         else
         {
@@ -247,7 +247,7 @@ void EthIntelInit(uint id, PciDeviceInfo *info)
         return;
     }
 
-    ConsolePrint("Initializing Intel Gigabit Ethernet\n");
+    printTextToWindow(4,mywin,"Initializing Intel Gigabit Ethernet\n");
 
     // Base I/O Address
     PciBar bar;
@@ -296,7 +296,7 @@ void EthIntelInit(uint id, PciDeviceInfo *info)
     char macStr[18];
     EthAddrToStr(macStr, sizeof(macStr), &localAddr);
 
-    ConsolePrint("MAC = %s\n", macStr);
+    printTextToWindow(4,mywin,"MAC = %s\n", macStr);
 
     // Set Link Up
     MmioWrite32(mmioAddr + REG_CTRL, MmioRead32(mmioAddr + REG_CTRL) | CTRL_SLU);

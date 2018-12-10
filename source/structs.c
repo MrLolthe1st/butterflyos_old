@@ -80,6 +80,9 @@ typedef struct __attribute__((packed)) _FHandler {
 	unsigned int size;
 	unsigned int type;
 	Window * w;
+	char * buffer;
+	int head, tail, length;
+	int inted;
 } FILE;
 typedef struct __attribute__((packed)) _E {
 	unsigned int eax;//4

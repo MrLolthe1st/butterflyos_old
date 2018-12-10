@@ -4,17 +4,22 @@
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
 
-typedef struct _tl
-{
-	struct _tl * left, * down;
-	char * buf;
-} TextLine;
-TextLine * fl;
 void KeyHandler(char k);
 FILE * curFile;
+typedef struct _line{
+	char * text;
+	struct _line * next;
+	int length;
+} line;
+line * text = 0;
 Window * w;
 char kkey = 0;
 
+typedef struct {
+	unsigned char b;
+	unsigned char g;
+	unsigned char r;
+} ScreenPoint;
 int width,height;
 int cursorX = 0, cursorY = 0, pos = 0, cstate = 0,
 	pageOffsetY = 0, pageOffsetX = 0, pageSizeX = 0,
@@ -28,11 +33,21 @@ void handle(WindowEvent * z)
 }
 void KeyHandler(char k)
 {
-	kkey=k;
 	lockTaskSwitch(1);
+	kkey=k;
+	int cx = cursorX - pageOffsetX,
+		cy = cursorY - pageOffsetY;
 	if(cstate)
-		updateCursor();
-	cstate = 0;
+	for(int i=0;i<16;i++)
+	{
+		ScreenPoint * p = (uint)w->video + cx * 8 * 3 + (cy) * 16 * width * 3 + i* width * 3;
+		//printTextToWindow(2,w,"\n%x %x",w->video,p);
+		p->b^=255;
+		p->g^=255;
+		p->r^=255;
+	}
+	cstate=0;
+	updateCursor();
 	cursorX++;
 	unlockTaskSwitch();
 	
@@ -57,125 +72,87 @@ unsigned char openFile(char * fname)
 		}
 	} else return 1;
 }
-typedef struct{
-	unsigned char b;
-	unsigned char g;
-	unsigned char r;
-} ScreenPoint;
+void MoveLeft(int k)
+{
+	for(int i=0; i<pageSizeY;i++)
+	{
+		for(int j=0;j<16;j++)
+		memcpy((uint)w->video + (i*16 + j)*3*width,(uint)w->video + (i*16 +j)*3*width + k*3*8, (pageSizeX-k)*3*8);
+	}
+	for(int i=0; i<pageSizeY;i++)
+	{
+		for(int j=0;j<16;j++)
+			memset((uint)w->video + (i*16+j)*3*width + k*3*8, 0, k*3*8);
+	}
+}
+void MoveRight(int k)
+{
+	for(int i=0; i<pageSizeY;i++)
+	{
+		for(int j=0;j<16;j++)
+			memcpy1((uint)w->video + (i*16 +j)*3*width + k*3*8,(uint)w->video + (i*16 + j)*3*width, (pageSizeX-k)*3*8);
+	}
+	for(int i=0; i<pageSizeY;i++)
+	{
+		for(int j=0;j<16;j++)
+			memset((uint)w->video + (i*16+j)*3*width, 0, k*3*8);
+	}
+}
 void updateCursor()
 {
 	int cx = cursorX - pageOffsetX,
 		cy = cursorY - pageOffsetY;
-	if (cx * 8 >= width)
-		pageOffsetX += 2;
+	int lpox = pageOffsetX;
+	int lpoy = pageOffsetY;
+		
+	if (cx * 8 >= width - 16){
+		pageOffsetX += 6;
+		MoveLeft(6);
+	}	
 	cx = cursorX - pageOffsetX;
-	if (cy * 16 >= height)
-		pageOffsetY += 2;
+	if (cy * 16 >= height - 32)
+		pageOffsetY += 6;
 	cy = cursorY - pageOffsetY;
-	cstate = 1 - cstate;
-	for(int i=0;i<16;i++)
-	{
-		ScreenPoint * p = (uint)w->video + 22*3*width + cx * 8 * 3 + (cy) * 16 * width * 3 + i* width * 3;
-		//printTextToWindow(2,w,"\n%x %x",w->video,p);
-		p->b^=255;
-		p->g^=255;
-		p->r^=255;
-	}
+	w->cursorX = cx;
+	w->cursorY = cy;
 	
 }
-void FillWithTextAt(char * ln, TextLine * op, TextLine * lineStart)
+int min(int a, int b)
 {
-	TextLine * lsz = lineStart;
-	char * ss = op->buf;
-	int i=0;
-	while(*ln)
-	{
-		if(*ln == 10)
-		{
-			lsz->down = malloc(sizeof(TextLine));
-			lsz->down->buf=malloc(512);
-			lsz->down->left=0;
-			op=lsz->down;
-			ss=lsz->down->buf;
-			lsz=lsz->down;
-			i=0;
-			continue;
-		}
-		*ss=*ln;
-		i++;
-		if(i==256)
-		{
-			op->left = malloc(sizeof(TextLine));
-			op->left->buf=malloc(512);
-			ss=op->left->buf;
-			op=op->left;
-			op->down=0;
-			op->left=0;
-			i=0;
-		}
-		++ln;
-		++ss;
-	}
+	return a<b?a:b;
 }
-void * strend(char * ln)
+
+int strlen(char * s)
 {
-	while(*ln)
-		++ln;
-	return ln;
+	int k=0;
+	while(s&&*s)
+	{
+		s++;
+		k++;
+	}
+	return k;
 }
-void InsertText(char * ln, int pos)
+
+void InsertLine(char * linee)
 {
-	int inslen = (uint)strend(ln)-(uint)ln;
-	TextLine * p = fl;
-	if(!fl)
+	
+	if(!text)
 	{
-		fl = malloc(sizeof(TextLine));
-		fl->down=0;
-		fl->buf = malloc(512);
-		fl->left=0;
-		p=fl;
-	}
-	int cpos = 0,ccpos=0;
-	TextLine * pz=p;
-	while(cpos<=pos&&p)
-	{
-		pz = p;
-		while(p)
-		{
-			cpos+=(uint)strend(p->buf)-(uint)p->buf;
-			if(cpos>=pos) break;
-			p=p->left;
-			ccpos=cpos;
-		}
-		if(cpos>=pos) break;
-		p=pz->down;
-	}
-	if(512-((uint)strend(p->buf)-(uint)p->buf)>=inslen)
-	{
-		//memccpy((uint)p->buf+ccpos++inslen,(uint)p->buf+pos-ccpos+inslen,
-		memcpy((uint)p->buf+pos-ccpos+inslen,(uint)p->buf+pos-ccpos,(uint)strend(p->buf)-(uint)p->buf-(pos-ccpos));
-		memcpy((uint)p->buf+pos-ccpos,ln,inslen);
+		line * l = (line*) malloc(sizeof(line));
+		l->next=0;
+		l->text = linee;
+		l->length = strlen(linee);
+		text=l;
 	} else
-	if(!p->left)
 	{
-		TextLine * u = malloc(sizeof(TextLine));
-		u->left=0;
-		u->down=0;
-		u->buf=malloc(512);
-		p->left=u;
-		FillWithTextAt(ln, u, pz);
+		line * l = text;
+		while(l->next) l=l->next;
+		line * ll = (line*) malloc(sizeof(line));
+		ll->next=0;
+		ll->text = linee;
+		ll->length = strlen(linee);
+		l->next = ll;
 	}
-	
-}
-
-void AddTextToLine(int k, char * ln)
-{
-	
-}
-
-void InsertLineAfter(int k, char * ln)
-{
-	
 }
 
 void LoadFile()
@@ -183,7 +160,44 @@ void LoadFile()
 	fseek(curFile,0,2);
 	int sz = ftell(curFile);
 	rewind(curFile);
-	
+	int cpos = 0;
+	char * cline = 0;
+	int curLen = 0, llen = 0;
+	while(cpos!=sz)
+	{
+		char buf[1028];
+		int cnt = min(cpos + 1028, sz) - cpos;
+		fread(&buf, cnt, 1, curFile);
+		cpos+=cnt;
+		for(int i = 0;i<cnt;i++)
+		{
+			
+			if(curLen-llen>1023)
+			{
+				char * f= malloc(curLen + 1028);
+				memcpy(f, cline, curLen);
+				free(cline);
+				llen=curLen;
+				cline=f;
+			}
+			if(!cline)
+			{
+				cline=malloc(1024);
+				curLen=0;llen = 0;
+			}
+			cline[curLen] = buf[i];
+			curLen++;
+			if(buf[i]==10)
+			{
+				InsertLine(cline);
+				free(cline);
+				cline = 0;
+				curLen=0;
+				llen = 0;
+			}
+		}
+	}
+	InsertLine(cline);
 }
 void redraw()
 {
@@ -195,16 +209,14 @@ void redraw()
 }
 void outText()
 {
-	TextLine * z =fl, *pz=fl;
-	while(z)
+	int cy = 0;
+	line * l = text;
+	while(l)
 	{
-		pz=z;
-		while(z)
-		{
-			printTextToWindow(1,w,z->buf);
-			z=z->left;
-		}
-		z=pz->down;
+		printf("%.90s",l->text);
+		cy++;
+		if(cy=pageSizeY)
+			break;
 	}
 }
 void _main(int argc, char ** argv)
@@ -221,12 +233,10 @@ void _main(int argc, char ** argv)
 			closeWindow(w);
 			return;
 		};
-	fl=0;
-	redraw();
-	InsertText("abcde",0);
-	InsertText("aebcde",1);
+	//redraw();
+	LoadFile();
 	outText();
-	
+	printTextToWindow(4,w,"123456789\n123456789\n");
 	if(curFile)
 	{
 		
@@ -234,7 +244,20 @@ void _main(int argc, char ** argv)
 	for(;;)
 	{
 		
-		updateCursor();
-		Wait(100);
+		//updateCursor();
+		int cx = cursorX - pageOffsetX,
+		cy = cursorY - pageOffsetY;
+		lockTaskSwitch(1);
+		cstate = 1 - cstate;
+		for(int i=0;i<16;i++)
+		{
+			ScreenPoint * p = (uint)w->video + cx * 8 * 3 + (cy) * 16 * width * 3 + i* width * 3;
+			//printTextToWindow(2,w,"\n%x %x",w->video,p);
+			p->b^=255;
+			p->g^=255;
+			p->r^=255;
+		}
+		unlockTaskSwitch();
+		Wait(50);
 	};
 }

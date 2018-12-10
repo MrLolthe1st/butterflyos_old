@@ -65,7 +65,7 @@ static void ArpPrint(const NetBuf *pkt)
     u8 hlen = hdr->hlen;
     u8 plen = hdr->plen;
     u16 op = NetSwap16(hdr->op);
-    ConsolePrint(" ARP: htype=0x%x ptype=0x%x hlen=%d plen=%d op=%d\n",
+    printTextToWindow(4,mywin," ARP: htype=0x%x ptype=0x%x hlen=%d plen=%d op=%d\n",
             htype, ptype, hlen, plen, op);
 
     if (htype == ARP_HTYPE_ETH && ptype == ET_IPV4 && pkt->start + 28 <= pkt->end)
@@ -85,8 +85,8 @@ static void ArpPrint(const NetBuf *pkt)
         EthAddrToStr(thaStr, sizeof(thaStr), tha);
         Ipv4AddrToStr(tpaStr, sizeof(tpaStr), tpa);
 
-        ConsolePrint(" ARP: %s spa=%s\n", shaStr, spaStr);
-        ConsolePrint(" ARP: %s tpa=%s\n", thaStr, tpaStr);
+        printTextToWindow(4,mywin," ARP: %s spa=%s\n", shaStr, spaStr);
+        printTextToWindow(4,mywin," ARP: %s tpa=%s\n", thaStr, tpaStr);
     }
 }
 
@@ -177,7 +177,7 @@ static ArpEntry *ArpAdd(const EthAddr *ha, const Ipv4Addr *pa)
         return entry;
     }
 
-    ConsolePrint("Ran out of ARP entries\n");
+    printTextToWindow(4,mywin,"Ran out of ARP entries\n");
     return 0;
 }
 

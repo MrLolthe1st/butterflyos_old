@@ -61,9 +61,10 @@ void Ipv4Recv(NetIntf *intf, NetBuf *pkt)
 
     // Update packet end
     u8 *ipEnd = pkt->start + NetSwap16(hdr->len);
+	//printTextToWindow(4, mywin, "IP Packet too long\n");
     if (ipEnd > pkt->end)
     {
-        ConsolePrint("IP Packet too long\n");
+        printTextToWindow(4,mywin,"IP Packet too long\n");
         return;
     }
 
@@ -160,11 +161,11 @@ void Ipv4Print(const NetBuf *pkt)
     Ipv4AddrToStr(srcAddrStr, sizeof(srcAddrStr), &hdr->src);
     Ipv4AddrToStr(dstAddrStr, sizeof(dstAddrStr), &hdr->dst);
 
-    ConsolePrint(" IPv4: version=%d ihl=%d dscp=%d ecn=%d\n",
+    printTextToWindow(4,mywin," IPv4: version=%d ihl=%d dscp=%d ecn=%d\n",
             version, ihl, dscp, ecn);
-    ConsolePrint(" IPv4: len=%d, id=%d, fragment=%d, ttl=%d, protocol=%d, checksum=%d%c\n",
+    printTextToWindow(4,mywin," IPv4: len=%d, id=%d, fragment=%d, ttl=%d, protocol=%d, checksum=%d%c\n",
             len, id, fragment, ttl, protocol, checksum,
             checksum2 ? '!' : ' ');
-    ConsolePrint(" IPv4: dst=%s src=%s\n",
+    printTextToWindow(4,mywin," IPv4: dst=%s src=%s\n",
             dstAddrStr, srcAddrStr);
 }

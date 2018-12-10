@@ -594,7 +594,7 @@ static void UhciControllerPoll(UsbController *controller)
 	}
 }
 void _uhci_init(unsigned int id, PciDeviceInfo *info)
-{
+{	
 	//return;
 	if (!(((info->classCode << 8) | info->subclass) == PCI_SERIAL_USB &&
 		info->progIntf == PCI_SERIAL_USB_UHCI))

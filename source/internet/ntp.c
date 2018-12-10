@@ -46,7 +46,7 @@ void NtpRecv(NetIntf *intf, const NetBuf *pkt)
 
     char str[TIME_STRING_SIZE];
     FormatTime(str, sizeof(str), &dt);
-    ConsolePrint("Setting time to %s\n", str);
+    printTextToWindow(4,mywin,"Setting time to %s\n", str);
 
     RtcSetTime(&dt);
 }
@@ -93,14 +93,14 @@ void NtpPrint(const NetBuf *pkt)
 
     abs_time t = (NetSwap64(hdr->sendTimestamp) >> 32) - UNIX_EPOCH;
 
-    ConsolePrint("   NTP: mode=%02x stratum=%d poll=%d precision=%d\n",
+    printTextToWindow(4,mywin,"   NTP: mode=%02x stratum=%d poll=%d precision=%d\n",
         hdr->mode, hdr->stratum, hdr->poll, hdr->precision);
-    ConsolePrint("   NTP: rootDelay=%08x rootDispersion=%08x refId=%08x\n",
+    printTextToWindow(4,mywin,"   NTP: rootDelay=%08x rootDispersion=%08x refId=%08x\n",
         NetSwap32(hdr->rootDelay), NetSwap32(hdr->rootDispersion), NetSwap32(hdr->refId));
-    ConsolePrint("   NTP: refTimestamp=%016x origTimestamp=%016x\n",
+    printTextToWindow(4,mywin,"   NTP: refTimestamp=%016x origTimestamp=%016x\n",
         NetSwap64(hdr->refTimestamp), NetSwap64(hdr->origTimestamp));
-    ConsolePrint("   NTP: recvTimestamp=%016x sendTimestamp=%016x\n",
+    printTextToWindow(4,mywin,"   NTP: recvTimestamp=%016x sendTimestamp=%016x\n",
         NetSwap64(hdr->recvTimestamp), NetSwap64(hdr->sendTimestamp));
-    ConsolePrint("   NTP: unix_epoch=%u\n",
+    printTextToWindow(4,mywin,"   NTP: unix_epoch=%u\n",
         t);
 }

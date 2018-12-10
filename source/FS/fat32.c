@@ -748,7 +748,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 		((uint*)(&FATTablePart))[currentCluster % 128] = 0xFFFFFFF;
 		WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 		lastCluster = currentCluster;
-		printTextToWindow(6, mywin, "zzz%xzzz", currentCluster);
+		//printTextToWindow(6, mywin, "zzz%xzzz", currentCluster);
 	}
 
 	entrs[clustIndex].size += cnt;
@@ -807,7 +807,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 */
 int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 {
-	printTextToWindow(2, mywin, "Clearing file chain...\n");
+	//printTextToWindow(2, mywin, "Clearing file chain...\n");
 	char bootSect[512];
 	ReadFromDisk(0, 1, &bootSect, diskId);
 	char sectorsPerCluster = bootSect[0x0D];
@@ -826,7 +826,7 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 	ReadFromDisk(FatStart + startingCluster - 2, sectorsPerCluster, cluster, diskId);
 	F32E * entrs = (F32E*) cluster;
 	currentCluster = entrs[clustIndex].clusterLo + (entrs[clustIndex].clusterHi << 16); uint sz = entrs[clustIndex].size;
-	printTextToWindow(2, mywin, "Starting cluster %x\n", currentCluster);
+	//printTextToWindow(2, mywin, "Starting cluster %x\n", currentCluster);
 	//kprintf("Starting at: %x\n", currentCluster);
 	entrs[clustIndex].clusterLo = 0;
 	entrs[clustIndex].clusterHi = 0;
@@ -838,7 +838,7 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 //	ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 	uint fst = 1;
 	lastCluster = currentCluster;
-	printTextToWindow(2, mywin, "%x", currentCluster);
+	//printTextToWindow(2, mywin, "%x", currentCluster);
 	while (currentCluster != 0xFFFFFFF && currentCluster != 0)
 	{
 		//	if ((lastCluster >> 7) != (currentCluster >> 7))
@@ -849,9 +849,9 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 		if ((lastCluster >> 7) != (currentCluster >> 7))
 			WriteToDisk(reserved + (lastCluster >> 7), 1, (void*)((uint)f32drives[diskId].FATTable + (lastCluster >> 7) * 128), diskId);
 		fst = 0;
-		printTextToWindow(2, mywin, "->%x", currentCluster);
+		//printTextToWindow(2, mywin, "->%x", currentCluster);
 	}
-	printTextToWindow(2, mywin, "\n");
+	//printTextToWindow(2, mywin, "\n");
 	WriteToDisk(reserved + (lastCluster >> 7), 1, (void*)((uint)f32drives[diskId].FATTable + (lastCluster >> 7) * 128), diskId);
 }
 
@@ -1058,7 +1058,9 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	e[t].clusterHi = zz << 16;
 	e[t].clusterLo = zz & 0xFFFF;
 	e[t].lastModifiedTime = ((((*sec100) / ticksPerSecond) % 60) / 2) + (((((*sec100) / ticksPerSecond) / 60) % 60) << 5) + ((((((*sec100) / ticksPerSecond) / 60) / 60) % 24) << 11);
-	e[t].lastModifiedDate = 26 + (9 << 5) + (38 << 9);
+	DateTime dtt;
+	RtcGetTime(&dtt);
+	e[t].lastModifiedDate = dtt.day + (dtt.month << 5) + (dtt.year - 1980 << 9);
 	e[t].attributes = 0;
 
 
@@ -1298,7 +1300,9 @@ void  FAT32CreateDirectory(uint diskId, char * fileName)
 	e[t].clusterHi = zz << 16;
 	e[t].clusterLo = zz & 0xFFFF;
 	e[t].lastModifiedTime = ((((*sec100) / ticksPerSecond) % 60) / 2) + (((((*sec100) / ticksPerSecond) / 60) % 60) << 5) + ((((((*sec100) / ticksPerSecond) / 60) / 60) % 24) << 11);
-	e[t].lastModifiedDate = 26 + (9 << 5) + (38 << 9);
+	DateTime dtt;
+	RtcGetTime(&dtt);
+	e[t].lastModifiedDate = dtt.day + (dtt.month << 5) + (dtt.year - 1980 << 9);
 	e[t].attributes = 0x10;
 	uint cdot = 0;
 	for (int i = 0; i < 8; i++)

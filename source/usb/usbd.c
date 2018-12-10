@@ -374,6 +374,11 @@ typedef struct UsbDevice
 	void(*hcIntr)(struct UsbDevice *dev, UsbTransfer *t);
 	void(*drvPoll)(struct UsbDevice *dev);
 	void(*onDisconnect)(struct UsbDevice *dev);
+
+	u16 langs[USB_STRING_SIZE];
+	char productStr[USB_STRING_SIZE];
+	char vendorStr[USB_STRING_SIZE];
+	char serialStr[USB_STRING_SIZE];
 } UsbDevice;
 typedef struct UsbDriver
 {
@@ -634,21 +639,17 @@ static bool UsbDevInit(UsbDevice *dev)
 	UsbPrintDeviceDesc(&devDesc);
 
 	// String Info
-	u16 langs[USB_STRING_SIZE];
-	UsbDevGetLangs(dev, &langs);
+	UsbDevGetLangs(dev, &dev->langs);
 
-	uint langId = langs[0];
+	uint langId = dev->langs[0];
 
 	//printTextToWindow(1, mywin, "%x",(int)langs[0]);
 	if (langId)
 	{
-		char productStr[USB_STRING_SIZE];
-		char vendorStr[USB_STRING_SIZE];
-		char serialStr[USB_STRING_SIZE];
-		UsbDevGetString(dev, productStr, langId, devDesc.productStr);
-		UsbDevGetString(dev, vendorStr, langId, devDesc.vendorStr);
-		UsbDevGetString(dev, serialStr, langId, devDesc.serialStr);
-		printTextToWindow(2, mywin, "  Product='%s' Vendor='%s' Serial=%s\n", productStr, vendorStr, serialStr);
+		UsbDevGetString(dev, &dev->productStr, langId, devDesc.productStr);
+		UsbDevGetString(dev, &dev->vendorStr, langId, devDesc.vendorStr);
+		UsbDevGetString(dev, &dev->serialStr, langId, devDesc.serialStr);
+		printTextToWindow(2, mywin, "  Product='%s' Vendor='%s' Serial=%s\n", &dev->productStr, &dev->vendorStr, &dev->serialStr);
 	}
 	// Pick configuration and interface - grab first for now
 	u8 configBuf[256];

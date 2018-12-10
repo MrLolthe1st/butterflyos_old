@@ -25,7 +25,7 @@ const NetRoute *NetFindRoute(const Ipv4Addr *dst)
         }
     }
 
-    ConsolePrint("Failed to route IPv4 address\n");
+    printTextToWindow(4,mywin,"Failed to route IPv4 address\n");
     return 0;
 }
 
@@ -69,7 +69,7 @@ const Ipv4Addr *NetNextAddr(const NetRoute *route, const Ipv4Addr *dstAddr)
 // ------------------------------------------------------------------------------------------------
 void NetPrintRouteTable()
 {
-    ConsolePrint("%-15s  %-15s  %-15s  %s\n", "Destination", "Netmask", "Gateway", "Interface");
+    printTextToWindow(4,mywin,"%-15s  %-15s  %-15s  %s\n", "Destination", "Netmask", "Gateway", "Interface");
 
     NetRoute *route;
     ListForEach(route, s_routeTable, link)
@@ -89,6 +89,6 @@ void NetPrintRouteTable()
             strcpy(gatewayStr, "On-link");
         }
 
-        ConsolePrint("%-15s  %-15s  %-15s  %s\n", dstStr, maskStr, gatewayStr, route->intf->name);
+        printTextToWindow(4,mywin,"%-15s  %-15s  %-15s  %s\n", dstStr, maskStr, gatewayStr, route->intf->name);
     }
 }

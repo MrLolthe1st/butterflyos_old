@@ -2,6 +2,8 @@
 
 unsigned char testForGUI();
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
+void memcpy1(unsigned char * d, unsigned char * s, unsigned int count);
+void memset(void * addr, char s, unsigned int count);
 void clearScreen();
 void unlockTaskSwitch();
 void lockTaskSwitch(uint id);
@@ -17,16 +19,18 @@ typedef struct __attribute__((packed)) _FHandler {
 	char * name;
 	long long currentByte;
 	long long currentByteAppend;
-
-	uint add1;
-	uint add2;
-	uint add3;
-	uint diskId;
-	uint fsType;
-	uint rights;
-	uint size;
-	uint type;
+	unsigned int add1;
+	unsigned int add2;
+	unsigned int add3;
+	unsigned int diskId;
+	unsigned int fsType;
+	unsigned int rights;
+	unsigned int size;
+	unsigned int type;
 	void * w;
+	char buffer[1024];
+	int head, tail, length;
+	int inted;
 } FILE;
 typedef struct dentr_y
 {
@@ -45,5 +49,5 @@ uint fseek(FILE *stream, long offset, int origin);
 FILE *fopen(const char *fname, const char *mode);
 void mkdir(char *p, uint mode);
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * workingDir);
-void attachIoToWindow(void * w);
 void printf(char * text, ...);
+void attachIoToWindow(void * w);

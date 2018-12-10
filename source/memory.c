@@ -29,7 +29,7 @@ void memcpy(unsigned char * d, unsigned char * s, size_t count) {
 				add $16, %%esi			\n\
 				add $16, %%edi			\n\
 				dec %%ecx				\n\
-				test %%ecx,%%ecx		\n\
+				#test %%ecx,%%ecx		\n\
 				jnz memcpySSE			\n\
 			zr:							\n\
 			mov %3, %%ecx				\n\
@@ -44,6 +44,42 @@ void memcpy(unsigned char * d, unsigned char * s, size_t count) {
 		::"r"(s), "r"(d), "r"(count >> 4), "r"(count % 16));
 }
 
+void memcpy1(unsigned char * d, unsigned char * s, size_t count) {
+	__asm__("pusha\n\
+			mov %2,%%ecx\n\
+			mov %0,%%esi\n\
+			mov %1,%%edi\n\
+			test %%ecx,%%ecx\n\
+			jz zrz\n\
+			sub $16, %%esi			\n\
+			sub $16, %%edi			\n\
+			memcpySSE2:\
+				movups (%%esi),%%xmm0	\n\
+				movups %%xmm0,(%%edi)	\n\
+				sub $16, %%esi			\n\
+				sub $16, %%edi			\n\
+				dec %%ecx				\n\
+				#test %%ecx,%%ecx		\n\
+				jnz memcpySSE2			\n\
+			inc %%edi\n\
+			inc %%esi\n\
+			zrz:							\n\
+			mov %3, %%ecx				\n\
+			test %%ecx,%%ecx			\n\
+			jz send2					\n\
+			pushf\n\
+			std\n\
+			dec %%edi\n\
+			dec %%esi\n\
+			memcpySSE_12:				\
+				movsb					\n\
+				dec %%ecx				\n\
+				jnz memcpySSE_12			\n\
+			popf\n\
+			send2:						\
+			popa"
+		::"r"(s+count), "r"(d + count), "r"(count >> 4), "r"(count & 0xF));
+}
 void * memchr(const void * buf, int c, size_t n) {
 	unsigned char * p = (unsigned char *)buf;
 	unsigned char * end = p + n;

@@ -18,6 +18,21 @@ FileInfo * FileSeek(uint diskId, char * f)
 		return (FileInfo*)FAT32Seek(diskId, f);
 	}
 }
+int putc(int ch, FILE * f)
+{
+	if (!f->inted)
+	{
+		f->head = 0;
+		f->tail = -1;
+		f->length = 0;
+		f->inted = 1;
+	}
+	if (f->length < 1024) {
+		//f->tail = (f->tail + 1) % f->bufSize;
+	}
+	else return -1;
+
+}
 uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
 {
 	if (drives[f->diskId].type == 0)
@@ -146,7 +161,7 @@ FILE *fopen(const char *fname, const char *mode)
 	}
 	if (!drives[ups[0] - 'A'].avaliable)
 		return 0;
-	FILE * n = (FILE*) malloc(sizeof(FILE));
+	FILE * n = (FILE*)malloc(sizeof(FILE));
 	n->name = ups;
 	n->rights = 0;
 	n->type = 0;
@@ -233,13 +248,15 @@ void attachIoToWindow(Window * w)
 void printf(char * text, ...)
 {
 	FILE * out = procTable[currentRunning].stdout;
-	va_list ap;
-	va_start(ap, text);
-	//Format string
-	text = formatString((char *)text, ap);
-	if(out->w)
-		printTextToWindowFormatted(1, out->w, text);
-	va_end(ap);
+	char buf[1024];
+	va_list args;
+
+	va_start(args, text);
+	vsnprintf(buf, sizeof(buf), text, args);
+	va_end(args);
+	
+	if (out->w)
+		printTextToWindowFormatted(7, out->w, buf);
 }
 #define stdin_stream 0
 #define stdout_stream 1

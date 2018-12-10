@@ -284,12 +284,13 @@ void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 //Print text to window
 void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 
-	va_list ap;
-	va_start(ap, text);
-	//Format string
-	text = formatString((char *)text, ap);
-	printTextToWindowFormatted(color, w, text);
-	va_end(ap);
+	char buf[1024];
+	va_list args;
+
+	va_start(args, text);
+	vsnprintf(buf, sizeof(buf), text, args);
+	va_end(args);
+	printTextToWindowFormatted(color, w, buf);
 }
 void updateWindows()
 {
