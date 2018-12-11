@@ -32,5 +32,5 @@ if '%errorlevel%' NEQ '0' (
 gcc -ffreestanding copy.c -c -o qq.o -w -std=c99
 objcopy qq.o -O elf32-i386
 sync64 A
-copy qq.o A:\COPY.O
+copy qq.o A:\SYSTEM32\COPY.O
 pause
