@@ -181,14 +181,19 @@ FILE *fopen(const char *fname, const char *mode)
 	n->currentByte = 0;
 
 
+	printTextToWindow(7, mywin, "~Path: %s && %x\n", ups, 0);
 	FileInfo * q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 	uint ut = 0;
+
+	printTextToWindow(7, mywin, "Path: %s && %x\n", ups, q);
 	if (!q && !(n->rights & 2)) {
 		free(n);
+
 		return 0;
 	}
 	else if ((n->rights & 2) && !q) {
 		FileCreate(n->diskId, (char*)((uint)ups + 3));
+		printTextToWindow(7, mywin, "!Path: %s && %x\n", ups, q);
 		q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 		ut = 1;
 	}
@@ -197,7 +202,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
-	kprintf("File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+	printTextToWindow(7, mywin, "File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
 	if (n->rights & 2 && !ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);

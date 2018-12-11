@@ -550,20 +550,26 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba, unsigned cha
 	return 0; // Easy, ... Isn't it?
 }
 char package[3];
-void ide_read_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
+int ide_read_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
 	unsigned short es, unsigned int edi) {
 
 	// 1: Check if the drive presents:
 	// ==================================
-	if (drive > 3 || ide_devices[drive].Reserved == 0) package[0] = 0x1;      // Drive Not Found!
+	if (drive > 3 || ide_devices[drive].Reserved == 0) {
+		package[0] = 0x1;      // Drive Not Found!
+		return 0;
+	}
 
 	// 2: Check if inputs are valid:
 	// ==================================
 	else if (((lba + numsects) > ide_devices[drive].Size) && (ide_devices[drive].Type == IDE_ATA))
+	{
 		package[0] = 0x2;                     // Seeking to invalid position.
+		return 0;
+	}
 
-	 // 3: Read in PIO Mode through Polling & IRQs:
-	 // ============================================
+	// 3: Read in PIO Mode through Polling & IRQs:
+	// ============================================
 	else {
 		unsigned char err;
 		if (ide_devices[drive].Type == IDE_ATA)
@@ -572,22 +578,27 @@ void ide_read_sectors(unsigned char drive, unsigned char numsects, unsigned int 
 			for (int i = 0; i < numsects; i++)
 				err = ide_atapi_read(drive, lba + i, 1, es, edi + (i * 2048));
 		package[0] = ide_print_error(drive, err);
+		return !err;
 	}
 }
 // package[0] is an entry of an array. It contains the Error Code.
-void ide_write_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
+int ide_write_sectors(unsigned char drive, unsigned char numsects, unsigned int lba,
 	unsigned short es, unsigned int edi) {
 
 	// 1: Check if the drive presents:
 	// ==================================
-	if (drive > 3 || ide_devices[drive].Reserved == 0)
+	if (drive > 3 || ide_devices[drive].Reserved == 0) {
 		package[0] = 0x1;      // Drive Not Found!
-	 // 2: Check if inputs are valid:
-	 // ==================================
-	else if (((lba + numsects) > ide_devices[drive].Size) && (ide_devices[drive].Type == IDE_ATA))
+		return 1;
+	}
+	// 2: Check if inputs are valid:
+	// ==================================
+	else if (((lba + numsects) > ide_devices[drive].Size) && (ide_devices[drive].Type == IDE_ATA)) {
 		package[0] = 0x2;                     // Seeking to invalid position.
-	 // 3: Read in PIO Mode through Polling & IRQs:
-	 // ============================================
+		return 0;
+	}
+	// 3: Read in PIO Mode through Polling & IRQs:
+	// ============================================
 	else {
 		unsigned char err;
 		if (ide_devices[drive].Type == IDE_ATA)
@@ -595,6 +606,7 @@ void ide_write_sectors(unsigned char drive, unsigned char numsects, unsigned int
 		else if (ide_devices[drive].Type == IDE_ATAPI)
 			err = 4; // Write-Protected.
 		package[0] = ide_print_error(drive, err);
+		return !err;
 	}
 }
 void ide_atapi_eject(unsigned char drive) {

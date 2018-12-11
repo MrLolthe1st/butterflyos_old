@@ -354,6 +354,7 @@ typedef struct PciFunction {
 typedef struct PciDriver
 {
 	void(*init)(unsigned int id, PciDeviceInfo *info);
+
 } PciDriver;
 
 
@@ -473,14 +474,7 @@ void PciGetBar(PciBar *bar, unsigned int id, unsigned int index)
 		bar->flags = addressLow & 0xf;
 	}
 }
-/*
-const PciDriver g_pciDriverTable[] =
-{
-	{ UhciInit },
-	{ EhciInit },
-	{ 0 },
-};
-*/
+
 struct pci_func
 {
 	uint32_t vendor_id;
@@ -550,13 +544,11 @@ void get_mmio_space_size(struct pci_func *pci_device)
 	unsigned short offset = (unsigned short)(pci_device->mmio_reg | 0x0);
 	address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8)
 		| (offset & 0xfc) | ((uint32_t)0x80000000));
-	kprintf("#%x#", address);
 	pci_device->start_virtual_address = address;
 	sysOutLong(0xCF8, address);
 	sysOutLong(0xCFC, 0xffffffff);
 	tmp = (ReadWord(pci_device->bus_num, pci_device->slot_num, 0,
 		(pci_device->mmio_reg | 0x0)));
-	kprintf("#%x#", tmp);
 	pci_device->mmio_reg_size = (~tmp) + 1;
 	sysOutLong(0xCF8, address);
 	sysOutLong(0xCFC, pci_device->mmio_reg_addr);
@@ -671,17 +663,6 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	EthIntelInit(id, &info);
 	_uhci_init(id, &info);
 	_rtl39_init(id, &info);
-	/////while (!getKey());
-	//PitWait(1000);
-	//__pci_ata(id, &info);
-	/*
-	const PciDriver *driver = g_pciDriverTable;
-	while (driver->init)
-	{
-		driver->init(id, &info);
-		++driver;
-	}
-	*/
 }
 struct mem_req {
 	uint64_t phys_addr, dest_addr;

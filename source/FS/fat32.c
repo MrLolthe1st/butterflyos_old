@@ -1,5 +1,5 @@
 #pragma GCC push_options
-#pragma GCC optimize ("Ofast")
+#pragma GCC optimize ("O2")
 char upcase(char s)
 {
 
@@ -35,8 +35,6 @@ char F32OkName(char q)
 	if ((q >= 'A'&&q <= 'Z') ||
 		(q >= 'a'&&q <= 'z') ||
 		(q >= '0'&&q <= '9') ||
-		(q >= 128 && q <= 228) ||
-		(q >= 230 && q <= 255) ||
 		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' || q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' || q == '}' || q == '~'))
 		return 1;
 	return 0;
@@ -134,7 +132,6 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 						{
 							int j = 0, len = 0;
 							memset(&longFileName, 0, 256);
-
 							while ((!(e[i].name[j] == 0x20)) && (j < 8))
 							{
 								longFileName[len++] = e[i].name[j];
@@ -350,6 +347,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 					}
 					//kprintf("%s\n", &longFileName);
 					//File/Folder name parsed.
+
 					if ((!(e[i].attributes & 0x10)) && lastDir) {
 						int j = 0;
 						curChar = fileName;
@@ -404,6 +402,8 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 		lastDir = 1;
 		//kprintf("->%x", currentCluster);
 		//
+		//printTextToWindow(7, mywin, "~: %d %d\n", locF, uu);
+		//Wait(1000);
 		if (locF) {
 			lastCluster = currentCluster;
 
@@ -413,7 +413,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 			break;
 		}
 		else if (!uu)
-			currentCluster = f32drives[diskId].FATTable[currentCluster % 128];
+			currentCluster = f32drives[diskId].FATTable[currentCluster];
 
 		while (*curChar) {
 			if ((*curChar) == '\\')
@@ -736,7 +736,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	uint ofs = 0;
 	lastCluster = 0;
 	void * qf = buf;
-	ReadFromDisk(FatStart + startingCluster - 2, sectorsPerCluster, cluster, diskId);
+	ReadFromDisk(FatStart + (startingCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	F32E * entrs = (F32E*)cluster;
 	currentCluster = entrs[clustIndex].clusterLo + (entrs[clustIndex].clusterHi << 16); uint sz = entrs[clustIndex].size;
 	if (currentCluster == 0)
@@ -754,7 +754,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 
 	entrs[clustIndex].size += cnt;
 
-	WriteToDisk(FatStart + startingCluster - 2, sectorsPerCluster, cluster, diskId);
+	WriteToDisk(FatStart + (startingCluster - 2)* sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	//Size changed, find last entry of file
 	if (currentCluster != 0 && (lastCluster >> 7) != (currentCluster >> 7)) {
 		ReadFromDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
@@ -771,14 +771,14 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	}
 	//kprintf("appending...\n");
 	uint curOffs = (sz) % (512 * sectorsPerCluster);
-	ReadFromDisk(FatStart + lastCluster - 2, sectorsPerCluster, cluster, diskId);
+	ReadFromDisk(FatStart + (lastCluster - 2)* sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	currentCluster = lastCluster;
 	for (int i = 0; i < cnt; i++)
 	{
 		if (curOffs == 0 && sz > 0)
 		{
 			uint nw = findFreeFATEntry(diskId, reserved);
-			WriteToDisk(FatStart + currentCluster - 2, sectorsPerCluster, cluster, diskId);
+			WriteToDisk(FatStart + (currentCluster - 2)* sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 
 			memset(cluster, 0, 512 * sectorsPerCluster);
 			f32drives[diskId].FATTable[currentCluster] = nw;
@@ -798,7 +798,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 		if (!curOffs)
 			sz = 1;
 	}
-	WriteToDisk(FatStart + currentCluster - 2, sectorsPerCluster, cluster, diskId);
+	WriteToDisk(FatStart + (currentCluster - 2)* sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	((uint*)(&FATTablePart))[currentCluster % 128] = 0xfFFFFFF;
 	WriteToDisk(reserved + (currentCluster >> 7), 1, &FATTablePart, diskId);
 	free(cluster);
@@ -929,7 +929,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 						for (int k = 0; k < 256; k++)
 							if (longFileName[k] == 0xFF)
 								longFileName[k] = 0;
-						////kprintf("%s", &longFileName);
+
 						if (reread)
 							ReadFromDisk(FatStart + (currentCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 					}
@@ -970,7 +970,7 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 						}
 					}
 					//File/Folder name parsed.
-
+					//printTextToWindow(7, mywin, "~: %s\n", &longFileName);
 					if ((!(e[i].attributes & 0x10)) && lastDir) {
 
 					}

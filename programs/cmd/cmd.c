@@ -33,9 +33,14 @@ void _main(int argc, char ** argv)
 	char * dir = malloc(512);
 	char * cmd = malloc(512);
 	char * ucmd = malloc(512);
-	dir[0] = 'A';
-	dir[1] = ':';
-	dir[2] = '\\';
+	char * zz1 = procTable[currentRunning].workingDir;
+	//printf("%s",procTable[currentRunning].workingDir);
+	int j=0;
+	while(*zz1){
+		dir[j]=*zz1;
+		j++;
+		zz1++;
+	}
 	int dirLen = 3;
 	int cmdLen = 0;
 	char key = 0;

@@ -432,7 +432,7 @@ uint MassStorageReset(UsbDevice * dev, UsbEndpoint * out)
 	}
 	return 0;
 }
-void _read10usb(void * ss, uint lba, uint count, void * buf)
+int _read10usb(void * ss, uint lba, uint count, void * buf)
 {
 	UsbStorage * s = (UsbStorage*)ss;
 	//clearHalt(s);
@@ -504,9 +504,9 @@ retry_read:;
 #endif // DEBUG
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355) {
-
+		return 0;
 	}
-	free(cbw);
+	return 1;
 }
 long long bswap64(long long a)
 {
@@ -627,7 +627,7 @@ void _write16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	free(cbw);
 }
 
-void _write10usb(void * ss, uint lba, uint count, void * buf)
+int _write10usb(void * ss, uint lba, uint count, void * buf)
 {
 
 	UsbStorage * s = (UsbStorage*)ss;
@@ -682,6 +682,10 @@ void _write10usb(void * ss, uint lba, uint count, void * buf)
 	//Read CSW
 	dev->hcIntr(dev, t);
 	//Invalid signature - soft reset
+	if (cbw->sig != 0x53425355) {
+		return 0;
+	}
+	return 1;
 }
 
 void storageDisconnect(UsbDevice *d)
@@ -763,25 +767,20 @@ void _storageInit(UsbDevice * dev)
 	storage->use16bcmds = 0;
 	long long sectorCount = 0;
 	for (int lun = 0; lun <= lunCnt; ++lun) {
-		//Test for ready
-		//kprintf("inquiryRequest(storage);");
+		
 		inquiryRequest(storage);
-		//kprintf("startStorage(storage);");
+		//Start storage
 		startStorage(storage);
-		//kprintf("testUnitReady(storage");
+		//Wait for ready
 		while (testUnitReady(storage)) {
 			//Request sense from device
-			//kprintf("requestSense(storage)");
 			requestSense(storage);
 		}
-		//requestSense(storage);
 		sectorCount = readcapacity10(storage);
-		//long long z = readcapacity16(storage);
-
 	};
 	kprintf("Sectors count: %x\n", sectorCount);
 	storage->sectorsCount = sectorCount;
-	Wait(1000);//Wait some time, but for what?!
+//	Wait(1000);//Wait some time, but for what?!
 	//Try read to clear chache
 	char * b = malloc(1024);
 	_read10usb(storage, 0, 2, b);

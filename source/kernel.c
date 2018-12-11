@@ -285,9 +285,11 @@ void k_main()
 	addGlobalVariable("drawcharv", (void*)&drawcharv);
 	addGlobalVariable("getProcessSTDStream", (void*)&getProcessSTDStream);
 	addGlobalVariable("attachIoToWindow", (void*)&attachIoToWindow);
+	addGlobalVariable("currentRunning", &currentRunning);
 	addGlobalVariable("memcpy1", (void*)&memcpy1);
 	addGlobalVariable("printf", &printf);
 	addGlobalVariable("memset", &memset);
+	addGlobalVariable("procTable", &procTable);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
 	unsigned char key = 0x0;
@@ -328,10 +330,14 @@ void k_main()
 			}
 		}
 	}
-	runProcess("A:\\CMD.O", 2, 0, 0, "A:\\");
+	char * cmd_path = "A:\\SYSTEM32\\CMD.O";
+	char * cmd_work_dir = "A:\\SYSTEM32\\";
+	cmd_path[0] = bootedFrom + 'A';
+	cmd_work_dir[0] = bootedFrom + 'A';
+	runProcess(cmd_path, 2, 0, 0, cmd_work_dir);
 	DateTime dtt;
 	RtcGetTime(&dtt);
-	printTextToWindow(7, mywin, "ButterflyOS started! Current time and date: %02d.%02d.%04d %02d:%02d\n", dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
+	printTextToWindow(7, mywin, "ButterflyOS started! Booted from %c, current time and date: %02d.%02d.%04d %02d:%02d\n", bootedFrom + 'A', dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
 	if (*g_activeCpuCount > 1)
 		for (;;) {
 			UsbPoll();

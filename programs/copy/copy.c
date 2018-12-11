@@ -9,10 +9,11 @@ void _main(int argc, char ** argv)
 
 	if(argc!=2)
 		return;
-	
+	printf("1");
 	FILE * z = fopen(argv[0],"r");
+	printf("2");
 	FILE * u = fopen(argv[1],"w");
-	if(!z)
+	if(!z||!u)
 	{
 		printf("Can't find file %s!\n", argv[0]);
 		return;

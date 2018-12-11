@@ -36,31 +36,40 @@ typedef struct WindowEvent_ {
 	void * data;
 } WindowEvent;
 
-
+extern int currentRunning;
 typedef struct _pralloc
 {
 	void * addr;
 	struct _pralloc * next;
 } processAlloc;
 
+
 typedef struct __attribute__((packed)) _E {
-	unsigned int eax;
-	unsigned int ebx;
-	unsigned int ecx;
-	unsigned int edx;
-	unsigned int ebp;
-	unsigned int esp;
-	unsigned int esi;
-	unsigned int edi;
-	unsigned int eflags;
-	unsigned int state;
-	void * startAddr;
-	void * currentAddr;
-	void * stack;
-	unsigned int sse[4 * 8];
-	unsigned int mmx[2 * 8];
-	unsigned int priority;
-	unsigned int priorityL;
-	void * elf_process;
+	unsigned int eax;//4
+	unsigned int ebx;//8
+	unsigned int ecx;//12
+	unsigned int edx;//16
+	unsigned int ebp;//20
+	unsigned int esp;//24
+	unsigned int esi;//28
+	unsigned int edi;//32
+	unsigned int eflags;//36
+	unsigned int state;//40
+	void * startAddr;//44
+	void * currentAddr;//48
+	void * stack;//52
+	unsigned int sse[4 * 8];//
+	unsigned int mmx[2 * 8];//244
+	unsigned int priority;//248
+	unsigned int priorityL;//252
+	void * elf_process;//256
+	char ** argv;//260
+	unsigned int argc;//264
+	unsigned int runnedFrom;//268
+	char * workingDir;//272
+	FILE * stdout;
+	FILE * stdin;
+	FILE * stderr;
 
 } Process;
+extern Process * procTable;

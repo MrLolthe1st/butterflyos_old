@@ -580,7 +580,7 @@ void some()
 void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-	Wait(1);
+	//Wait(1);
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;
@@ -782,7 +782,6 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Initialize queue head
 	EhciQH *qh = EhciAllocQH(hc);
 	EhciInitQH(qh, t, head, dev->parent, true, speed, addr, endp, maxSize);
-	//printQh(qh);
 	// Schedule queue
 	if (t->w)
 		EhciInsertAsyncQH(hc->asyncQH, qh);
