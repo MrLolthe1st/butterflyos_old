@@ -26,6 +26,7 @@ pageOffsetY = 0, pageOffsetX = 0, pageSizeX = 0,
 pageSizeY = 0, lastCursorUpdate = 0;
 char queue[256];
 int head = 0, tail = -1, length = 0;
+void outText();
 void insertKey(char c)
 {
 	tail = (tail + 1) % 256;
@@ -34,9 +35,9 @@ void insertKey(char c)
 }
 char getKey()
 {
-	if(length<1) return 0;
+	if (length < 1) return 0;
 	char c = queue[head];
-	head = (head + 1)%256;
+	head = (head + 1) % 256;
 	length--;
 	return c;
 }
@@ -74,14 +75,36 @@ void KeyHandler(char k)
 			p->r ^= 255;
 		}
 	cstate = 0;
-	updateCursor();
-	if(k==0x27)
-		cursorX++;
-	if(k==0x25){
-		cursorX = max(0, cursorX - 1);
-		updateCursor();
+	if (k == 0x24)
+	{
+		cursorX = 0;
+		pageOffsetX = 0;
+		BarVideo(0, 0, width - 1, height - 16, 0x0, width, height, w->video);
+		outText();
 	}
-
+	if (k == 0x23)
+	{
+		line * l = text;
+		cy = 0;
+		while (l&&cy++ < cursorY) l = l->next;
+		if (l)
+		{
+			cursorX = strlen(l->text);
+			pageOffsetX = (cursorX / pageSizeX)*pageSizeX;
+			BarVideo(0, 0, width - 1, height - 16, 0x0, width, height, w->video);
+			outText();
+		}
+	}
+	if (k == 0x27)
+		cursorX++;
+	if (k == 0x25) {
+		cursorX = max(0, cursorX - 1);
+	}
+	if (k == 0x28)
+		cursorY++;
+	if (k == 0x26)
+		cursorY--;
+	updateCursor();
 }
 
 unsigned char openFile(char * fname)
@@ -89,8 +112,7 @@ unsigned char openFile(char * fname)
 	curFile = fopen(fname, "r");
 	if (!curFile)
 	{
-		printTextToWindow(1, w, "No input file found, press\
-		Y to create, whatever else for exit\n");
+		printTextToWindow(1, w, "No input file found, press Y to create, whatever else for exit\n");
 		while (!kkey) Wait(1);
 		if (kkey == 'Y' || kkey == 'y')
 		{
@@ -121,17 +143,17 @@ void MoveLeft(int k)
 	line * l = text;
 	int ccx = w->cursorX;
 	int ccy = w->cursorY;
-	w->cursorY= 0;
-	while(l&&cy<pageOffsetY)
-		l=l->next;
+	w->cursorY = 0;
+	while (l&&cy < pageOffsetY)
+		l = l->next;
 	while (l)
 	{
 		w->cursorX = (pageSizeX - k);
 		w->cursorY = cy - pageOffsetY;
-		printTextToWindow(7,w,"%.6s", l->text+ min(l->length, pageOffsetX + pageSizeX - k));
-		
+		printTextToWindow(7, w, "%.6s", l->text + min(l->length, pageOffsetX + pageSizeX - k));
+
 		cy++;
-		l=l->next;
+		l = l->next;
 		if (cy == pageOffsetY + pageSizeY)
 			break;
 	}
@@ -150,28 +172,28 @@ void MoveRight(int k)
 		for (int j = 0; j < 16; j++)
 			memset((uint)w->video + (i * 16 + j) * 3 * width, 0, k * 3 * 8);
 	}
-	
+
 	int cy = 0;
 	line * l = text;
 	int ccx = w->cursorX;
 	int ccy = w->cursorY;
-	w->cursorY= 0;
-	while(l&&cy<pageOffsetY)
-		l=l->next;
+	w->cursorY = 0;
+	while (l&&cy < pageOffsetY)
+		l = l->next;
 	while (l)
 	{
 		w->cursorX = 0;
 		w->cursorY = cy - pageOffsetY;
-		printTextToWindow(7,w,"%.6s", l->text+ min(l->length, pageOffsetX-k));
-		
+		printTextToWindow(7, w, "%.6s", l->text + min(l->length, pageOffsetX - k));
+
 		cy++;
-		l=l->next;
+		l = l->next;
 		if (cy == pageOffsetY + pageSizeY)
 			break;
 	}
 	w->cursorX = ccx;
 	w->cursorY = ccy;
-	
+
 }
 void updateCursor()
 {
@@ -184,11 +206,11 @@ void updateCursor()
 		pageOffsetX += 6;
 		MoveLeft(6);
 	}
-	if(cx<0)
+	if (cx < 0)
 	{
-		MoveRight(min(6,pageOffsetX));
-		pageOffsetX-=min(6,pageOffsetX);
-		cx=0;
+		MoveRight(min(6, pageOffsetX));
+		pageOffsetX -= min(6, pageOffsetX);
+		cx = 0;
 	}
 	cx = cursorX - pageOffsetX;
 	if (cy * 16 >= height - 32)
@@ -202,7 +224,7 @@ void updateCursor()
 int strlen(char * ss)
 {
 	int k = 0;
-	char * s=ss;
+	char * s = ss;
 	while (s&&*s)
 	{
 		s++;
@@ -218,7 +240,7 @@ void InsertLine(char * linee)
 		line * l = (line*)malloc(sizeof(line));
 		l->next = 0;
 		l->length = strlen(linee);
-		l->text = malloc(l->length+1);
+		l->text = malloc(l->length + 1);
 		memcpy(l->text, linee, l->length);
 		text = l;
 	}
@@ -229,9 +251,9 @@ void InsertLine(char * linee)
 		line * ll = (line*)malloc(sizeof(line));
 		ll->next = 0;
 		ll->length = strlen(linee);
-		ll->text = malloc(ll->length+1);
+		ll->text = malloc(ll->length + 1);
 		memcpy(ll->text, linee, ll->length);
-	
+
 		l->next = ll;
 	}
 }
@@ -256,7 +278,7 @@ void LoadFile()
 			if (curLen - llen > 1023)
 			{
 				char * f = malloc(curLen + 1028);
-				memcpy(f, cline, curLen+1);
+				memcpy(f, cline, curLen + 1);
 				free(cline);
 				llen = curLen;
 				cline = f;
@@ -273,18 +295,19 @@ void LoadFile()
 				cline = 0;
 				curLen = 0;
 				llen = 0;
-			} else
+			}
+			else
 			{
-				
-			cline[curLen] = buf[i];
-			curLen++;
+
+				cline[curLen] = buf[i];
+				curLen++;
 			}
 		}
-		
+
 	}
 	InsertLine(cline);
-	if(cline)
-	free(cline);
+	if (cline)
+		free(cline);
 }
 void redraw()
 {
@@ -296,20 +319,25 @@ void redraw()
 }
 void outText()
 {
+	int cl = w->cursorX;
+	int cly = w->cursorY;
+
 	w->cursorX = 0;
 	w->cursorY = 0;
 	int cy = 0;
 	line * l = text;
-	while(l&&cy<pageOffsetY)
-		l=l->next;
+	while (l&&cy < pageOffsetY)
+		l = l->next;
 	while (l)
 	{
-		printf("%.90s", l->text + pageOffsetX);
+		printf("%.90s", min(l->text + l->length, l->text + pageOffsetX));
 		cy++;
-		l=l->next;
+		l = l->next;
 		if (cy == pageOffsetY + pageSizeY)
 			break;
 	}
+	w->cursorX = cl;
+	w->cursorY = cly;
 }
 void _main(int argc, char ** argv)
 {
@@ -320,7 +348,7 @@ void _main(int argc, char ** argv)
 	pageSizeX = width / 8;
 	pageSizeY = (height / 16) - 1;
 	pageOffsetX = 0;
-	cursorX=0;
+	cursorX = 0;
 	pageOffsetY = 0;
 	if (argc)
 		if (!openFile(argv[0]))
@@ -342,12 +370,11 @@ void _main(int argc, char ** argv)
 		//updateCursor();
 		w->updating = 1;
 		char c = getKey();
-		if(c)
+		if (c)
 			KeyHandler(c);
 		int cx = cursorX - pageOffsetX,
 			cy = cursorY - pageOffsetY;
-		if(lastUpdate - (*sec100)>500){
-			lockTaskSwith(1);
+		if (lastUpdate - (*sec100) > 2000) {
 			cstate = 1 - cstate;
 			for (int i = 0; i < 16; i++)
 			{
@@ -366,7 +393,6 @@ void _main(int argc, char ** argv)
 			printTextToWindow(3, w, "Pos: %04d:%04d", cursorX, cursorY);
 			w->cursorX = lx;
 			w->cursorY = ly;
-			unlockTaskSwith();
 		}
 		w->updating = 0;
 		Wait(1);
