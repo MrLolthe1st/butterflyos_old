@@ -1,6 +1,6 @@
 //#define DEBUG 1 
 /*
-     ^
+	 ^
 	 | comment
 	 it
 to turn off debbuging messages
@@ -31,7 +31,7 @@ char pcidone = 0;
 char getKey()
 {
 
-	unsigned char * keysInQueue = (unsigned char *) KeysQueue;
+	unsigned char * keysInQueue = (unsigned char *)KeysQueue;
 	unsigned char * queueFirst = (unsigned char *)(KeysQueue + 1);
 	unsigned char * queueLast = (unsigned char *)(KeysQueue + 2);
 
@@ -183,8 +183,8 @@ void HttpOnTcpData(TcpConn *conn, const u8 *data, uint len)
 }
 void CmdHttp(char * a1, char *a2)
 {
-		printTextToWindow(4, mywin, "Usage: http <dest ipv4 address> <path>\n");
-		
+	printTextToWindow(4, mywin, "Usage: http <dest ipv4 address> <path>\n");
+
 	Ipv4Addr dstAddr;
 	if (!StrToIpv4Addr(&dstAddr, a1))
 	{
@@ -249,7 +249,7 @@ void k_main()
 	//while(getKey()!=0);
 	initDevices();
 	ATAInit();
-	kprintf("ButterflyOS started. Build from 8th august 2018.\n");
+	kprintf("ButterflyOS started. Build from 11th December 2018.\n");
 	char b[512];
 	//Wait(50);
 	initGlobals();
@@ -262,6 +262,8 @@ void k_main()
 	addGlobalVariable("clearScreen", (void*)&clearScreen);
 	addGlobalVariable("fclose", (void*)&fclose);
 	addGlobalVariable("Wait", (void*)&Wait);
+	addGlobalVariable("BufferWindow", (void*)&BufferWindow);
+	addGlobalVariable("enableBuffering", (void*)&enableBuffering);
 	addGlobalVariable("fread", (void*)&fread);
 	addGlobalVariable("ftell", (void*)&ftell);
 	addGlobalVariable("fwrite", (void*)&fwrite);
@@ -304,10 +306,10 @@ void k_main()
 	NetInit();
 	NetPrintRouteTable();
 	CmdHttp("127.0.0.1", "/");
-	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n",(uint)'а');
+	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n", (uint)'а');
 	{
 		printTextToWindow(4, mywin, "USB Devices:\n");
-		
+
 		for (UsbDevice *dev = g_usbDeviceList; dev; dev = dev->next)
 		{
 			printTextToWindow(3, mywin, "Product='%s' Vendor='%s' Serial=%s\n", &dev->productStr, &dev->vendorStr, &dev->serialStr);
@@ -318,7 +320,7 @@ void k_main()
 			if (diskDevices[i].sectorsCount > 0)
 			{
 				((identify_data*)&diskDevices[i].data)->model[39] = 0;
-				if(diskDevices[i].type== DISK_TYPE_SATA_AHCI)
+				if (diskDevices[i].type == DISK_TYPE_SATA_AHCI)
 					printTextToWindow(3, mywin, "SATA AHCI Drive Model: %s\n", &((identify_data*)&diskDevices[i].data)->model);
 
 				if (diskDevices[i].type == DISK_TYPE_SATA)
@@ -331,7 +333,7 @@ void k_main()
 	RtcGetTime(&dtt);
 	printTextToWindow(7, mywin, "ButterflyOS started! Current time and date: %02d.%02d.%04d %02d:%02d\n", dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
 	if (*g_activeCpuCount > 1)
-		for (;;) { 
+		for (;;) {
 			UsbPoll();
 			NetPoll();
 			Wait(1);
@@ -366,7 +368,7 @@ void k_main()
 			Wait(1);
 		}
 	CopyFromVMemory(width / 2, height / 2, 17, 17, under);
-	
+
 
 	char * mo = malloc(12);
 	int tttt = 0;

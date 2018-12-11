@@ -82,7 +82,7 @@ int formattedLength(char* str, va_list ap)
 				int c = va_arg(ap, int);
 				char str[32] = { 0 };
 				__itoa_s(c, 10, str);
-				char * s = (char*) &str;
+				char * s = (char*)&str;
 				while (*s != 0) { a++; s++; };
 				i++;
 				continue;
@@ -91,7 +91,7 @@ int formattedLength(char* str, va_list ap)
 				int c = va_arg(ap, int);
 				char str[32] = { 0 };
 				__itoa(c, 16, str);
-				char * s = (char*) &str;
+				char * s = (char*)&str;
 				while (*s != 0) { a++; s++; };
 				i++;
 				continue;
@@ -343,8 +343,8 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 		// Parse width
 		f.width = -1;
 		int ww = 0;
-		if(c=='.'){
-			ww=1;
+		if (c == '.') {
+			ww = 1;
 			c = *fmt++;
 		}
 		if (IsDigit(c))
@@ -371,8 +371,8 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 				isLongLong = true;
 			}
 		}
-		
-		
+
+
 		// Process type specifier
 		char type = c;
 		switch (type)
@@ -388,7 +388,7 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 
 		case 's':
 		{
-			 char *s = va_arg(args, char *);
+			char *s = va_arg(args, char *);
 			if (!s)
 			{
 				s = "(null)";
@@ -402,8 +402,8 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 					++p;
 				}
 
-				
-				if(ww)
+
+				if (ww)
 				{
 					int width = f.width;
 					//printTextToWindow(1,mywin,"[%d]", f.width);
@@ -417,7 +417,7 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 						}
 					}
 
-					while (*s&&width>0)
+					while (*s&&width > 0)
 					{
 						OutputChar(&f, *s++);
 						width--;
@@ -428,12 +428,14 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list args)
 					{
 						OutputChar(&f, padChar);
 					}
-					
-				} else { 
+
+				}
+				else {
 					f.width -= p - s;
 					OutputString(&f, s);
 				}
-			} else
+			}
+			else
 				OutputString(&f, s);
 		}
 		break;

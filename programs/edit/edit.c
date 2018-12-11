@@ -65,7 +65,7 @@ void KeyHandler(char k)
 	kkey = k;
 	int cx = cursorX - pageOffsetX,
 		cy = cursorY - pageOffsetY;
-	if (cstate)
+	if (cstate){
 		for (int i = 0; i < 16; i++)
 		{
 			ScreenPoint * p = (uint)w->video + cx * 8 * 3 + (cy) * 16 * width * 3 + i * width * 3;
@@ -74,7 +74,8 @@ void KeyHandler(char k)
 			p->g ^= 255;
 			p->r ^= 255;
 		}
-	cstate = 0;
+		cstate = 0;
+	}
 	if (k == 0x24)
 	{
 		cursorX = 0;
@@ -159,6 +160,8 @@ void MoveLeft(int k)
 	}
 	w->cursorX = ccx;
 	w->cursorY = ccy;
+	BufferWindow(w);
+
 }
 void MoveRight(int k)
 {
@@ -194,6 +197,7 @@ void MoveRight(int k)
 	w->cursorX = ccx;
 	w->cursorY = ccy;
 
+	BufferWindow(w);
 }
 void updateCursor()
 {
@@ -342,6 +346,7 @@ void outText()
 void _main(int argc, char ** argv)
 {
 	w = openWindow(720, 480, 1, &handle, "Notepad--");
+	enableBuffering(w);
 	//printTextToWindow(2,w,"qq");
 	width = 720;
 	height = 480;
@@ -368,7 +373,6 @@ void _main(int argc, char ** argv)
 	{
 
 		//updateCursor();
-		w->updating = 1;
 		char c = getKey();
 		if (c)
 			KeyHandler(c);
@@ -393,8 +397,8 @@ void _main(int argc, char ** argv)
 			printTextToWindow(3, w, "Pos: %04d:%04d", cursorX, cursorY);
 			w->cursorX = lx;
 			w->cursorY = ly;
+			BufferWindow(w);
 		}
-		w->updating = 0;
 		Wait(1);
 	};
 }

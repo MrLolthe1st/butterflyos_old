@@ -82,7 +82,7 @@ void _rtl39_init(uint id, PciDeviceInfo *info)
 	outportd(ioaddr + 0x44, 0xf | (1 << 7));
 	outportb(ioaddr + 0x37, 0x0C);
 	uint irqNum = PciRead32(id, PCI_CONFIG_INTERRUPT_LINE);
-	inst(0x20+ irqNum, &_rtl8139, 0x8e);
+	inst(0x20 + irqNum, &_rtl8139, 0x8e);
 	kprintf("try to send packet\n");
 
 }

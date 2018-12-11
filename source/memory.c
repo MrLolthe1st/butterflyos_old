@@ -80,7 +80,7 @@ void memcpy1(unsigned char * d, unsigned char * s, size_t count) {
 			popf\n\
 			send2:						\
 			popa"
-		::"r"(s+count), "r"(d + count), "r"(count >> 4), "r"(count & 0xF));
+		::"r"(s + count), "r"(d + count), "r"(count >> 4), "r"(count & 0xF));
 }
 void * memchr(const void * buf, int c, size_t n) {
 	unsigned char * p = (unsigned char *)buf;
@@ -129,7 +129,7 @@ unsigned int count_memory(void) {
 	do {
 		memkb++;
 		mem_count += 1024 * 1024 * 1;
-		mem = (unsigned int *) mem_count;
+		mem = (unsigned int *)mem_count;
 
 		a = *mem; *mem = 0x55AA55AA;
 
@@ -165,7 +165,8 @@ unsigned int count_memory(void) {
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
 char * malloc(size_t size) {
-	if (!size) { return 0;
+	if (!size) {
+		return 0;
 	}
 	lockTaskSwitch(1);
 	/* Loop through blocks and find a block sized the same or bigger */
@@ -217,7 +218,7 @@ nalloc:;
 	last_alloc += size;
 	last_alloc += sizeof(alloc_t);
 	//kprintf("Allocated %d bytes from 0x%x to 0x%x\n", size, (uint32_t)alloc + sizeof(alloc_t), last_alloc);
-	memory_used += size  + sizeof(alloc_t);
+	memory_used += size + sizeof(alloc_t);
 	memset((char *)((uint32_t)alloc + sizeof(alloc_t)), 0, size);
 	unlockTaskSwitch();
 	return (char *)((uint32_t)alloc + sizeof(alloc_t));
@@ -236,7 +237,7 @@ nalloc:;
 void addProcessAlloc(ELF_Process * p, void * addr)
 {
 	void * z = p->allocs;
-	p->allocs = (processAlloc*) malloc(sizeof(processAlloc));
+	p->allocs = (processAlloc*)malloc(sizeof(processAlloc));
 	p->allocs->addr = addr;
 	p->allocs->next = z;
 }
@@ -253,7 +254,7 @@ void mm_init(uint32_t kernel_end) {
 }
 
 void mm_print_out() {
-	
+
 	/*kprintf("Memory used: %d bytes\n", memory_used);
 	kprintf("Memory free: %d bytes\n", heap_end - heap_begin - memory_used);
 	kprintf("Heap size: %d bytes\n", heap_end - heap_begin);
@@ -264,7 +265,7 @@ void mm_print_out() {
 
 void free(void * mem) {
 	alloc_t * alloc = (mem - sizeof(alloc_t));
-	memory_used -= alloc->size + sizeof(alloc_t) ;
+	memory_used -= alloc->size + sizeof(alloc_t);
 	alloc->status = 0;
 }
 

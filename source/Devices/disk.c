@@ -978,10 +978,10 @@ void _probe_port(void *abar_temp1)
 					//					diskDevices[dcount].ReadController = &ReadController;
 					diskDevices[dcount].structNo = AHCICount;
 					diskDevices[dcount].sectorsCount = ((identify_data*)buf)->sectors_48;
-					
+
 					for (int oou1 = 0; oou1 < 256; oou1++) {
 						diskDevices[dcount].data[oou1 * 2] = buf[oou1] >> 8;
-						diskDevices[dcount].data[oou1 * 2+1] = buf[oou1] & 0xFF;
+						diskDevices[dcount].data[oou1 * 2 + 1] = buf[oou1] & 0xFF;
 					}
 					AHCIDevices[AHCICount].port = &abar_temp->ports[i];
 

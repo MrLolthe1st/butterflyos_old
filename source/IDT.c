@@ -761,7 +761,7 @@ IRQ_HANDLER1(irq_time8) {
 	kprintf("!");
 	*sec100 = (*sec100) + 1; // % 100;
 	//printTextToWindow(3, mywin, "~~~~~~~*");
-	
+
 }
 char shift = 0;
 
@@ -776,7 +776,7 @@ void addKey(int release, char c, char cc) {
 	if (!c)c = cc;
 	//printTextToWindow(3, mywin, "%c %x\n", c, cc);
 	if (c == 0) return;
-	
+
 	unsigned char * keysInQueue = (uchar*)KeysQueue;
 	unsigned char * queueFirst = (uchar*)(KeysQueue + 1);
 	unsigned char * queueLast = (uchar*)(KeysQueue + 2);
@@ -921,7 +921,7 @@ void IoApicInit()
 	// Disable all entries
 	for (uint i = 0; i < count; ++i)
 	{
-		IoApicSetEntry(g_ioApicAddr, i, 1<<16);
+		IoApicSetEntry(g_ioApicAddr, i, 1 << 16);
 	}
 }
 

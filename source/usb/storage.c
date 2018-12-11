@@ -88,7 +88,7 @@ uint readcapacity10(UsbStorage * s)
 #ifdef DEBUG
 	kprintf("ReadCapacity CBW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	dev->hcIntr(dev, t);
 	unsigned char res[8];
@@ -102,7 +102,7 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("ReadCapacity DATA\n");
 	printMem(&res, 8);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	t->endp = endpointIn;
 	t->req = 0;
@@ -114,7 +114,7 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("ReadCapacity CSW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	free(cbw);
 	s->bytesPerBlock = (res[4] << 24) + (res[5] << 16) + (res[6] << 8) + res[7];
@@ -126,7 +126,7 @@ uint readcapacity16(UsbStorage * s)
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-	cbw_t * cbw = (cbw_t*) malloc(sizeof(cbw_t) + 66);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
 	cbw->sig = 0x43425355;
 	cbw->wcb_len = 16;
@@ -148,7 +148,7 @@ uint readcapacity16(UsbStorage * s)
 	t->data = &res;
 	t->len = 12;
 	t->complete = false;
-	t->success = false; 
+	t->success = false;
 
 	dev->hcIntr(dev, t);
 	t->endp = endpointIn;
@@ -240,7 +240,7 @@ void inquiryRequest(UsbStorage * s)
 #ifdef DEBUG
 	kprintf("Inquiry CBW\n");
 	printMem(cbw, 31); kprintf("\n");
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	dev->hcIntr(dev, t);
 
@@ -266,7 +266,7 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("Inquiry CSW\n");
 	printMem(cbw, 13); kprintf("\n");
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 
 }
@@ -277,7 +277,7 @@ u8 testUnitReady(UsbStorage * s)
 	UsbDevice * dev = s->d;
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
-	cbw_t * cbw =(cbw_t*) malloc(sizeof(cbw_t) + 66);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 66);
 	cbw->lun = 0;
 	cbw->tag = s->tag;
 	s->tag++;
@@ -295,7 +295,7 @@ u8 testUnitReady(UsbStorage * s)
 #ifdef DEBUG
 	kprintf("TUR CBW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	dev->hcIntr(dev, t);
 
@@ -310,7 +310,7 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("TUR CSW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	free(cbw);
 	return *((u8*)((uint)cbw + 12));
@@ -346,7 +346,7 @@ void requestSense(UsbStorage * s)
 #ifdef DEBUG
 	kprintf("RequsetSense CBW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	dev->hcIntr(dev, t);
 	char z[32];
@@ -361,7 +361,7 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("RequsetSense Data\n");
 	printMem(&z, 0x12);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	t->endp = endpointIn;
 	t->req = 0;
@@ -374,10 +374,10 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("RequsetSense CSW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 
-	
+
 	free(cbw);
 }
 
@@ -398,7 +398,7 @@ void startStorage(UsbStorage * s)
 	cbw->xfer_len = 0;
 	*((u8*)((uint)cbw + 15)) = 0x1b;
 	*((u8*)((uint)cbw + 18)) = 0;
-	*((u8*)((uint)cbw + 19)) = 1|(1<<4);//252 bytes - full sense(see SCSI spec.)
+	*((u8*)((uint)cbw + 19)) = 1 | (1 << 4);//252 bytes - full sense(see SCSI spec.)
 	t->endp = endpointOut;
 	t->req = 0;
 	t->data = cbw;
@@ -443,7 +443,7 @@ void _read10usb(void * ss, uint lba, uint count, void * buf)
 	//Allocate Control Block Wrapper
 	char abg[31];
 	cbw_t * cbw = &abg;
-	
+
 retry_read:;
 	memset(cbw, 0, 31);
 	cbw->tag = s->tag;
@@ -471,7 +471,7 @@ retry_read:;
 	kprintf("\n");
 #endif // DEBUG
 	dev->hcIntr(dev, t);
-	
+
 	for (int i = 0; i < count*(s->bytesPerBlock / endpointIn->desc->maxPacketSize); i++)
 	{
 		//Read by one sector
@@ -485,7 +485,7 @@ retry_read:;
 #ifdef DEBUG
 		kprintf("Read Data\n");
 		printMem(buf, 13);
-kprintf("\n");
+		kprintf("\n");
 #endif // DEBUG
 		buf += endpointIn->desc->maxPacketSize;
 	}
@@ -500,11 +500,11 @@ kprintf("\n");
 #ifdef DEBUG
 	kprintf("Read CSW\n");
 	printMem(cbw, 13);
-kprintf("\n");
+	kprintf("\n");
 #endif // DEBUG
 	//Invalid signature - soft reset
 	if (cbw->sig != 0x53425355) {
-		
+
 	}
 	free(cbw);
 }
@@ -520,7 +520,7 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	UsbTransfer *t = s->t;
 	UsbEndpoint * endpointIn = s->endpointIn, *endpointOut = s->endpointOut;
 	//Allocate Control Block Wrapper
-	cbw_t * cbw = (cbw_t*) malloc(sizeof(cbw_t) + 20);
+	cbw_t * cbw = (cbw_t*)malloc(sizeof(cbw_t) + 20);
 	cbw->lun = 0;
 	cbw->tag = 0x10011;
 	cbw->sig = 0x43425355;
@@ -531,7 +531,7 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	cmd_rw10_t * cmd = (void*)((uint)cbw + 15);
 	*((u8*)((uint)cbw + 15 + 0)) = 0x88;
 	*((long long*)((uint)cbw + 15 + 2)) = bswap64(lba);//LBA for CBW is big-endian
-	
+
 	*((uint*)((uint)cbw + 15 + 10)) = bswap_32_m(count);//Count of sectors also
 	printMem(cbw, 31);
 	t->endp = endpointOut;//bulk Out
@@ -542,7 +542,7 @@ void _read16usb(UsbStorage * s, long long lba, uint count, void * buf)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-	for (int i = 0; i < count*(s->bytesPerBlock/ dev->maxPacketSize); i++)
+	for (int i = 0; i < count*(s->bytesPerBlock / dev->maxPacketSize); i++)
 	{
 		//Read by one sector
 		t->endp = endpointIn;
@@ -660,7 +660,7 @@ void _write10usb(void * ss, uint lba, uint count, void * buf)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-//	kprintf("{*%x}", lba);
+	//	kprintf("{*%x}", lba);
 	for (int i = 0; i < count*(s->bytesPerBlock / endpointOut->desc->maxPacketSize); i++)
 	{
 		//Read by one sector
@@ -689,7 +689,7 @@ void storageDisconnect(UsbDevice *d)
 	UsbStorage * s = d->drv; uint did = 0;
 	for (int i = 0; i < dcount; i++)
 	{
-		if ((uint)diskDevices[i].link ==(uint) s)
+		if ((uint)diskDevices[i].link == (uint)s)
 		{
 			did = i;
 		}
@@ -749,9 +749,9 @@ void _storageInit(UsbDevice * dev)
 	Wait(1600);
 	kprintf("LUN count:%x\n", lunCnt);
 	//Preapare transfer
-	UsbTransfer *t = (UsbTransfer*) malloc(sizeof(UsbTransfer));
+	UsbTransfer *t = (UsbTransfer*)malloc(sizeof(UsbTransfer));
 	//Allocate memory for storage structures
-	UsbStorage * storage = (UsbStorage*) malloc(sizeof(UsbStorage));
+	UsbStorage * storage = (UsbStorage*)malloc(sizeof(UsbStorage));
 	dev->drv = storage;
 	dev->onDisconnect = &storageDisconnect;
 	t->w = 1;
@@ -777,7 +777,7 @@ void _storageInit(UsbDevice * dev)
 		//requestSense(storage);
 		sectorCount = readcapacity10(storage);
 		//long long z = readcapacity16(storage);
-		
+
 	};
 	kprintf("Sectors count: %x\n", sectorCount);
 	storage->sectorsCount = sectorCount;
@@ -794,6 +794,6 @@ void _storageInit(UsbDevice * dev)
 	checkDiskPatritions(dcount);
 
 	dcount++;
-	
+
 	free(b);
 }

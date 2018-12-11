@@ -12,19 +12,19 @@
 // ------------------------------------------------------------------------------------------------
 static inline u16 NetSwap16(u16 x)
 {
-    return (x>>8) | (x<<8);
+	return (x >> 8) | (x << 8);
 }
 
 // ------------------------------------------------------------------------------------------------
 static inline u32 NetSwap32(u32 x)
 {
-    return __builtin_bswap32(x);
+	return __builtin_bswap32(x);
 }
 
 // ------------------------------------------------------------------------------------------------
 static inline u64 NetSwap64(u64 x)
 {
-    return __builtin_bswap64(x);
+	return __builtin_bswap64(x);
 }
 #define PORT_OSHELPER                   4950
 #define TRACE_LINK      (1 << 0)
@@ -62,32 +62,32 @@ u8 g_netTrace = 0;
 // ------------------------------------------------------------------------------------------------
 void NetInit()
 {
-    LoopbackInit();
-    ArpInit();
-    TcpInit();
+	LoopbackInit();
+	ArpInit();
+	TcpInit();
 
-    // Initialize interfaces
-    NetIntf *intf;
-    ListForEach(intf, g_netIntfList, link)
-    {
+	// Initialize interfaces
+	NetIntf *intf;
+	ListForEach(intf, g_netIntfList, link)
+	{
 		//printTextToWindow(4,mywin,"1111111111111111111111");
-        // Check if interface needs IP address dynamically assigned
-        if (!intf->ipAddr.u.bits)
-        {
-            DhcpDiscover(intf);
-        }
-    }
+		// Check if interface needs IP address dynamically assigned
+		if (!intf->ipAddr.u.bits)
+		{
+			DhcpDiscover(intf);
+		}
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
 void NetPoll()
 {
-    // Poll interfaces
-    NetIntf *intf;
-    ListForEach(intf, g_netIntfList, link)
-    {
-        intf->poll(intf);
-    }
+	// Poll interfaces
+	NetIntf *intf;
+	ListForEach(intf, g_netIntfList, link)
+	{
+		intf->poll(intf);
+	}
 
-    TcpPoll();
+	TcpPoll();
 }

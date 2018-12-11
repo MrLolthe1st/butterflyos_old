@@ -110,7 +110,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 	u8 *data = kbd->data;
 	bool error = false;
 	printTextToWindow(3, mywin, "%08llx\n", *((unsigned long long*)data));
-	
+
 	// Modifier keys
 	uint modDelta = data[0] ^ kbd->lastData[0];
 	for (uint i = 0; i < 8; ++i)
@@ -159,7 +159,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 	// Update keystate
 	if (!error)
 	{
-		memcpy(kbd->lastData, data, 8); 
+		memcpy(kbd->lastData, data, 8);
 	}
 }
 
@@ -176,9 +176,9 @@ static void UsbKbdPoll(UsbDevice *dev)
 			if (usage >= 4)
 			{
 				InputOnKey(usage, 1);
-				
+
 			}
-			
+
 		}
 		kbd->lastUpdate = *sec100;
 		return;
@@ -218,7 +218,7 @@ void _UsbKbdInit(UsbDevice *dev)
 			RT_HOST_TO_DEV | RT_CLASS | RT_INTF,
 			REQ_SET_IDLE, 0, intfIndex,
 			0, 0);*/
-		UsbEndpoint * endp = (UsbEndpoint*) malloc(sizeof(UsbEndpoint));
+		UsbEndpoint * endp = (UsbEndpoint*)malloc(sizeof(UsbEndpoint));
 		endp->toggle = 0;
 		endp->desc = dev->intfDesc->endpoints;
 

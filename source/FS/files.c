@@ -254,7 +254,7 @@ void printf(char * text, ...)
 	va_start(args, text);
 	vsnprintf(buf, sizeof(buf), text, args);
 	va_end(args);
-	
+
 	if (out->w)
 		printTextToWindowFormatted(7, out->w, buf);
 }

@@ -48,7 +48,7 @@ void drawDesktop()
 	//Task Panel
 	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
 	//Some text...
-	OutTextXY(width - 240, height - 19 - 32, "ButterflyOS stable build 0.1.0.0", 0xDD2C00, 1);
+	OutTextXY(width - 270, height - 19 - 32, "ButterflyOS stable build 0.1.2.0", 0xDD2C00, 1);
 }
 
 void printChars(unsigned char color, Window * w, char * text)
@@ -192,7 +192,7 @@ char* formatString(char* str, va_list ap)
 }
 
 void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
-	
+
 	kprintf(text);
 
 	//Window != zero
@@ -373,12 +373,22 @@ void closeWindow(Window * ws) {
 		w = w->next;
 	}
 }
+void enableBuffering(Window * w)
+{
+	w->buffered = 1;
+}
 
+void BufferWindow(Window * w)
+{
+	lockTaskSwitch(1);
+	memcpy(w->videoOk, w->video, (w->wwidth) * (w->wheight) * 3);
+	unlockTaskSwitch();
+}
 //Opens a window
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
 
-	Window * win = (Window*) malloc(sizeof(Window));
+	Window * win = (Window*)malloc(sizeof(Window));
 	Window * node = windows;
 	//Get active window pointer
 	while (node != 0 && node->next != 0) node = node->next;
@@ -396,10 +406,12 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->wwidth = wwidth;							//Window width
 	win->wheight = wheight;							//Window height
 	win->video = malloc(wwidth * (wheight) * 3);	//Video memory
+	win->videoOk = malloc(wwidth * (wheight) * 3);	//Video memory
 	win->type = (unsigned char)type & 0xFF;			//Type
 	win->lastx = startX;							//Starting X
 	win->lasty = startY;							//Starting Y
 	win->id = cid++;								//Window Id
+	win->buffered = 0;
 	activeWindow = win->id;							//Activate current window
 	win->cursorX = 0;								//Cursor X
 	win->cursorY = 0;								//Cursor Y
@@ -408,7 +420,7 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->y = startY;								//Starting Y
 	startX += 20;									//add 20 for 'cascade'
 	startY += 20;
-	if (currentRunning && procTable[currentRunning].stdin->w==procTable[procTable[currentRunning].runnedFrom].stdin->w)
+	if (currentRunning && procTable[currentRunning].stdin->w == procTable[procTable[currentRunning].runnedFrom].stdin->w)
 	{
 		attachIoToWindow(win);
 	}
@@ -424,8 +436,10 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 void Draw(Window * toDraw) {
 	Bar(toDraw->x - 1, toDraw->y - 20, toDraw->x + toDraw->wwidth, toDraw->y, 0x1976D2);
 	//BarV(0,0, 7,15, COLOR_BLUE, 1024, videoBuffer);
-
-	CopyToVMemory(toDraw->x, toDraw->y, toDraw->wwidth, toDraw->wheight, toDraw->video);
+	if (toDraw->buffered == 1)
+		CopyToVMemory(toDraw->x, toDraw->y, toDraw->wwidth, toDraw->wheight, toDraw->videoOk);
+	else if (toDraw->buffered == 0)
+		CopyToVMemory(toDraw->x, toDraw->y, toDraw->wwidth, toDraw->wheight, toDraw->video);
 	Rect(toDraw->x - 1, toDraw->y - 1, toDraw->wwidth + 1, toDraw->wheight + 1, 0x1976D2);
 	if (*sec100 - (toDraw->lastUpdate) > 10000 - cursorSpeed * 10) {
 		toDraw->lastUpdate = *sec100;

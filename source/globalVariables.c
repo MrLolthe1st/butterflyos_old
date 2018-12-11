@@ -16,7 +16,7 @@ void addGlobalVariable(char * name, void * addr)
 	w = w->next;
 	w->next = 0;
 	w->name = name;
-	w->ptr = (int) addr;
+	w->ptr = (int)addr;
 }
 unsigned int getVariableAddress(char * name)
 {

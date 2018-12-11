@@ -55,16 +55,16 @@ static uint UsbHubResetPort(UsbHub *hub, uint port)
 			break;
 		}
 
-		
-		// Acknowledge change in status
-		if(status&PORT_CONNECTION_CHANGE)
-		if (!UsbDevRequest(dev,
-			0x23,
-			REQ_CLEAR_FEATURE, F_C_PORT_CONNECTION, port + 1,
-			0, 0))
-		{
 
-		}
+		// Acknowledge change in status
+		if (status&PORT_CONNECTION_CHANGE)
+			if (!UsbDevRequest(dev,
+				0x23,
+				REQ_CLEAR_FEATURE, F_C_PORT_CONNECTION, port + 1,
+				0, 0))
+			{
+
+			}
 		// Check if device is enabled
 		if (status & PORT_ENABLE)
 		{
@@ -154,7 +154,7 @@ static void UsbHubPoll(UsbDevice *dev)
 				REQ_CLEAR_FEATURE, F_C_PORT_CONNECTION, port + 1,
 				0, 0))
 			{
-				
+
 			}
 			UsbDevice * cur = g_usbDeviceList, *ls = 0;
 			while (cur)
@@ -164,7 +164,7 @@ static void UsbHubPoll(UsbDevice *dev)
 					if (cur->onDisconnect)
 						cur->onDisconnect(cur);
 					if (ls)
-					{						
+					{
 						ls->next = cur->next;
 						free(cur); break;
 					}
@@ -237,7 +237,7 @@ void _usbhubinit(UsbDevice *dev)
 
 		UsbPrintHubDesc(&desc);
 
-		UsbHub *hub = (UsbHub*) malloc(sizeof(UsbHub));
+		UsbHub *hub = (UsbHub*)malloc(sizeof(UsbHub));
 		hub->dev = dev;
 		hub->desc = desc;
 

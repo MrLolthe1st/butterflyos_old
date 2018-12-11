@@ -612,11 +612,11 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 }
 void * cat;
 void loadFontPointer() {
-	fontPointer = (unsigned char*)( 0x50000 + 256);
+	fontPointer = (unsigned char*)(0x50000 + 256);
 	///Bar(0, 0, 600, 600, 0xFF0000);
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
 
-	OutTextXY(220, 332, "Please wait, desktop is loading...", 0xFFFFFF, 2);
+	OutTextXY((width - 35 * 8 * 2) / 2, (height - 16 * 2) / 2, "Please wait, desktop is loading...", 0xFFFFFF, 2);
 	//
 	swapBuffer();
 	return;
@@ -682,12 +682,12 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 void initSVGA() {
 	//__asm__("movl $70999993,%eax\njmp %eax");
 	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;
-	width = (unsigned int) * (((unsigned short *)(0x50000 + 18))) ;
-	height = (unsigned int) * (((unsigned short *)(0x50000 + 20))) ;
+	width = (unsigned int) * (((unsigned short *)(0x50000 + 18)));
+	height = (unsigned int) * (((unsigned short *)(0x50000 + 20)));
 	//kprintf("!!%x %x!!!", width, height);
 	//	Wait(10000);
 	mouseX = width / 2, mouseY = height / 2, mouse_cycle = 0, lastX = width / 2, lastY = height / 2;
-	ccnt = (width*height/64)*3;
+	ccnt = (width*height / 64) * 3;
 	if (bpp == 4) {
 		ccnt = (width * height) / 16;
 		ok = 0;

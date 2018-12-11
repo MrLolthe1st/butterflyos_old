@@ -294,7 +294,7 @@ static void UhciProcessQH(UhciController *hc, UhciQH *qh)
 
 		if (td->cs & TD_CS_STALLED)
 		{
-		//	printTextToWindow(1, mywin, "TD is stalled\n");
+			//	printTextToWindow(1, mywin, "TD is stalled\n");
 			t->success = false;
 			t->complete = true;
 		}
@@ -508,7 +508,7 @@ static void UhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	// Data in/out packets
 	uint toggle = t->endp->toggle;//dev->endp.toggle;
 	uint packetType = TD_PACKET_IN;
-	if (t->endp->desc->addr&0x80)
+	if (t->endp->desc->addr & 0x80)
 		packetType = TD_PACKET_IN;
 	else
 		packetType = TD_PACKET_OUT;
@@ -522,7 +522,7 @@ static void UhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 
 	// Schedule queue
 	UhciInsertQH(hc, qh);
-	if(t->w)
+	if (t->w)
 		UhciWaitForQH(hc, qh);
 }
 
@@ -587,14 +587,14 @@ static void UhciControllerPoll(UsbController *controller)
 	UhciQH *next;
 	ListForEachSafe(qh, next, hc->asyncQH->qhLink, qhLink)
 	{
-		if (qh->transfer&&!qh->transfer->w)
+		if (qh->transfer && !qh->transfer->w)
 		{
 			UhciProcessQH(hc, qh);
 		}
 	}
 }
 void _uhci_init(unsigned int id, PciDeviceInfo *info)
-{	
+{
 	//return;
 	if (!(((info->classCode << 8) | info->subclass) == PCI_SERIAL_USB &&
 		info->progIntf == PCI_SERIAL_USB_UHCI))

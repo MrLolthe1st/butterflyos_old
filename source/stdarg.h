@@ -28,7 +28,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #endif /* not __need___va_list */
 #undef __need___va_list
 
-/* Define __gnuc_va_list.  */
+ /* Define __gnuc_va_list.  */
 
 #ifndef __GNUC_VA_LIST
 #define __GNUC_VA_LIST
@@ -48,22 +48,22 @@ typedef __builtin_va_list __gnuc_va_list;
 #endif
 #define __va_copy(d,s)	__builtin_va_copy(d,s)
 
-/* Define va_list, if desired, from __gnuc_va_list. */
-/* We deliberately do not define va_list when called from
-   stdio.h, because ANSI C says that stdio.h is not supposed to define
-   va_list.  stdio.h needs to have access to that data type, 
-   but must not use that name.  It should use the name __gnuc_va_list,
-   which is safe because it is reserved for the implementation.  */
+   /* Define va_list, if desired, from __gnuc_va_list. */
+   /* We deliberately do not define va_list when called from
+	  stdio.h, because ANSI C says that stdio.h is not supposed to define
+	  va_list.  stdio.h needs to have access to that data type,
+	  but must not use that name.  It should use the name __gnuc_va_list,
+	  which is safe because it is reserved for the implementation.  */
 
 #ifdef _BSD_VA_LIST
 #undef _BSD_VA_LIST
 #endif
 
 #if defined(__svr4__) || (defined(_SCO_DS) && !defined(__VA_LIST))
-/* SVR4.2 uses _VA_LIST for an internal alias for va_list,
-   so we must avoid testing it and setting it here.
-   SVR4 uses _VA_LIST as a flag in stdarg.h, but we should
-   have no conflict with that.  */
+	  /* SVR4.2 uses _VA_LIST for an internal alias for va_list,
+		 so we must avoid testing it and setting it here.
+		 SVR4 uses _VA_LIST as a flag in stdarg.h, but we should
+		 have no conflict with that.  */
 #ifndef _VA_LIST_
 #define _VA_LIST_
 #ifdef __i860__
@@ -78,12 +78,12 @@ typedef __gnuc_va_list va_list;
 #endif /* _VA_LIST_ */
 #else /* not __svr4__ || _SCO_DS */
 
-/* The macro _VA_LIST_ is the same thing used by this file in Ultrix.
-   But on BSD NET2 we must not test or define or undef it.
-   (Note that the comments in NET 2's ansi.h
-   are incorrect for _VA_LIST_--see stdio.h!)  */
+	  /* The macro _VA_LIST_ is the same thing used by this file in Ultrix.
+		 But on BSD NET2 we must not test or define or undef it.
+		 (Note that the comments in NET 2's ansi.h
+		 are incorrect for _VA_LIST_--see stdio.h!)  */
 #if !defined (_VA_LIST_) || defined (__BSD_NET2__) || defined (____386BSD____) || defined (__bsdi__) || defined (__sequent__) || defined (__FreeBSD__) || defined(WINNT)
-/* The macro _VA_LIST_DEFINED is used in Windows NT 3.5  */
+		 /* The macro _VA_LIST_DEFINED is used in Windows NT 3.5  */
 #ifndef _VA_LIST_DEFINED
 /* The macro _VA_LIST is used in SCO Unix 3.2.  */
 #ifndef _VA_LIST

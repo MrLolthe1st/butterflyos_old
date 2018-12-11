@@ -3,99 +3,99 @@
 
 typedef struct UdpHeader
 {
-    u16 srcPort;
-    u16 dstPort;
-    u16 len;
-    u16 checksum;
+	u16 srcPort;
+	u16 dstPort;
+	u16 len;
+	u16 checksum;
 } PACKED UdpHeader;
 // ------------------------------------------------------------------------------------------------
 void UdpRecv(NetIntf *intf, const Ipv4Header *ipHdr, NetBuf *pkt)
 {
-    UdpPrint(pkt);
+	UdpPrint(pkt);
 
-    // Validate packet header
-    if (pkt->start + sizeof(UdpHeader) > pkt->end)
-    {
-        return;
-    }
+	// Validate packet header
+	if (pkt->start + sizeof(UdpHeader) > pkt->end)
+	{
+		return;
+	}
 
-    const UdpHeader *hdr = (const UdpHeader *)pkt->start;
+	const UdpHeader *hdr = (const UdpHeader *)pkt->start;
 
-    u16 srcPort = NetSwap16(hdr->srcPort);
-    //u16 dstPort = NetSwap16(hdr->dstPort);
+	u16 srcPort = NetSwap16(hdr->srcPort);
+	//u16 dstPort = NetSwap16(hdr->dstPort);
 
-    pkt->start += sizeof(UdpHeader);
+	pkt->start += sizeof(UdpHeader);
 
-    switch (srcPort)
-    {
-    case PORT_DNS:
-        DnsRecv(intf, pkt);
-        break;
+	switch (srcPort)
+	{
+	case PORT_DNS:
+		DnsRecv(intf, pkt);
+		break;
 
-    case PORT_BOOTP_SERVER:
-        DhcpRecv(intf, pkt);
-        break;
+	case PORT_BOOTP_SERVER:
+		DhcpRecv(intf, pkt);
+		break;
 
-    case PORT_NTP:
-        NtpRecv(intf, pkt);
-        break;
-    }
+	case PORT_NTP:
+		NtpRecv(intf, pkt);
+		break;
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
 void UdpSend(const Ipv4Addr *dstAddr, uint dstPort, uint srcPort, NetBuf *pkt)
 {
-    // UDP Header
-    pkt->start -= sizeof(UdpHeader);
+	// UDP Header
+	pkt->start -= sizeof(UdpHeader);
 
-    UdpHeader *hdr = (UdpHeader *)pkt->start;
-    hdr->srcPort = NetSwap16(srcPort);
-    hdr->dstPort = NetSwap16(dstPort);
-    hdr->len = NetSwap16(pkt->end - pkt->start);
-    hdr->checksum = 0;  // don't compute checksum yet
+	UdpHeader *hdr = (UdpHeader *)pkt->start;
+	hdr->srcPort = NetSwap16(srcPort);
+	hdr->dstPort = NetSwap16(dstPort);
+	hdr->len = NetSwap16(pkt->end - pkt->start);
+	hdr->checksum = 0;  // don't compute checksum yet
 
-    UdpPrint(pkt);
+	UdpPrint(pkt);
 
-    Ipv4Send(dstAddr, IP_PROTOCOL_UDP, pkt);
+	Ipv4Send(dstAddr, IP_PROTOCOL_UDP, pkt);
 }
 
 // ------------------------------------------------------------------------------------------------
 void UdpSendIntf(NetIntf *intf, const Ipv4Addr *dstAddr, uint dstPort, uint srcPort, NetBuf *pkt)
 {
-    // UDP Header
-    pkt->start -= sizeof(UdpHeader);
+	// UDP Header
+	pkt->start -= sizeof(UdpHeader);
 
-    UdpHeader *hdr = (UdpHeader *)pkt->start;
-    hdr->srcPort = NetSwap16(srcPort);
-    hdr->dstPort = NetSwap16(dstPort);
-    hdr->len = NetSwap16(pkt->end - pkt->start);
-    hdr->checksum = 0;  // don't compute checksum yet
+	UdpHeader *hdr = (UdpHeader *)pkt->start;
+	hdr->srcPort = NetSwap16(srcPort);
+	hdr->dstPort = NetSwap16(dstPort);
+	hdr->len = NetSwap16(pkt->end - pkt->start);
+	hdr->checksum = 0;  // don't compute checksum yet
 
-    UdpPrint(pkt);
+	UdpPrint(pkt);
 
-    Ipv4SendIntf(intf, dstAddr, dstAddr, IP_PROTOCOL_UDP, pkt);
+	Ipv4SendIntf(intf, dstAddr, dstAddr, IP_PROTOCOL_UDP, pkt);
 }
 
 // ------------------------------------------------------------------------------------------------
 void UdpPrint(const NetBuf *pkt)
 {
-    if (~g_netTrace & TRACE_TRANSPORT)
-    {
-        return;
-    }
+	if (~g_netTrace & TRACE_TRANSPORT)
+	{
+		return;
+	}
 
-    if (pkt->start + sizeof(UdpHeader) > pkt->end)
-    {
-        return;
-    }
+	if (pkt->start + sizeof(UdpHeader) > pkt->end)
+	{
+		return;
+	}
 
-    const UdpHeader *hdr = (const UdpHeader *)pkt->start;
+	const UdpHeader *hdr = (const UdpHeader *)pkt->start;
 
-    u16 srcPort = NetSwap16(hdr->srcPort);
-    u16 dstPort = NetSwap16(hdr->dstPort);
-    u16 len = NetSwap16(hdr->len);
-    u16 checksum = NetSwap16(hdr->checksum);
+	u16 srcPort = NetSwap16(hdr->srcPort);
+	u16 dstPort = NetSwap16(hdr->dstPort);
+	u16 len = NetSwap16(hdr->len);
+	u16 checksum = NetSwap16(hdr->checksum);
 
-    printTextToWindow(4,mywin,"  UDP: src=%d dst=%d len=%d checksum=%d\n",
-        srcPort, dstPort, len, checksum);
+	printTextToWindow(4, mywin, "  UDP: src=%d dst=%d len=%d checksum=%d\n",
+		srcPort, dstPort, len, checksum);
 }

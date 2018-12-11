@@ -4,55 +4,55 @@
 #define uint64_t unsigned long long
 static inline void MmioWrite8(void *p, u8 data)
 {
-    *(volatile u8 *)(p) = data;
+	*(volatile u8 *)(p) = data;
 }
 
 static inline u8 MmioRead8(void *p)
 {
-    return *(volatile u8 *)(p);
+	return *(volatile u8 *)(p);
 }
 
 static inline void MmioWrite16(void *p, u16 data)
 {
-    *(volatile u16 *)(p) = data;
+	*(volatile u16 *)(p) = data;
 }
 
 static inline u16 MmioRead16(void *p)
 {
-    return *(volatile u16 *)(p);
+	return *(volatile u16 *)(p);
 }
 
 static inline void MmioWrite32(void *p, u32 data)
 {
-    *(volatile u32 *)(p) = data;
+	*(volatile u32 *)(p) = data;
 }
 
 static inline u32 MmioRead32(void *p)
 {
-    return *(volatile u32 *)(p);
+	return *(volatile u32 *)(p);
 }
 
 static inline void MmioWrite64(void *p, u64 data)
 {
-    *(volatile u64 *)(p) = data;
+	*(volatile u64 *)(p) = data;
 }
 
 static inline u64 MmioRead64(void *p)
 {
-    return *(volatile u64 *)(p);
+	return *(volatile u64 *)(p);
 }
 
 static inline void MmioReadN(void *dst, const volatile void *src, size_t bytes)
 {
-    volatile u8 *s = (volatile u8 *)src;
-    u8 *d = (u8 *)dst;
-    while (bytes > 0)
-    {
-        *d =  *s;
-        ++s;
-        ++d;
-        --bytes;
-    }
+	volatile u8 *s = (volatile u8 *)src;
+	u8 *d = (u8 *)dst;
+	while (bytes > 0)
+	{
+		*d = *s;
+		++s;
+		++d;
+		--bytes;
+	}
 }
 uint8_t inportb(uint16_t portid)
 {

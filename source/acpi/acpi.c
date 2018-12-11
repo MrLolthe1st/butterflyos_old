@@ -221,7 +221,7 @@ int log2(int val)
 unsigned long long cyc_per_tick = 0;
 unsigned int memms;
 // ------------------------------------------------------------------------------------------------
- void AcpiParseDT(AcpiHeader *header)
+void AcpiParseDT(AcpiHeader *header)
 {
 	u32 signature = header->signature;
 
@@ -241,17 +241,17 @@ unsigned int memms;
 		TIMER0_CONF_REG = val;
 
 		printTextToWindow(7, mywin, "!%x 0x%x\n", 1, CLK_PERIOD_REG);
-		unsigned long long hz = (unsigned long long)((unsigned long long)1000000000 / (unsigned long long )CLK_PERIOD_REG);
-		
+		unsigned long long hz = (unsigned long long)((unsigned long long)1000000000 / (unsigned long long)CLK_PERIOD_REG);
+
 		// (1e10 / some) 
-		cyc_per_tick = hz*10;
+		cyc_per_tick = hz * 10;
 		GENERAL_CONF_REG |= GCONF_LR | GCONF_ENABLE;
-		
+
 		TIMER0_CONF_REG |= TCONF_MODE32;
 		TIMER0_CONF_REG |= TCONF_INT_ENABLE;
-		TIMER0_CONF_REG |= (1<<3)|(1<<2)|(1<<6);
+		TIMER0_CONF_REG |= (1 << 3) | (1 << 2) | (1 << 6);
 		TIMER0_COMPARATOR_REG = MAIN_COUNTER_REG + cyc_per_tick;
-		TIMER0_COMPARATOR_REG = (0 + cyc_per_tick)&0xFFFFFFFF;
+		TIMER0_COMPARATOR_REG = (0 + cyc_per_tick) & 0xFFFFFFFF;
 		//HPET_REG32(0x10C) = (0 + cyc_per_tick)>>32;
 		//TIMER0_CONF_REG |= 1<<2;
 	}

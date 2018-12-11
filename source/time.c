@@ -1,5 +1,5 @@
 #define ConsolePrint kprintf
-int hour, minute, sec = 0, *sec100 = (size_t*) 0x09913;
+int hour, minute, sec = 0, *sec100 = (size_t*)0x09913;
 #define ticksPerSecond 10026
 
 void Wait(unsigned int n)
@@ -201,7 +201,7 @@ void RtcSetTime(const DateTime *dt)
 
 
 
-								 // ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 void SplitTime(DateTime *dt, abs_time t, int tzOffset)
 {
 	// Adjust t for time zone

@@ -12,7 +12,7 @@ typedef struct {
 typedef struct _hook
 {
 	unsigned int type;
-	void (*handler)(HookEvent * e);
+	void(*handler)(HookEvent * e);
 	struct _hook * next;
 	struct _hook * prev;
 } Hook;
@@ -32,7 +32,7 @@ Hook * SetHook(unsigned int hookType, void * handler)
 		hookChain->handler = handler;
 		return hookChain;
 	}
-	Hook * nhook = (Hook *) malloc(sizeof(Hook));
+	Hook * nhook = (Hook *)malloc(sizeof(Hook));
 	if (!nhook)
 		return 0;
 	if (!hookChain->prev)

@@ -51,8 +51,10 @@ void _main(int argc, char ** argv)
 			while ((key = RecieveKey()) == 0) { Wait(1); };
 			if (key == 13) continue;
 			if (key == 0x9) continue;
-			if ((key==0x8&&cmdLen > 0)||key!=0x8)
+			if ((key==0x8&&cmdLen > 0)||key!=0x8){
 				printf("%c", key);
+				//BufferWindow(w);
+			}
 			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; continue; }
 			cmd[cmdLen] = key;
 			cmdLen++;

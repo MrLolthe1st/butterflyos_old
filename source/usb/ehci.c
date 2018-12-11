@@ -579,7 +579,7 @@ void some()
 // ------------------------------------------------------------------------------------------------
 void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
-	UsbTransfer *t = qh->transfer; 
+	UsbTransfer *t = qh->transfer;
 	Wait(1);
 	if (qh->token & TD_TOK_HALTED)
 	{
@@ -650,7 +650,7 @@ static void EhciWaitForQH(EhciController *hc, EhciQH *qh)
 	{
 		EhciProcessQH(hc, qh);
 	}
-	
+
 }
 // ------------------------------------------------------------------------------------------------
 static void EhciDevControl(UsbDevice *dev, UsbTransfer *t)
@@ -784,7 +784,7 @@ static void EhciDevIntr(UsbDevice *dev, UsbTransfer *t)
 	EhciInitQH(qh, t, head, dev->parent, true, speed, addr, endp, maxSize);
 	//printQh(qh);
 	// Schedule queue
-	if(t->w)
+	if (t->w)
 		EhciInsertAsyncQH(hc->asyncQH, qh);
 	else
 		EhciInsertPeriodicQH(hc->periodicQH, qh);
@@ -859,7 +859,7 @@ static void EhciControllerPollList(EhciController *hc, Link *list)
 	lockTaskSwitch(1);
 	ListForEachSafe(qh, next, *list, qhLink)
 	{
-		if (qh->transfer && (qh->transfer->w==0)&& (!qh->transfer->complete))
+		if (qh->transfer && (qh->transfer->w == 0) && (!qh->transfer->complete))
 		{
 			EhciProcessQH(hc, qh);
 		}
@@ -941,7 +941,7 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	}
 	//return;
 	// Controller initialization
-	EhciController *hc = (EhciController *) VMAlloc(sizeof(EhciController));
+	EhciController *hc = (EhciController *)VMAlloc(sizeof(EhciController));
 	hc->capRegs = (EhciCapRegs *)(uintptr_t)bar.u.address;
 	hc->ehcibase2 = (uint)bar.u.address;
 	hc->opRegs = (EhciOpRegs *)(uintptr_t)(bar.u.address + hc->capRegs->capLength);

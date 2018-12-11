@@ -661,7 +661,7 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 			}
 		}
 	}
-	printTextToWindow(4,mywin,"%x:%x:%d 0x%x/0x%x: %s\n",
+	printTextToWindow(4, mywin, "%x:%x:%d 0x%x/0x%x: %s\n",
 		(int)info.classCode, (int)info.subclass, (int)info.progIntf,
 		(int)info.vendorId, (int)info.deviceId,
 		(uint)PciClassName(info.classCode, info.subclass, info.progIntf)

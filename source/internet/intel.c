@@ -7,12 +7,12 @@
 // Receive Descriptor
 typedef struct RecvDesc
 {
-    volatile u64 addr;
-    volatile u16 len;
-    volatile u16 checksum;
-    volatile u8 status;
-    volatile u8 errors;
-    volatile u16 special;
+	volatile u64 addr;
+	volatile u16 len;
+	volatile u16 checksum;
+	volatile u8 status;
+	volatile u8 errors;
+	volatile u16 special;
 } PACKED RecvDesc;
 
 // ------------------------------------------------------------------------------------------------
@@ -30,13 +30,13 @@ typedef struct RecvDesc
 // Transmit Descriptor
 typedef struct TransDesc
 {
-    volatile u64 addr;
-    volatile u16 len;
-    volatile u8 cso;
-    volatile u8 cmd;
-    volatile u8 status;
-    volatile u8 css;
-    volatile u16 special;
+	volatile u64 addr;
+	volatile u16 len;
+	volatile u8 cso;
+	volatile u8 cmd;
+	volatile u8 status;
+	volatile u8 css;
+	volatile u16 special;
 } PACKED TransDesc;
 
 // ------------------------------------------------------------------------------------------------
@@ -63,13 +63,13 @@ typedef struct TransDesc
 
 typedef struct EthIntelDevice
 {
-    u8 *mmioAddr;
-    uint rxRead;
-    uint txWrite;
-    RecvDesc *rxDescs;
-    TransDesc *txDescs;
-    NetBuf *rxBufs[RX_DESC_COUNT];
-    NetBuf *txBufs[TX_DESC_COUNT];
+	u8 *mmioAddr;
+	uint rxRead;
+	uint txWrite;
+	RecvDesc *rxDescs;
+	TransDesc *txDescs;
+	NetBuf *rxBufs[RX_DESC_COUNT];
+	NetBuf *txBufs[TX_DESC_COUNT];
 } EthIntelDevice;
 
 static EthIntelDevice s_device;
@@ -157,233 +157,232 @@ static EthIntelDevice s_device;
 // ------------------------------------------------------------------------------------------------
 static u16 EepromRead(u8 *mmioAddr, u8 eepromAddr)
 {
-    MmioWrite32(mmioAddr + REG_EERD, EERD_START | (eepromAddr << EERD_ADDR_SHIFT));
+	MmioWrite32(mmioAddr + REG_EERD, EERD_START | (eepromAddr << EERD_ADDR_SHIFT));
 
-    u32 val;
-    do
-    {
-        // TODO - add some kind of delay here
-        val = MmioRead32(mmioAddr + REG_EERD);
-    }
-    while (~val & EERD_DONE);
+	u32 val;
+	do
+	{
+		// TODO - add some kind of delay here
+		val = MmioRead32(mmioAddr + REG_EERD);
+	} while (~val & EERD_DONE);
 
-    return val >> EERD_DATA_SHIFT;
+	return val >> EERD_DATA_SHIFT;
 }
 
 // ------------------------------------------------------------------------------------------------
 static void EthIntelPoll(NetIntf *intf)
 {
-    RecvDesc *desc = &s_device.rxDescs[s_device.rxRead];
+	RecvDesc *desc = &s_device.rxDescs[s_device.rxRead];
 
-    while (desc->status & RSTA_DD)
-    {
-        if (desc->errors)
-        {
-            printTextToWindow(4,mywin,"Packet Error: (0x%x)\n", desc->errors);
-        }
-        else
-        {
-            NetBuf *buf = s_device.rxBufs[s_device.rxRead];
-            buf->end = buf->start + desc->len;
+	while (desc->status & RSTA_DD)
+	{
+		if (desc->errors)
+		{
+			printTextToWindow(4, mywin, "Packet Error: (0x%x)\n", desc->errors);
+		}
+		else
+		{
+			NetBuf *buf = s_device.rxBufs[s_device.rxRead];
+			buf->end = buf->start + desc->len;
 
-            EthRecv(intf, buf);
+			EthRecv(intf, buf);
 
-            NetReleaseBuf(buf);
-            buf = NetAllocBuf();
-            desc->addr = (u64)(uintptr_t)buf->start;
-        }
+			NetReleaseBuf(buf);
+			buf = NetAllocBuf();
+			desc->addr = (u64)(uintptr_t)buf->start;
+		}
 
-        desc->status = 0;
+		desc->status = 0;
 
-        MmioWrite32(s_device.mmioAddr + REG_RDT, s_device.rxRead);
+		MmioWrite32(s_device.mmioAddr + REG_RDT, s_device.rxRead);
 
-        s_device.rxRead = (s_device.rxRead + 1) & (RX_DESC_COUNT - 1);
-        desc = &s_device.rxDescs[s_device.rxRead];
-    }
+		s_device.rxRead = (s_device.rxRead + 1) & (RX_DESC_COUNT - 1);
+		desc = &s_device.rxDescs[s_device.rxRead];
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
 static void EthIntelSend(NetBuf *buf)
 {
-    TransDesc *desc = &s_device.txDescs[s_device.txWrite];
-    NetBuf *oldBuf = s_device.txBufs[s_device.txWrite];
+	TransDesc *desc = &s_device.txDescs[s_device.txWrite];
+	NetBuf *oldBuf = s_device.txBufs[s_device.txWrite];
 
-    // Wait until packet is sent
-    while (!(desc->status & 0xf))
-    {
-        PitWait(1);
-    }
+	// Wait until packet is sent
+	while (!(desc->status & 0xf))
+	{
+		PitWait(1);
+	}
 
-    // Free packet that was sent with this descriptor.
-    // TODO - free packets earlier?
+	// Free packet that was sent with this descriptor.
+	// TODO - free packets earlier?
 
-    if (oldBuf)
-    {
-        NetReleaseBuf(oldBuf);
-    }
+	if (oldBuf)
+	{
+		NetReleaseBuf(oldBuf);
+	}
 
-    // Write new tx descriptor
-    desc->addr = (u64)(uintptr_t)buf->start;
-    desc->len = buf->end - buf->start;
-    desc->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
-    desc->status = 0;
-    s_device.txBufs[s_device.txWrite] = buf;
+	// Write new tx descriptor
+	desc->addr = (u64)(uintptr_t)buf->start;
+	desc->len = buf->end - buf->start;
+	desc->cmd = CMD_EOP | CMD_IFCS | CMD_RS;
+	desc->status = 0;
+	s_device.txBufs[s_device.txWrite] = buf;
 
-    s_device.txWrite = (s_device.txWrite + 1) & (TX_DESC_COUNT - 1);
-    MmioWrite32(s_device.mmioAddr + REG_TDT, s_device.txWrite);
+	s_device.txWrite = (s_device.txWrite + 1) & (TX_DESC_COUNT - 1);
+	MmioWrite32(s_device.mmioAddr + REG_TDT, s_device.txWrite);
 }
 
 // ------------------------------------------------------------------------------------------------
 void EthIntelInit(uint id, PciDeviceInfo *info)
 {
-    // Check device supported.
-    if (info->vendorId != 0x8086)
-    {
-        return;
-    }
+	// Check device supported.
+	if (info->vendorId != 0x8086)
+	{
+		return;
+	}
 
-    if (!(info->deviceId == 0x100e || info->deviceId == 0x1503||info->deviceId == 0x10EA))
-    {
-        return;
-    }
+	if (!(info->deviceId == 0x100e || info->deviceId == 0x1503 || info->deviceId == 0x10EA))
+	{
+		return;
+	}
 
-    printTextToWindow(4,mywin,"Initializing Intel Gigabit Ethernet\n");
+	printTextToWindow(4, mywin, "Initializing Intel Gigabit Ethernet\n");
 
-    // Base I/O Address
-    PciBar bar;
-    PciGetBar(&bar, id, 0);
-    if (bar.flags & PCI_BAR_IO)
-    {
-        // Only Memory Mapped I/O supported
-        return;
-    }
+	// Base I/O Address
+	PciBar bar;
+	PciGetBar(&bar, id, 0);
+	if (bar.flags & PCI_BAR_IO)
+	{
+		// Only Memory Mapped I/O supported
+		return;
+	}
 
-    u8 *mmioAddr = (u8 *)bar.u.address;
-    s_device.mmioAddr = mmioAddr;
+	u8 *mmioAddr = (u8 *)bar.u.address;
+	s_device.mmioAddr = mmioAddr;
 
-    // IRQ
-    //u8 irq = PciRead8(id, PCI_CONFIG_INTERRUPT_LINE);
+	// IRQ
+	//u8 irq = PciRead8(id, PCI_CONFIG_INTERRUPT_LINE);
 
-    // MAC address
-    EthAddr localAddr;
-    u32 ral = MmioRead32(mmioAddr + REG_RAL);   // Try Receive Address Register first
-    if (ral)
-    {
-        u32 rah = MmioRead32(mmioAddr + REG_RAH);
+	// MAC address
+	EthAddr localAddr;
+	u32 ral = MmioRead32(mmioAddr + REG_RAL);   // Try Receive Address Register first
+	if (ral)
+	{
+		u32 rah = MmioRead32(mmioAddr + REG_RAH);
 
-        localAddr.n[0] = (u8)(ral);
-        localAddr.n[1] = (u8)(ral >> 8);
-        localAddr.n[2] = (u8)(ral >> 16);
-        localAddr.n[3] = (u8)(ral >> 24);
-        localAddr.n[4] = (u8)(rah);
-        localAddr.n[5] = (u8)(rah >> 8);
-    }
-    else
-    {
-        // Read MAC address from EEPROM registers
-        u16 mac01 = EepromRead(mmioAddr, 0);
-        u16 mac23 = EepromRead(mmioAddr, 1);
-        u16 mac45 = EepromRead(mmioAddr, 2);
+		localAddr.n[0] = (u8)(ral);
+		localAddr.n[1] = (u8)(ral >> 8);
+		localAddr.n[2] = (u8)(ral >> 16);
+		localAddr.n[3] = (u8)(ral >> 24);
+		localAddr.n[4] = (u8)(rah);
+		localAddr.n[5] = (u8)(rah >> 8);
+	}
+	else
+	{
+		// Read MAC address from EEPROM registers
+		u16 mac01 = EepromRead(mmioAddr, 0);
+		u16 mac23 = EepromRead(mmioAddr, 1);
+		u16 mac45 = EepromRead(mmioAddr, 2);
 
-        localAddr.n[0] = (u8)(mac01);
-        localAddr.n[1] = (u8)(mac01 >> 8);
-        localAddr.n[2] = (u8)(mac23);
-        localAddr.n[3] = (u8)(mac23 >> 8);
-        localAddr.n[4] = (u8)(mac45);
-        localAddr.n[5] = (u8)(mac45 >> 8);
-    }
+		localAddr.n[0] = (u8)(mac01);
+		localAddr.n[1] = (u8)(mac01 >> 8);
+		localAddr.n[2] = (u8)(mac23);
+		localAddr.n[3] = (u8)(mac23 >> 8);
+		localAddr.n[4] = (u8)(mac45);
+		localAddr.n[5] = (u8)(mac45 >> 8);
+	}
 
-    char macStr[18];
-    EthAddrToStr(macStr, sizeof(macStr), &localAddr);
+	char macStr[18];
+	EthAddrToStr(macStr, sizeof(macStr), &localAddr);
 
-    printTextToWindow(4,mywin,"MAC = %s\n", macStr);
+	printTextToWindow(4, mywin, "MAC = %s\n", macStr);
 
-    // Set Link Up
-    MmioWrite32(mmioAddr + REG_CTRL, MmioRead32(mmioAddr + REG_CTRL) | CTRL_SLU);
+	// Set Link Up
+	MmioWrite32(mmioAddr + REG_CTRL, MmioRead32(mmioAddr + REG_CTRL) | CTRL_SLU);
 
-    // Clear Multicast Table Array
-    for (int i = 0; i < 128; ++i)
-    {
-        MmioWrite32(mmioAddr + REG_MTA + (i * 4), 0);
-    }
+	// Clear Multicast Table Array
+	for (int i = 0; i < 128; ++i)
+	{
+		MmioWrite32(mmioAddr + REG_MTA + (i * 4), 0);
+	}
 
-    // Enable interrupts (TODO - only enable specific types as some of these are reserved bits)
-    //MmioWrite32(mmioAddr + REG_IMS, 0x1ffff);
+	// Enable interrupts (TODO - only enable specific types as some of these are reserved bits)
+	//MmioWrite32(mmioAddr + REG_IMS, 0x1ffff);
 
-    // Clear all interrupts
-    MmioRead32(mmioAddr + REG_ICR);
+	// Clear all interrupts
+	MmioRead32(mmioAddr + REG_ICR);
 
-    // Allocate memory
-    RecvDesc *rxDescs = (RecvDesc *) VMAlloc(RX_DESC_COUNT * sizeof(RecvDesc));
-    TransDesc *txDescs = (TransDesc *)VMAlloc(TX_DESC_COUNT * sizeof(TransDesc));
+	// Allocate memory
+	RecvDesc *rxDescs = (RecvDesc *)VMAlloc(RX_DESC_COUNT * sizeof(RecvDesc));
+	TransDesc *txDescs = (TransDesc *)VMAlloc(TX_DESC_COUNT * sizeof(TransDesc));
 
-    s_device.rxDescs = rxDescs;
-    s_device.txDescs = txDescs;
+	s_device.rxDescs = rxDescs;
+	s_device.txDescs = txDescs;
 
-    // Receive Setup
-    for (uint i = 0; i < RX_DESC_COUNT; ++i)
-    {
-        NetBuf *buf = NetAllocBuf();
+	// Receive Setup
+	for (uint i = 0; i < RX_DESC_COUNT; ++i)
+	{
+		NetBuf *buf = NetAllocBuf();
 
-        s_device.rxBufs[i] = buf;
+		s_device.rxBufs[i] = buf;
 
-        RecvDesc *rxDesc = rxDescs + i;
-        rxDesc->addr = (u64)(uintptr_t)buf->start;
-        rxDesc->status = 0;
-    }
+		RecvDesc *rxDesc = rxDescs + i;
+		rxDesc->addr = (u64)(uintptr_t)buf->start;
+		rxDesc->status = 0;
+	}
 
-    s_device.rxRead = 0;
+	s_device.rxRead = 0;
 
-    MmioWrite32(mmioAddr + REG_RDBAL, (uintptr_t)rxDescs);
-    MmioWrite32(mmioAddr + REG_RDBAH, (uintptr_t)rxDescs >> 32);
-    MmioWrite32(mmioAddr + REG_RDLEN, RX_DESC_COUNT * 16);
-    MmioWrite32(mmioAddr + REG_RDH, 0);
-    MmioWrite32(mmioAddr + REG_RDT, RX_DESC_COUNT - 1);
-    MmioWrite32(mmioAddr + REG_RCTL,
-          RCTL_EN
-        | RCTL_SBP
-        | RCTL_UPE
-        | RCTL_MPE
-        | RCTL_LBM_NONE
-        | RTCL_RDMTS_HALF
-        | RCTL_BAM
-        | RCTL_SECRC
-        | RCTL_BSIZE_2048
-        );
+	MmioWrite32(mmioAddr + REG_RDBAL, (uintptr_t)rxDescs);
+	MmioWrite32(mmioAddr + REG_RDBAH, (uintptr_t)rxDescs >> 32);
+	MmioWrite32(mmioAddr + REG_RDLEN, RX_DESC_COUNT * 16);
+	MmioWrite32(mmioAddr + REG_RDH, 0);
+	MmioWrite32(mmioAddr + REG_RDT, RX_DESC_COUNT - 1);
+	MmioWrite32(mmioAddr + REG_RCTL,
+		RCTL_EN
+		| RCTL_SBP
+		| RCTL_UPE
+		| RCTL_MPE
+		| RCTL_LBM_NONE
+		| RTCL_RDMTS_HALF
+		| RCTL_BAM
+		| RCTL_SECRC
+		| RCTL_BSIZE_2048
+	);
 
-    // Transmit Setup
-    TransDesc *txDesc = txDescs;
-    TransDesc *txEnd = txDesc + TX_DESC_COUNT;
-    memset(txDesc, 0, TX_DESC_COUNT * 16);
+	// Transmit Setup
+	TransDesc *txDesc = txDescs;
+	TransDesc *txEnd = txDesc + TX_DESC_COUNT;
+	memset(txDesc, 0, TX_DESC_COUNT * 16);
 
-    for (; txDesc != txEnd; ++txDesc)
-    {
-        txDesc->status = TSTA_DD;      // mark descriptor as 'complete'
-    }
+	for (; txDesc != txEnd; ++txDesc)
+	{
+		txDesc->status = TSTA_DD;      // mark descriptor as 'complete'
+	}
 
-    s_device.txWrite = 0;
+	s_device.txWrite = 0;
 
-    MmioWrite32(mmioAddr + REG_TDBAL, (uintptr_t)txDescs);
-    MmioWrite32(mmioAddr + REG_TDBAH, (uintptr_t)txDescs >> 32);
-    MmioWrite32(mmioAddr + REG_TDLEN, TX_DESC_COUNT * 16);
-    MmioWrite32(mmioAddr + REG_TDH, 0);
-    MmioWrite32(mmioAddr + REG_TDT, 0);
-    MmioWrite32(mmioAddr + REG_TCTL,
-          TCTL_EN
-        | TCTL_PSP
-        | (15 << TCTL_CT_SHIFT)
-        | (64 << TCTL_COLD_SHIFT)
-        | TCTL_RTLC
-        );
+	MmioWrite32(mmioAddr + REG_TDBAL, (uintptr_t)txDescs);
+	MmioWrite32(mmioAddr + REG_TDBAH, (uintptr_t)txDescs >> 32);
+	MmioWrite32(mmioAddr + REG_TDLEN, TX_DESC_COUNT * 16);
+	MmioWrite32(mmioAddr + REG_TDH, 0);
+	MmioWrite32(mmioAddr + REG_TDT, 0);
+	MmioWrite32(mmioAddr + REG_TCTL,
+		TCTL_EN
+		| TCTL_PSP
+		| (15 << TCTL_CT_SHIFT)
+		| (64 << TCTL_COLD_SHIFT)
+		| TCTL_RTLC
+	);
 
-    // Create net interface
-    NetIntf *intf = NetIntfCreate();
-    intf->ethAddr = localAddr;
-    intf->ipAddr = g_nullIpv4Addr;
-    intf->name = "eth";
-    intf->poll = EthIntelPoll;
-    intf->send = EthSendIntf;
-    intf->devSend = EthIntelSend;
+	// Create net interface
+	NetIntf *intf = NetIntfCreate();
+	intf->ethAddr = localAddr;
+	intf->ipAddr = g_nullIpv4Addr;
+	intf->name = "eth";
+	intf->poll = EthIntelPoll;
+	intf->send = EthSendIntf;
+	intf->devSend = EthIntelSend;
 
-    NetIntfAdd(intf);
+	NetIntfAdd(intf);
 }
