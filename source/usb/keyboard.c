@@ -109,7 +109,7 @@ static void UsbKbdProcess(UsbKbd *kbd)
 {
 	u8 *data = kbd->data;
 	bool error = false;
-	printTextToWindow(3, mywin, "%08llx\n", *((unsigned long long*)data));
+	//printTextToWindow(3, mywin, "%08llx\n", *((unsigned long long*)data));
 
 	// Modifier keys
 	uint modDelta = data[0] ^ kbd->lastData[0];
