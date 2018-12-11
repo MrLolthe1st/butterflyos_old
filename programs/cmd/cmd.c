@@ -6,18 +6,18 @@
 
 
 Window * w;
-char kkey = 0;
+unsigned short kkey = 0;
 void handle(WindowEvent * z)
 {
 	if(z->code==WINDOWS_KEY_DOWN)
 	{
-		kkey = *((char*)z->data);
+		kkey = *((unsigned short*)z->data);
 	}
 }
-char RecieveKey()
+unsigned short RecieveKey()
 {
 	if(kkey){
-		char z=kkey;
+		unsigned short z=kkey;
 		kkey=0;
 		return z;
 	}
@@ -43,7 +43,7 @@ void _main(int argc, char ** argv)
 	}
 	int dirLen = 3;
 	int cmdLen = 0;
-	char key = 0;
+	short key = 0;
 	for (;;)
 	{
 		printf("\n%s>", dir);
@@ -51,6 +51,7 @@ void _main(int argc, char ** argv)
 		key = 0;
 		for (int i = 0; i < 512; i++)
 			cmd[i] = 0;
+		int cpos = 0;
 		while (key != 13)
 		{
 			while ((key = RecieveKey()) == 0) { Wait(1); };
@@ -60,9 +61,9 @@ void _main(int argc, char ** argv)
 				printf("%c", key);
 				//BufferWindow(w);
 			}
-			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; continue; }
+			if (key == 0x8) { if (cmdLen > 0)cmd[--cmdLen] = 0; cpos--; continue; }
 			cmd[cmdLen] = key;
-			cmdLen++;
+			cmdLen++;cpos++;
 		}
 		printf("\n");
 		for(int i=0;i<512;i++)
@@ -106,19 +107,8 @@ void _main(int argc, char ** argv)
 					len++;
 				}
 
-				printf(" MOD. ");
-				if (day < 10)
-					printf("0");
-				printf("%d.", day);
-				if (month < 10)
-					printf("0");
-				printf("%d.%d ", month, year);
-				if (hour < 10)
-					printf("0");
-				printf("%d:", hour);
-				if (minute < 10)
-					printf("0");
-				printf("%d ", minute);
+				
+				printf(" MOD. %02d.%02d.%d %02d:%02d ", day, month, year, hour, minute);
 				if (d->attrs & 0x10) {
 
 					printf("DIR\n");

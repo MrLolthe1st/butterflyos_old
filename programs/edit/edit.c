@@ -4,7 +4,7 @@
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
 unsigned int * sec100 = 0x09913;
-void KeyHandler(char k);
+void KeyHandler(unsigned short k);
 FILE * curFile;
 typedef struct _line {
 	char * text;
@@ -24,19 +24,19 @@ int width, height;
 int cursorX = 0, cursorY = 0, pos = 0, cstate = 0,
 pageOffsetY = 0, pageOffsetX = 0, pageSizeX = 0,
 pageSizeY = 0, lastCursorUpdate = 0;
-char queue[256];
+unsigned short queue[256];
 int head = 0, tail = -1, length = 0;
 void outText();
-void insertKey(char c)
+void insertKey(unsigned short c)
 {
 	tail = (tail + 1) % 256;
 	queue[tail] = c;
 	length++;
 }
-char getKey()
+unsigned short getKey()
 {
 	if (length < 1) return 0;
-	char c = queue[head];
+	unsigned short c = queue[head];
 	head = (head + 1) % 256;
 	length--;
 	return c;
@@ -45,7 +45,7 @@ void handle(WindowEvent * z)
 {
 	if (z->code == WINDOWS_KEY_DOWN)
 	{
-		insertKey(*((char*)z->data));
+		insertKey(*((unsigned short*)z->data));
 	}
 }
 
@@ -60,7 +60,8 @@ int max(int a, int b)
 	return a > b ? a : b;
 }
 
-void KeyHandler(char k)
+int lastUpdate = 0;
+void KeyHandler(unsigned short k)
 {
 	kkey = k;
 	int cx = cursorX - pageOffsetX,
@@ -74,16 +75,17 @@ void KeyHandler(char k)
 			p->g ^= 255;
 			p->r ^= 255;
 		}
-		cstate = 0;
+		lastUpdate = *sec100;
 	}
-	if (k == 0x24)
+	cstate = 1;
+	if (k == (0x24 << 8))
 	{
 		cursorX = 0;
 		pageOffsetX = 0;
 		BarVideo(0, 0, width - 1, height - 16, 0x0, width, height, w->video);
 		outText();
 	}
-	if (k == 0x23)
+	if (k == (0x23 << 8))
 	{
 		line * l = text;
 		cy = 0;
@@ -96,16 +98,30 @@ void KeyHandler(char k)
 			outText();
 		}
 	}
-	if (k == 0x27)
+	if (k == (0x27 << 8))
 		cursorX++;
-	if (k == 0x25) {
+	if (k == (0x25 << 8)) {
 		cursorX = max(0, cursorX - 1);
 	}
-	if (k == 0x28)
+	if (k == (0x28 << 8))
 		cursorY++;
-	if (k == 0x26)
+	if (k == (0x26 << 8))
 		cursorY--;
 	updateCursor();
+	if (cstate){
+		cx = cursorX - pageOffsetX,
+		cy = cursorY - pageOffsetY;
+		for (int i = 0; i < 16; i++)
+		{
+			ScreenPoint * p = (uint)w->video + cx * 8 * 3 + (cy) * 16 * width * 3 + i * width * 3;
+			//printTextToWindow(2,w,"\n%x %x",w->video,p);
+			p->b ^= 255;
+			p->g ^= 255;
+			p->r ^= 255;
+		}
+		lastUpdate = *sec100;
+	}
+	BufferWindow(w);
 }
 
 unsigned char openFile(char * fname)
@@ -160,7 +176,6 @@ void MoveLeft(int k)
 	}
 	w->cursorX = ccx;
 	w->cursorY = ccy;
-	BufferWindow(w);
 
 }
 void MoveRight(int k)
@@ -197,7 +212,6 @@ void MoveRight(int k)
 	w->cursorX = ccx;
 	w->cursorY = ccy;
 
-	BufferWindow(w);
 }
 void updateCursor()
 {
@@ -368,26 +382,27 @@ void _main(int argc, char ** argv)
 	{
 
 	}
-	int lastUpdate = 0;
+	cstate =0;
 	for (;;)
 	{
 
 		//updateCursor();
-		char c = getKey();
+		unsigned short c = getKey();
 		if (c)
 			KeyHandler(c);
+		if (((*sec100) - lastUpdate) > 2000) {
 		int cx = cursorX - pageOffsetX,
 			cy = cursorY - pageOffsetY;
-		if (lastUpdate - (*sec100) > 2000) {
 			cstate = 1 - cstate;
 			for (int i = 0; i < 16; i++)
 			{
 				ScreenPoint * p = (uint)w->video + cx * 8 * 3 + (cy) * 16 * width * 3 + i * width * 3;
-				//printTextToWindow(2,w,"\n%x %x",w->video,p);
+				
 				p->b ^= 255;
 				p->g ^= 255;
 				p->r ^= 255;
 			}
+			//printTextToWindow(2,w,"!");
 			lastUpdate = *sec100;
 			BarVideo(width - 8 * 20, height - 16, width, height, 0, width, height, w->video);
 			int lx = w->cursorX;

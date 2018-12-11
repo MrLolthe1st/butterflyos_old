@@ -13,7 +13,7 @@ to turn off debbuging messages
 short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 int cday, cmonth, cyear;
 #define VMAlloc malloc
-#define KeysQueue (int)0x09810
+#define KeysQueue (int)0x08510
 //PIC#0; port 0x20
 #define IRQ_HANDLER(func) unsigned char func = 0x90;\
 __asm__(#func ": \npusha \n call __"#func " \n movb $0x20, %al \n outb %al, $0x20 \n popa  \n iret \n");\
@@ -27,21 +27,7 @@ void printChar(char s);
 void outportb(unsigned short portid, unsigned char value);
 void inst(unsigned char interruptID, void * address, unsigned char flags);
 //Достает символ из очереди
-char pcidone = 0;
-char getKey()
-{
 
-	unsigned char * keysInQueue = (unsigned char *)KeysQueue;
-	unsigned char * queueFirst = (unsigned char *)(KeysQueue + 1);
-	unsigned char * queueLast = (unsigned char *)(KeysQueue + 2);
-
-	if ((*keysInQueue) == 0) return 0;
-	(*keysInQueue)--;
-	char c = *((unsigned char *)KeysQueue + 3 + (*queueFirst));
-	*queueFirst = ((*queueFirst) + 1) % 256;
-
-	return c;
-}
 unsigned int locked = 0;
 
 void nope(int a, ...)
@@ -62,6 +48,21 @@ Window * windows = 0;
 int activeWindow = 0, rec = 0;
 int cursorSpeed = 700;
 Window * mywin = 0;
+char pcidone = 0;
+short getKey()
+{
+
+	unsigned char * keysInQueue = (unsigned char *)KeysQueue;
+	unsigned char * queueFirst = (unsigned char *)(KeysQueue + 1);
+	unsigned char * queueLast = (unsigned char *)(KeysQueue + 2);
+
+	if ((*keysInQueue) == 0) return 0;
+	(*keysInQueue)--;
+	short c = *((unsigned short *)KeysQueue + 3 + 2 * (*queueFirst));
+	*queueFirst = ((*queueFirst) + 1) % 256;
+	printTextToWindow(3, mywin, "%x", c);
+	return c;
+}
 unsigned int usbPoll = 1;
 #include "Link.h"
 #include "devices/fpu.c"
@@ -208,6 +209,7 @@ void CmdHttp(char * a1, char *a2)
 void k_main()
 {
 	//hubinit=&_usbHubInit;
+	fontPointer = (unsigned char*)(0x50000 + 256);
 	initCoProc();
 	memset(&drives, 0, sizeof(LogicDrive) * 26);
 	for (int i = 0; i < 64; i++)
@@ -240,7 +242,6 @@ void k_main()
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
-	initSVGA();
 	mywin = openWindow(640, 680, 0, 0, "System Info");
 	AcpiInit();
 	iint();
@@ -289,6 +290,10 @@ void k_main()
 	addGlobalVariable("memcpy1", (void*)&memcpy1);
 	addGlobalVariable("printf", &printf);
 	addGlobalVariable("memset", &memset);
+	addGlobalVariable("fflush", &fflush);
+	addGlobalVariable("strlen", &strlen);
+	addGlobalVariable("fprintf", &fprintf);
+	addGlobalVariable("strerr", 1);
 	addGlobalVariable("procTable", &procTable);
 	unsigned char * cur_dir = malloc(512);
 	unsigned char * cur_cmd = malloc(512);
@@ -302,6 +307,7 @@ void k_main()
 	//
 	mywin->handler = &Win1Handler;
 	PciInit();
+	initSVGA();
 	updateWindows();
 	//swapBuffer();
 	SmpInit();
@@ -358,14 +364,13 @@ void k_main()
 					break;
 				currentActive = currentActive->next;
 			}
-			char key = 0;
+			short key = 0;
 			while (key = getKey())
 			{
 				if (currentActive)
 				{
 					we.code = WINDOWS_KEY_DOWN;
-					*((unsigned char*)we.data) = key;
-					*((char*)(we.data + 1)) = 0;
+					*((unsigned short*)we.data) = key;
 					currentActive->handler(&we);
 				}
 			}
@@ -408,8 +413,7 @@ void k_main()
 			if (currentActive)
 			{
 				we.code = WINDOWS_KEY_DOWN;
-				*((unsigned char*)we.data) = key;
-				*((char*)(we.data + 1)) = 0;
+				*((unsigned short*)we.data) = key;
 				currentActive->handler(&we);
 			}
 		}

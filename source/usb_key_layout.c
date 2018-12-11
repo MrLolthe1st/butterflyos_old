@@ -334,16 +334,17 @@ char usb_k_base[128] = {
 	[KEY_KP8] = '8',
 	[KEY_KP9] = '9',
 	[KEY_KP0] = '0',
-	[KEY_KPDOT] = '.',
+	[KEY_KPDOT] = '.'
+
+};
+unsigned char useful_usb[256] = {
 	[KEY_LEFT] = VK_LEFT,
 	[KEY_RIGHT] = VK_RIGHT,
 	[KEY_HOME] = VK_HOME,
 	[KEY_END] = VK_END,
 	[KEY_DOWN] = VK_DOWN,
 	[KEY_UP] = VK_UP
-
 };
-
 char usb_k_shift[128] = {
 	[KEY_102ND] = '|',
 	[KEY_KPEQUAL] = '=',

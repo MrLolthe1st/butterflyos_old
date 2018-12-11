@@ -41,14 +41,19 @@ typedef struct dentr_y
 	struct dentr_y * next;
 } direntry;
 void Wait(unsigned int n);
+void abort();
+#define size_t unsigned int
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);
 unsigned char fread(void * addr, uint size, uint count, FILE *f);
 void fclose(FILE * f);
 void rewind(FILE * f);
+void fflush(FILE * f);
+extern FILE * stderr;
 long ftell(FILE * f);
 uint fseek(FILE *stream, long offset, int origin);
 FILE *fopen(const char *fname, const char *mode);
 void mkdir(char *p, uint mode);
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * workingDir);
 void printf(char * text, ...);
+void fprintf(FILE * f, char * text, ...);
 void attachIoToWindow(void * w);

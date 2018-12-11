@@ -43,8 +43,8 @@ void initWindows()
 void drawDesktop()
 {
 	//Draw background
-	//CopyToVMemory(0, 0, 1024, 736, cat);
-	Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
+	CopyToVMemory(0, 0, width, height - 32, cat);
+	//Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
 	//Task Panel
 	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
 	//Some text...
@@ -451,13 +451,22 @@ void Draw(Window * toDraw) {
 		else
 			Bar(toDraw->x + toDraw->cursorX * 8, toDraw->y + toDraw->cursorY * 16, toDraw->x + toDraw->cursorX * 8 + 7, toDraw->y + toDraw->cursorY * 16 + 15, 0);
 	OutFixedTextXY(toDraw->x + 3, toDraw->y - 17, toDraw->caption, 0xFFFFFF, toDraw->wwidth - 90, 1);
-	Bar(toDraw->x + toDraw->wwidth - 26, toDraw->y - 20, toDraw->x + toDraw->wwidth, toDraw->y - 5, 0xFF0000);
-	Bar(toDraw->x + toDraw->wwidth - 50, toDraw->y - 20, toDraw->x + toDraw->wwidth - 27, toDraw->y - 5, 0xFFEB3B);
-	Bar(toDraw->x + toDraw->wwidth - 75, toDraw->y - 20, toDraw->x + toDraw->wwidth - 51, toDraw->y - 5, 0x43A047);
-	Line(toDraw->x + toDraw->wwidth - 25 + 8, toDraw->y - 20 + 3, toDraw->x + toDraw->wwidth - 8, toDraw->y - 8, 0xFFFFFF);
-	Line(toDraw->x + toDraw->wwidth - 25 + 8, toDraw->y - 8, toDraw->x + toDraw->wwidth - 8, toDraw->y - 20 + 3, 0xFFFFFF);
-	Rect(toDraw->x + toDraw->wwidth - 45, toDraw->y - 20 + 3, 13, 9, 0x311B92);
-	Line(toDraw->x + toDraw->wwidth - 58, toDraw->y - 8, toDraw->x + toDraw->wwidth - 58 - 10, toDraw->y - 8, 0xFFFFFF);
+	Bar(toDraw->x + toDraw->wwidth - 26, toDraw->y - 20, toDraw->x + toDraw->wwidth - 1, toDraw->y - 5, 0xFF0000);
+	Bar(toDraw->x + toDraw->wwidth - 50, toDraw->y - 20, toDraw->x + toDraw->wwidth - 28, toDraw->y - 5, 0x90CAF9);
+	Bar(toDraw->x + toDraw->wwidth - 75, toDraw->y - 20, toDraw->x + toDraw->wwidth - 52, toDraw->y - 5, 0x90CAF9);
+	Line(toDraw->x + toDraw->wwidth - 25 + 8, toDraw->y - 20 + 3, toDraw->x + toDraw->wwidth - 8, toDraw->y - 8, 0x0);
+	Line(toDraw->x + toDraw->wwidth - 25 + 8 + 1, toDraw->y - 20 + 3, toDraw->x + 1 + toDraw->wwidth - 8, toDraw->y - 8, 0x0);
+
+	Line(toDraw->x + toDraw->wwidth - 25 + 8 - 1, toDraw->y - 20 + 3, toDraw->x - 1 + toDraw->wwidth - 8, toDraw->y - 8, 0x0);
+
+	Line(toDraw->x + toDraw->wwidth - 25 + 8, toDraw->y - 8, toDraw->x + toDraw->wwidth - 8, toDraw->y - 20 + 3, 0x0);
+	Line(toDraw->x + toDraw->wwidth - 25 + 8 + 1, toDraw->y - 8, toDraw->x + toDraw->wwidth - 8 + 1, toDraw->y - 20 + 3, 0x0);
+	Line(toDraw->x + toDraw->wwidth - 25 + 8 - 1, toDraw->y - 8, toDraw->x + toDraw->wwidth - 8 - 1, toDraw->y - 20 + 3, 0x0);
+
+	Rect(toDraw->x + toDraw->wwidth - 45, toDraw->y - 20 + 3, 13, 9, 0x0);
+	Rect(toDraw->x + toDraw->wwidth - 44, toDraw->y - 20 + 4, 11, 7, 0x0);
+	Line(toDraw->x + toDraw->wwidth - 58, toDraw->y - 8, toDraw->x + toDraw->wwidth - 58 - 10, toDraw->y - 8, 0x0);
+	Line(toDraw->x + toDraw->wwidth - 58, toDraw->y - 8 - 1, toDraw->x + toDraw->wwidth - 58 - 10, toDraw->y - 8 - 1, 0x0);
 	//softBox(toDraw->x - 1, toDraw->y - 20, toDraw->x + toDraw->wwidth, toDraw->y +1 + toDraw->wheight, -80,5);
 	toDraw->lastx = toDraw->x;
 	toDraw->lasty = toDraw->y;

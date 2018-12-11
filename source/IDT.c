@@ -773,15 +773,15 @@ void initKeys() {
 }
 //Добавляет символ в очередь
 void addKey(int release, char c, char cc) {
-	if (!c)c = cc;
+	//if (!c)c = cc;
 	//printTextToWindow(3, mywin, "%c %x\n", c, cc);
-	if (c == 0) return;
+	//if (c == 0) return;
 
 	unsigned char * keysInQueue = (uchar*)KeysQueue;
 	unsigned char * queueFirst = (uchar*)(KeysQueue + 1);
 	unsigned char * queueLast = (uchar*)(KeysQueue + 2);
 	if (!release) {
-		(*keysInQueue)++; *((unsigned char *)KeysQueue + 3 + (*queueLast)) = c; *queueLast = ((*queueLast) + 1) % 256;
+		(*keysInQueue)++; *((unsigned short *)KeysQueue + 3 + 2 * (*queueLast)) = (c)+(cc << 8); *queueLast = ((*queueLast) + 1) % 256;
 	}
 }
 //Не сам обработчик клавы;)

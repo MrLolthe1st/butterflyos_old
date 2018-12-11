@@ -22,14 +22,13 @@ void smp_core(uint procId)
 						break;
 					currentActive = currentActive->next;
 				}
-				char key = 0;
+				unsigned short key = 0;
 				while (key = getKey())
 				{
 					if (currentActive)
 					{
 						we.code = WINDOWS_KEY_DOWN;
-						*((unsigned char*)we.data) = key;
-						*((char*)(we.data + 1)) = 0;
+						*((unsigned short*)we.data) = key;
 						currentActive->handler(&we);
 					}
 				}
@@ -57,7 +56,7 @@ void smp_core(uint procId)
 
 			//NetPoll();
 			unsigned int x = *sec100;
-			char key = 0;
+			unsigned short key = 0;
 			Window * currentActive = windows;
 
 			while (currentActive)
@@ -71,8 +70,7 @@ void smp_core(uint procId)
 				if (currentActive)
 				{
 					we.code = WINDOWS_KEY_DOWN;
-					*((unsigned char*)we.data) = key;
-					*((char*)(we.data + 1)) = 0;
+					*((unsigned short*)we.data) = key;
 					currentActive->handler(&we);
 				}
 			}

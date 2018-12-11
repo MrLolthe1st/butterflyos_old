@@ -611,36 +611,77 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 	}
 }
 void * cat;
-void loadFontPointer() {
-	fontPointer = (unsigned char*)(0x50000 + 256);
-	///Bar(0, 0, 600, 600, 0xFF0000);
-	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
 
-	OutTextXY((width - 35 * 8 * 2) / 2, (height - 16 * 2) / 2, "Please wait, desktop is loading...", 0xFFFFFF, 2);
-	//
-	swapBuffer();
-	return;
-	FILE * f = fopen("A:\\WP.BMP", "r");
+char * getBmpAndScaleIt(char * path, int width, int height)
+{
+	FILE * f = fopen("A:\\IMG\\WP.BMP", "r");
 	kprintf("###%x###", f);
 	if (!f)
 		return;
 	fseek(f, 0, 2);
 	uint sz = ftell(f);
 	rewind(f);
-	cat = malloc(sz);
+	char * cat = malloc(sz);
 	fread(cat, sz, 1, f);
 	//cat = FAT32ReadFileATA(0, "CAT.BMP");
 	//cat = 0x400000;
-	short h = 768;
 	short w = *((short *)(cat + 0x12));
+	short h = *((short *)(cat + 0x16));
 	cat = ((void *)(cat + *((unsigned int *)(cat + 0x0A))));
+	char * cat2 = malloc(sz);
 	void * mo = malloc(w * 3);
+	double pzz = w*1.0 / width;
+	double pzy = 1024.0 / height;
+	double ci = 0;
+	for (int cline = 0; cline < height; cline++, ci += pzy) {
+		int cx = 0;
+		for (double i = 0; cx < width; i += pzz)
+		{
+			int lpix = (int)i;
+			int cpix = max((int)(i + 0.5), lpix);
+			int lpiy = (int)ci;
+			int cpiy = (int)(ci + 0.5);
+			int sumr = 0, sumg = 0, sumb = 0;
+			for (int up = lpiy; up <= cpiy; up++)
+				for (int j = lpix; j <= cpix; j++)
+				{
+					sumr += *(unsigned char*)((uint)cat + up * w * 3 + j * 3);
+					sumg += *(unsigned char*)((uint)cat + up * w * 3 + j * 3 + 1);
+					sumb += *(unsigned char*)((uint)cat + up * w * 3 + j * 3 + 2);
+				}
 
+			sumr /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			sumg /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			sumb /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width) = sumr;
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width + 1) = sumg;
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width + 2) = sumb;
+			//putPixelD(cx, cline, (sumr)+(sumg << 8) + (sumb << 16));
+			cx++;
+		}
+	}
+	//Wait(1000);
+	cat = ((void *)(cat + *((unsigned int *)(cat - 0x0A))));
+	free(cat);
+	cat = cat2; w = width; h = height;
 	for (short i = 0; i < h / 2; i++) {
 		memcpy(mo, (void *)(cat + i * w * 3), w * 3);
 		memcpy((void *)(cat + i * w * 3), (void *)(cat + (h - i - 1) * w * 3), w * 3);
 		memcpy((void *)(cat + (h - i - 1) * w * 3), (void *)(mo), w * 3);
 	}
+	free(mo);
+	return cat;
+}
+
+void loadFontPointer() {
+	///Bar(0, 0, 600, 600, 0xFF0000);
+	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
+
+	OutTextXY((width - 35 * 8 * 2) / 2, (height - 16 * 2) / 2, "Please wait, desktop is loading...", 0xFFFFFF, 2);
+	//
+	//return;
+	swapBuffer();
+	cat = getBmpAndScaleIt("A:\\IMG\\WP.BMP", width, height);
 
 	//swapBuffer();
 	//Bar(0,0,600,600,0x00FF000);

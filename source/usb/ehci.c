@@ -580,7 +580,7 @@ void some()
 void EhciProcessQH(EhciController *hc, EhciQH *qh)
 {
 	UsbTransfer *t = qh->transfer;
-	//Wait(1);
+	Wait(1);
 	if (qh->token & TD_TOK_HALTED)
 	{
 		t->success = false;

@@ -181,11 +181,11 @@ FILE *fopen(const char *fname, const char *mode)
 	n->currentByte = 0;
 
 
-	printTextToWindow(7, mywin, "~Path: %s && %x\n", ups, 0);
+	//printTextToWindow(7, mywin, "~Path: %s && %x\n", ups, 0);
 	FileInfo * q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 	uint ut = 0;
 
-	printTextToWindow(7, mywin, "Path: %s && %x\n", ups, q);
+	//printTextToWindow(7, mywin, "Path: %s && %x\n", ups, q);
 	if (!q && !(n->rights & 2)) {
 		free(n);
 
@@ -193,7 +193,7 @@ FILE *fopen(const char *fname, const char *mode)
 	}
 	else if ((n->rights & 2) && !q) {
 		FileCreate(n->diskId, (char*)((uint)ups + 3));
-		printTextToWindow(7, mywin, "!Path: %s && %x\n", ups, q);
+		//printTextToWindow(7, mywin, "!Path: %s && %x\n", ups, q);
 		q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 		ut = 1;
 	}
@@ -202,7 +202,7 @@ FILE *fopen(const char *fname, const char *mode)
 	n->add2 = q->add2;
 	n->add3 = q->add3;
 	n->size = q->size;
-	printTextToWindow(7, mywin, "File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
+	//printTextToWindow(7, mywin, "File opened, size %dBytes, directory cluster=%x, dirIndex = %x\n", n->size, n->add2, n->add3);
 	if (n->rights & 2 && !ut)
 		FileClear(n);//Clear file if W mode used
 	free(q);
@@ -239,8 +239,11 @@ direntry * DirectoryListing(char *fname)
 			++z;
 		}
 	}
-	if (drives[fname[0] - 'A'].type == 0)
-		return FAT32GetDir(fname[0] - 'A', (char*)((uint)fname + 3));
+	if (drives[fname[0] - 'A'].type == 0) {
+		void * res = FAT32GetDir(fname[0] - 'A', (char*)((uint)ups + 3));
+		free(ups);
+		return res;
+	}
 }
 
 void attachIoToWindow(Window * w)
@@ -249,7 +252,25 @@ void attachIoToWindow(Window * w)
 	procTable[currentRunning].stdout->w = w;
 	procTable[currentRunning].stderr->w = w;
 }
-
+uchar fwrite(void *buf, uint size, uint count, FILE *stream);
+int fprintf(FILE * stream, char * text, ...)
+{
+	char buf[1024];
+	va_list args;
+	FILE * out = procTable[currentRunning].stdout;
+	va_start(args, text);
+	vsnprintf(buf, sizeof(buf), text, args);
+	va_end(args);
+	if (stream && (uint)stream > 1)
+		fwrite(&buf, strlen(&buf), 0, stream);
+	else if ((uint)stream == 1 && out->w)
+		printTextToWindowFormatted(7, out->w, buf);
+	return 0;
+}
+int fflush(FILE * stream)
+{
+	return 0;
+}
 void printf(char * text, ...)
 {
 	FILE * out = procTable[currentRunning].stdout;

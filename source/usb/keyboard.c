@@ -86,6 +86,7 @@ void InputOnKey(uint code, uint val)
 
 				addKey(0, ch, 0);
 			}
+			else addKey(0, 0, useful_usb[code]);
 		}
 	}
 	else
