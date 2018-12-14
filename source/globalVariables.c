@@ -18,6 +18,21 @@ void addGlobalVariable(char * name, void * addr)
 	w->name = name;
 	w->ptr = (int)addr;
 }
+
+
+
+int _getcmpstr(char * a, char *b)
+{
+	while(a&&b&&*a&&*b)
+	{
+		if(*a!=*b)
+			return 0;
+	}
+	if(a&&b&&((*a)==(*b)))
+		return 1;
+	return 0;
+}
+
 unsigned int getVariableAddress(char * name)
 {
 
@@ -36,4 +51,7 @@ unsigned int getVariableAddress(char * name)
 		}
 		w = w->next;
 	}
+	if(_getcmpstr(name, "stdin"))
+		
+	return 0;
 }

@@ -228,6 +228,29 @@ void _## func()
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
 	__asm__("movl %%esp,%0\n movl _sugg,%1": "=r" (stack), "=r" (s2) : );
+	//Save SSE registers
+	__asm__("\
+		push %%edi\n\
+		mov %0,%%edi			\n\
+		movups %%xmm0,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm1,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm2,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm3,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm4,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm5,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm6,(%%edi)	\n\
+		add $16, %%edi			\n\
+		movups %%xmm7,(%%edi)	\n\
+		add $16, %%edi			\n\
+		pop %%esi\n\
+		"::"r" (&procTable[currentRunning].sse));
+	
 	stack = s2;
 	procTable[currentRunning].ebp = *((int *)(stack));
 	procTable[currentRunning].edi = *((int *)(stack + 4));
@@ -251,6 +274,23 @@ void multiHandler() {
 		}
 	}
 	__asm__("\n\
+		mov %1,%%edi		\n\
+		movups (%%esi),%%xmm0	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm1	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm2	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm3	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm4	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm5	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm6	\n\
+		add $16, %%esi			\n\
+		movups (%%esi),%%xmm7	\n\
+		add $16, %%esi			\n\
 		mov %0,%%esi\n\
 		mov 0(%%esi),%%eax\n\
 		mov 4(%%esi),%%ebx\n\
@@ -267,7 +307,7 @@ void multiHandler() {
 		mov 28(%%esi),%%edi\n\
 		mov 24(%%esi),%%esi\n\
 		iret\n\
-		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning));
+		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning), "r" (&procTable[currentRunning].sse));
 
 }
 
@@ -289,10 +329,9 @@ IDT_HANDLERM(multitasking2) {
 
 #include "ELF.c"
 void processEnd() {
-	//for (;;);
 	lockTaskSwitch(1);
+	//Free buffer from runProcess()
 	free(procTable[currentRunning].startAddr);
-	//free(procTable[currentRunning].stack);
 	ELF_Process * z = procTable[currentRunning].elf_process;
 	processAlloc * p = z->allocs;
 	while (p)
@@ -302,7 +341,6 @@ void processEnd() {
 		free(p);
 		p = pz;
 	}
-	//kprintf("Emd!");
 	for (int i = 0; i < procCount; i++)
 		if (procTable[i].runnedFrom == currentRunning)
 			procTable[i].runnedFrom = 0;
@@ -341,66 +379,81 @@ typedef struct {
 rel;
 uint stack_size = 65536 * 2;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
+
+	//Try to open file
 	FILE * fp = fopen(fileName, "r");
 	fseek(fp, 0, 2);
 	if (!fp)
 		return;
+
+	//Got a size
 	uint z = ftell(fp);
 	rewind(fp);
-	void(*progq)() = (void*)malloc(z);// FAT32ReadFileATA(0, "OO.O");
+	void(*progq)() = (void*)malloc(z);
 	fread((void*)progq, z, 1, fp);
 	fclose(fp);
-	//kprintf("%x\n", &getKey);
+	//Reserve a process
+	int _procCount = procCount;
+	procTable[_procCount].state = 0;
+	procCount++;
 	ELF_Process *  entry = relocELF((void*)progq);
-	//printTextToWindow(5, mywin, "Elf");
+
 	if (!entry)
 	{
-		//printTextToWindow(5, mywin, "~");
+		//Put last process to reserved, if there isn't any process after us, just
+		// copy us to us
+		memcpy(&procTable[_procCount], &procTable[procCount - 1], sizeof(Process));
 		free((void*)progq);
 		return;
 	}
-	procTable[procCount].state = 0;
-	//progq = entry;
+	//Allocate stack
 	void * stack = malloc(stack_size);
-	procTable[procCount].stack = stack;
+	procTable[_procCount].stack = stack;
 	addProcessAlloc(entry, stack);
-	procTable[procCount].argc = argc;
-	procTable[procCount].argv = argv;
-
-	procTable[procCount].workingDir = malloc(512);
+	//Copy args, they won't be freeed, because that
+	// work assigned to caller
+	procTable[_procCount].argc = argc;
+	procTable[_procCount].argv = argv;
+	//Copy working directory path
+	procTable[_procCount].workingDir = malloc(512);
 	char * zz = dir;
 	uint ooo = 0;
 	while (*zz)
 	{
-		procTable[procCount].workingDir[ooo++] = *zz;
+		procTable[_procCount].workingDir[ooo++] = *zz;
 		++zz;
 	}
-	procTable[procCount].elf_process = entry;
-	procTable[procCount].esp = (uint)stack + stack_size - 12;
-	procTable[procCount].currentAddr = entry->entry;
-	//kprintf("!%x %x!",entry, entry->entry);
-	procTable[procCount].startAddr = (void*)progq;
-	//	procTable[procCount].eax = entry;
-	procTable[procCount].priority = 2;
-	procTable[procCount].priorityL = 2;
-	procTable[procCount].eflags = 0x216;
-	procTable[procCount].stdin = (FILE*)malloc(sizeof(FILE));
-	procTable[procCount].stdout = (FILE*)malloc(sizeof(FILE));
-	procTable[procCount].stderr = (FILE*)malloc(sizeof(FILE));
-	procTable[procCount].stdin->w = procTable[currentRunning].stdin->w;
-	procTable[procCount].stdout->w = procTable[currentRunning].stdout->w;
-	procTable[procCount].stderr->w = procTable[currentRunning].stderr->w;
-	procTable[procCount].runnedFrom = currentRunning;
-	if (suspendIt)
-		procTable[currentRunning].state &= ~1;
+	//Save our elf entry table
+	procTable[_procCount].elf_process = entry;
+	//Stack to -12, because we have 2 args and adress at top of stack
+	// before process have runned
+	procTable[_procCount].esp = (uint)stack + stack_size - 12;
+	//Current address is a .text entry in ELF File
+	procTable[_procCount].currentAddr = entry->entry;
+	//Save pointer to buffer, that allocated to read file
+	procTable[_procCount].startAddr = (void*)progq; 
+	procTable[_procCount].priority = 2;
+	procTable[_procCount].priorityL = 2;
+	//Flags is [------I------PR-]
+	procTable[_procCount].eflags = 0x216;
+	//Allocate STD IO
+	procTable[_procCount].stdin = (FILE*)malloc(sizeof(FILE));
+	procTable[_procCount].stdout = (FILE*)malloc(sizeof(FILE));
+	procTable[_procCount].stderr = (FILE*)malloc(sizeof(FILE));
+	//Preserve caller's st IO to that process
+	procTable[_procCount].stdin->w = procTable[currentRunning].stdin->w;
+	procTable[_procCount].stdout->w = procTable[currentRunning].stdout->w;
+	procTable[_procCount].stderr->w = procTable[currentRunning].stderr->w;
+	//Set 'runnedFrom' value
+	procTable[_procCount].runnedFrom = currentRunning;
+	//Push arguments and return address to stack
 	*((unsigned int *)(stack + stack_size - 4)) = (uint)argv;
 	*((unsigned int *)(stack + stack_size - 8)) = argc;
-	//*((unsigned int *)(stack + 8180)) = 0x08;
 	*((unsigned int *)(stack + stack_size - 12)) = (uint)&processEnd;
-	//*((unsigned int *)(stack + 8180)) = &processEnd;
-	//progq();
-	procCount++;
-	procTable[procCount - 1].state = 1;
+	procTable[_procCount].state = 1;
+	//Suspend process, be runned from
+	if (suspendIt)
+		procTable[currentRunning].state &= ~1;
 }
 //Можно трогать : - )
 //Утсановка прерывания
@@ -428,7 +481,7 @@ void int_l() {
 }
 IDT_HANDLER(irq_ex) {
 	unsigned int o = 0;
-
+	kprintf("div zero");
 	//OutTextXYV(10, 10, "Dividing by zero", 0xFF00FF, 1, 1024, videoMemory);
 	for (;;);
 }
@@ -436,6 +489,8 @@ IDT_HANDLER(irq_ex) {
 unsigned char * mouse_cur;
 unsigned char updatingW = 0;
 unsigned char buttons = 0;
+
+//Top window
 void windowToTop(int id) {
 	Window * prev = windows;
 	char fnd = 0;
@@ -470,13 +525,17 @@ void windowToTop(int id) {
 		//ok. ready
 	}
 }
+
+//Checks, is whether point in some bar
 char pointIn(int a, int b, int c, int d, int e, int f) {
 	if (a >= c && a <= e && b >= d && b <= f)
 		return 1;
 	else
 		return 0;
 }
+
 int wox = 0, woy = 0, dragging = 0;
+//Calls hookEvent
 void makeMouseHook(uint event, uint ev2)
 {
 	HookEvent he;
@@ -984,12 +1043,7 @@ void iint() {
 	inst(0x20 + 12, &irq_mouse, 0x8e); //PS/2 Mouse
 	//inst(0x20 + 14, & ATA1, 0x8e); //ATA Primary IRQ
 	//inst(0x20 + 15, & ATA2, 0x8e); //ATA Secondary IRQ
-	inst(0x0, &irq_ex, 0x8e);
-	inst(0x1, &irq_ex1, 0x8e);
-	inst(0x3, &irq_ex3, 0x8e);
-	inst(0x4, &irq_ex4, 0x8e);
-	inst(0x5, &irq_ex5, 0x8e);
-	inst(0x6, &irq_ex6, 0x8e);
+	for(int i=0;i<32;i++) inst(i, &irq_ex, 0x8e);
 	inst(0x30, &kbdService, 0x8e); //Keyboard service
 	inst(0x41, &multitasking2, 0x8e); //For sleeps and etc
 	//    inst(0x40, &videoService, 0x8e);

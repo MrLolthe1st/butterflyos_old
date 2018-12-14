@@ -520,6 +520,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	lastCluster = 0;
 	void * qf = buf;
 	ReadFromDisk(FatStart + (startingCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
+		
 	F32E * entrs = (F32E*)cluster;
 	currentCluster = entrs[clustIndex].clusterLo + (entrs[clustIndex].clusterHi << 16); uint sz = entrs[clustIndex].size;
 	if (currentCluster == 0)

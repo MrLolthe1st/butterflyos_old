@@ -42,7 +42,7 @@ typedef struct dentr_y
 } direntry;
 void Wait(unsigned int n);
 void abort();
-#define size_t unsigned int
+#define size_t  int
 unsigned char fwrite(const void *buf, uint size, uint count, FILE *stream);
 unsigned char fread(void * addr, uint size, uint count, FILE *f);
 void fclose(FILE * f);

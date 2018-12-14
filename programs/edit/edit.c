@@ -1,4 +1,4 @@
-#include "..\includes\executable.c"
+
 #include "..\includes\stdio.h"
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
@@ -357,7 +357,7 @@ void outText()
 	w->cursorX = cl;
 	w->cursorY = cly;
 }
-void _main(int argc, char ** argv)
+void main(int argc, char ** argv)
 {
 	w = openWindow(720, 480, 1, &handle, "Notepad--");
 	enableBuffering(w);

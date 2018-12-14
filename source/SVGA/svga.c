@@ -623,6 +623,7 @@ char * getBmpAndScaleIt(char * path, int width, int height)
 	rewind(f);
 	char * cat = malloc(sz);
 	fread(cat, sz, 1, f);
+	//printTextToWindow(3,mywin,"(%d %d)%x~()()",width, height videoBuffer);
 	//cat = FAT32ReadFileATA(0, "CAT.BMP");
 	//cat = 0x400000;
 	short w = *((short *)(cat + 0x12));

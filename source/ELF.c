@@ -138,22 +138,34 @@ ELF_Process *  relocELF(void * p)
 					}
 			}
 		}
+		int offset_main = -1;
 		//Find undefined functions and variables
+		ESHeader * names = 0;
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
 			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
 			if (sh->sh_type == 2)
 			{
 				ESymbol * st = (ESymbol *)(sh->sh_offset + (int)elf);
-				ESHeader * names = (ESHeader *)(sh->sh_link * 0x28 + (int)elf + elf->e_shoff);
+				names = (ESHeader *)(sh->sh_link * 0x28 + (int)elf + elf->e_shoff);
 				for (int i = 1; i < sh->sh_size / 0x10; i++)
 				{
+					char * varName = (char*)(names->sh_offset + st[i].st_name + (int)elf);
 					if (st[i].st_shndx == 0x0)
 					{
-						char * varName = (char*)(names->sh_offset + st[i].st_name + (int)elf);
-						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;
-						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = getVariableAddress((char*)((int)varName + 1));
+
+						uint zz = getVariableAddress((char*)((int)varName + 1));
+						if (zz) {
+							*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xfff1;
+							*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = zz;
+						}
+
 					}
+					if (varName[1] == 'm'&&varName[2] == 'a'&&varName[3] == 'i'&&varName[4] == 'n'&&varName[5] == 0) {
+						offset_main = *((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4));
+					}
+
+
 				}
 			}
 		}
@@ -172,14 +184,14 @@ ELF_Process *  relocELF(void * p)
 					{
 						*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xFFF1;		//Absolute offset
 						*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = commonSectionPtr + comId;	//Set offset
-			//			kprintf("Common: %x %x\n", i, comId);
+
 						comId += st[i].st_size;
 
 					}
 				}
 			}
 		}
-
+		names = names->sh_offset + (uint)elf;
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
 			ESHeader *section = (ESHeader*)(0x28 * i + (int)elf + elf->e_shoff);
@@ -191,23 +203,41 @@ ELF_Process *  relocELF(void * p)
 				ESHeader *relocSection = (ESHeader*)(0x28 * sectionForId + (int)elf + elf->e_shoff);
 				unsigned int relocSectionOffset = relocSection->sh_offset + (int)elf;
 
+
 				for (int j = 0; j < RelocationCount; j++)
 				{
 					unsigned int relocationSymbol = relocTable[j].r_info >> 8;
-					//ESHeader * names = sh->sh_link * 0x28 + (int)elf + elf->e_shoff;
 
 					unsigned int sectionOffset = relocTable[j].r_offset;
 					unsigned int additional = getSymAdr(elf, section->sh_link, relocationSymbol);
-					//printTextToWindow(7, mywin, "Reloc:%x %x %x \n", additional, *((uint*)(sectionOffset + (uint)relocSectionOffset)) , (sectionOffset + (uint)relocSectionOffset) - 4);
+
+					ESHeader *symtab = (ESHeader *)((int)elf + (elf->e_shoff) + 0x28 * section->sh_link);
+
+					unsigned int symtab_entries = symtab->sh_size / symtab->sh_entsize;
+
+					int symaddr = (uint)elf + symtab->sh_offset;
+					ESymbol *symbol = &((ESymbol *)symaddr)[relocationSymbol];
+
+					char * vn = (uint)names + symbol->st_name;
+					if (vn[2] == '_'&&vn[3] == 'm'&&vn[4] == 'a'&&vn[5] == 'i'&&vn[6] == 'n'&&vn[7] == 0)
+					{
+						*((unsigned char*)(sectionOffset + (int)relocSectionOffset - 1)) = 0x90;
+						*((unsigned int*)(sectionOffset + (int)relocSectionOffset)) = 0x90909090;
+						relocTable[j].r_info = 0;
+						continue;
+					}
 					if (relocTable[j].r_info & 1)
 						*((unsigned int*)(sectionOffset + (int)relocSectionOffset)) = *((unsigned int*)(sectionOffset + (int)relocSectionOffset)) + additional;
 					else if (relocTable[j].r_info & 2)
 						*((int*)(sectionOffset + (int)relocSectionOffset)) = *((int*)(sectionOffset + (int)relocSectionOffset)) + additional - (sectionOffset + (int)relocSectionOffset) - 4;
 
+
+
 				}
 			}
 		}
-		proc->entry = (void*)((uint)elf + 0x34);
+		proc->entry = 0x34 + offset_main + (uint)elf;
+		printTextToWindow(3, mywin, "!!!%x!!", elf->e_entry + (uint)elf);
 		return proc;
 	}
 	else

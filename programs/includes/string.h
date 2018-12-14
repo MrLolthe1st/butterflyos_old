@@ -1,4 +1,4 @@
-#define size_t unsigned int
+#define size_t  int
 
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
 void memset(void * addr, char s, unsigned int count);

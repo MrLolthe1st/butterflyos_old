@@ -18,8 +18,28 @@ FileInfo * FileSeek(uint diskId, char * f)
 		return (FileInfo*)FAT32Seek(diskId, f);
 	}
 }
+uint fread(void * addr, uint size, uint count, FILE *f);
+unsigned int fwrite(void *buf, uint size, uint count, FILE *stream);
+int feof(FILE *f)
+{
+	if (f->currentByte == f->size)
+		return 1;
+	else return 0;
+}
+
+int remove(char * f)
+{
+	//TODO!
+	return 0;
+}
+int ferror(FILE *f)
+{
+	return f->error;
+}
 int putc(int ch, FILE * f)
 {
+	if (f->size)
+		return fputc(ch, f);
 	if (!f->inted)
 	{
 		f->head = 0;
@@ -28,10 +48,34 @@ int putc(int ch, FILE * f)
 		f->inted = 1;
 	}
 	if (f->length < 1024) {
-		//f->tail = (f->tail + 1) % f->bufSize;
+		f->tail = (f->tail + 1) % 4096;
+		f->buffer[f->tail] = ch;
+		f->length++;
+		return ch;
 	}
 	else return -1;
 
+}
+int fputc(int ch, FILE * f)
+{
+	fwrite(&ch, 1, 1, f);
+	return ch;
+}
+int fgetc(FILE *f)
+{
+	int res;
+	fread(&res, 1, 1, f);
+	return res;
+}
+int getc(FILE * f)
+{
+	if (f->size)
+		return fgetc(f);
+	if (!f->inted || f->length < 1)
+		return -1;
+	f->head = (f->head + 1) % 4096;
+	f->length--;
+	return f->buffer[f->head - 1];
 }
 uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
 {
@@ -252,7 +296,6 @@ void attachIoToWindow(Window * w)
 	procTable[currentRunning].stdout->w = w;
 	procTable[currentRunning].stderr->w = w;
 }
-uchar fwrite(void *buf, uint size, uint count, FILE *stream);
 int fprintf(FILE * stream, char * text, ...)
 {
 	char buf[1024];
@@ -325,23 +368,19 @@ int rewind(FILE * f)
 	return 1;
 }
 
-void FileWrite(FILE * f, void * addr, uint cnt)
+unsigned int FileWrite(FILE * f, void * addr, uint cnt)
 {
 
 	if (drives[f->diskId].type == 0)
 		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
 }
-uchar fwrite(void *buf, uint size, uint count, FILE *stream)
+unsigned int fwrite(void *buf, uint size, uint count, FILE *stream)
 {
 	//kprintf("%x %x!", stream->add2, stream->add3);
 
-	FileWrite(stream, buf, size*count);
+	return FileWrite(stream, buf, size*count);
 	//stream->currentByte += size * count;
-}
-uchar fgetc(FILE * f)
-{
-
 }
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
@@ -351,7 +390,7 @@ void FileRead(FILE * f, void * addr, uint from, uint cnt)
 
 
 }
-uchar fread(void * addr, uint size, uint count, FILE *f)
+uint fread(void * addr, uint size, uint count, FILE *f)
 {
 	if (!f)
 		return 0;
