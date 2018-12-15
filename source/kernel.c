@@ -224,6 +224,8 @@ void k_main()
 	printString("Counting memory...\n");
 	g_usbControllerList = 0;
 	mm_init(0x400000);
+	procTable[0].elf_process = mmalloc(sizeof(ELF_Process));
+	procTable[0].elf_process->allocs = 0;
 	kprintf("Memory count: 0x%x bytes\n", pheap_end);
 	initGlobals();
 	initPS2Mouse();

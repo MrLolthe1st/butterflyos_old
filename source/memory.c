@@ -164,7 +164,7 @@ unsigned int count_memory(void) {
 
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
-char * malloc(size_t size) {
+char * mmalloc(size_t size) {
 	if (!size) {
 		return 0;
 	}
@@ -234,12 +234,25 @@ nalloc:;
 		return ret;*/
 }
 #pragma GCC pop_options
+void addProcessAlloc(ELF_Process * p, void * addr);
+char * malloc(size_t size)
+{
+	char * addr = mmalloc(size);
+	addProcessAlloc(procTable[currentRunning].elf_process, addr);
+	return addr;
+}
+
+void insertTreapAlloc(processAlloc * t, processAlloc * e)
+{
+
+}
+
 void addProcessAlloc(ELF_Process * p, void * addr)
 {
-	void * z = p->allocs;
-	p->allocs = (processAlloc*)malloc(sizeof(processAlloc));
-	p->allocs->addr = addr;
-	p->allocs->next = z;
+	processAlloc * z = (processAlloc*)mmalloc(sizeof(processAlloc));
+	z->next = p->allocs;
+	z->addr = addr;
+	p->allocs = z;
 }
 void mm_init(uint32_t kernel_end) {
 	last_alloc = kernel_end + 0x1000;
@@ -255,18 +268,50 @@ void mm_init(uint32_t kernel_end) {
 
 void mm_print_out() {
 
-	/*kprintf("Memory used: %d bytes\n", memory_used);
-	kprintf("Memory free: %d bytes\n", heap_end - heap_begin - memory_used);
-	kprintf("Heap size: %d bytes\n", heap_end - heap_begin);
-	kprintf("Heap start: 0x%x\n", heap_begin);
-	kprintf("Heap end: 0x%x\n", heap_end);
-	kprintf("PHeap start: 0x%x\nPHeap end: 0x%x\n", pheap_begin, pheap_end);*/
+	printTextToWindow(3,mywin,"Memory used: %d bytes\n", memory_used);
+	printTextToWindow(3, mywin, "Memory free: %d bytes\n", heap_end - heap_begin - memory_used);
+	printTextToWindow(3, mywin, "Heap size: %d bytes\n", heap_end - heap_begin);
+	printTextToWindow(3, mywin, "Heap start: 0x%x\n", heap_begin);
+	printTextToWindow(3, mywin, "Heap end: 0x%x\n", heap_end);
+	printTextToWindow(3, mywin, "PHeap start: 0x%x\nPHeap end: 0x%x\n", pheap_begin, pheap_end);
 }
 
-void free(void * mem) {
+void ffree(void * mem) {
+	if (!mem)
+		return;
 	alloc_t * alloc = (mem - sizeof(alloc_t));
 	memory_used -= alloc->size + sizeof(alloc_t);
 	alloc->status = 0;
+}
+void free(void * mem)
+{
+	if (!procTable[currentRunning].elf_process)
+		//May send segfault?
+		return;
+	processAlloc * p = procTable[currentRunning].elf_process->allocs;
+	if (!p)
+		return;
+	//printTextToWindow(3, mywin, "Free:\n");
+	processAlloc * prev = 0;
+	while (p)
+	{
+		if (p->addr == mem)
+		{
+			if (prev)
+			{
+				prev->next = p->next;
+			}
+			else
+			{
+				procTable[currentRunning].elf_process->allocs = p->next;
+			}
+			ffree(p->addr);
+			ffree(p);
+			return;
+		}
+		prev = p;
+		p = p->next;
+	}
 }
 
 void pfree(void * mem) {

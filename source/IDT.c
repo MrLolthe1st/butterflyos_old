@@ -330,36 +330,33 @@ IDT_HANDLERM(multitasking2) {
 #include "ELF.c"
 void processEnd() {
 	lockTaskSwitch(1);
-	//Free buffer from runProcess()
-	free(procTable[currentRunning].startAddr);
+	//Free all allocations from process
 	ELF_Process * z = procTable[currentRunning].elf_process;
 	processAlloc * p = z->allocs;
 	while (p)
 	{
-		free(p->addr);
+		ffree(p->addr);
 		processAlloc * pz = p->next;
-		free(p);
+		ffree(p);
 		p = pz;
 	}
+	//What is it, i'm don't know
 	for (int i = 0; i < procCount; i++)
 		if (procTable[i].runnedFrom == currentRunning)
 			procTable[i].runnedFrom = 0;
+	//Resume process
 	if (procTable[currentRunning].runnedFrom)
-		procTable[procTable[currentRunning].runnedFrom].state |= 1;
-	for (int i = 0; i < procTable[currentRunning].argc; i++)
-		free(procTable[currentRunning].argv[i]);
-	free(procTable[currentRunning].argv);
-	free(procTable[currentRunning].workingDir);
-	free(procTable[currentRunning].stdout);
-	free(procTable[currentRunning].stdin);
-	free(procTable[currentRunning].stderr);
+		procTable[procTable[currentRunning].runnedFrom].state ^= 1;
+	
 	memcpy((char*)&procTable[currentRunning], (char*)&procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
-	//printTextToWindow(6, mywin, "\nEnd!%x\n", currentRunning);
+	
 	procTable[procCount].state = 0;
 	currentRunning = procCount;
+	//mm_print_out();
 	unlockTaskSwitch();
+	
 	for (;;);
 }
 typedef struct _eqa {
@@ -389,7 +386,8 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	//Got a size
 	uint z = ftell(fp);
 	rewind(fp);
-	void(*progq)() = (void*)malloc(z);
+	//mm_print_out();
+	void(*progq)() = (void*)mmalloc(z);
 	fread((void*)progq, z, 1, fp);
 	fclose(fp);
 	//Reserve a process
@@ -403,11 +401,12 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 		//Put last process to reserved, if there isn't any process after us, just
 		// copy us to us
 		memcpy(&procTable[_procCount], &procTable[procCount - 1], sizeof(Process));
-		free((void*)progq);
+		ffree((void*)progq);
 		return;
 	}
+	addProcessAlloc(entry, progq);
 	//Allocate stack
-	void * stack = malloc(stack_size);
+	void * stack = mmalloc(stack_size);
 	procTable[_procCount].stack = stack;
 	addProcessAlloc(entry, stack);
 	//Copy args, they won't be freeed, because that
@@ -415,7 +414,7 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	procTable[_procCount].argc = argc;
 	procTable[_procCount].argv = argv;
 	//Copy working directory path
-	procTable[_procCount].workingDir = malloc(512);
+	procTable[_procCount].workingDir = mmalloc(512);
 	char * zz = dir;
 	uint ooo = 0;
 	while (*zz)
@@ -423,6 +422,7 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 		procTable[_procCount].workingDir[ooo++] = *zz;
 		++zz;
 	}
+	addProcessAlloc(entry, procTable[_procCount].workingDir);
 	//Save our elf entry table
 	procTable[_procCount].elf_process = entry;
 	//Stack to -12, because we have 2 args and adress at top of stack
@@ -437,9 +437,13 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	//Flags is [------I------PR-]
 	procTable[_procCount].eflags = 0x216;
 	//Allocate STD IO
-	procTable[_procCount].stdin = (FILE*)malloc(sizeof(FILE));
-	procTable[_procCount].stdout = (FILE*)malloc(sizeof(FILE));
-	procTable[_procCount].stderr = (FILE*)malloc(sizeof(FILE));
+	procTable[_procCount].stdin = (FILE*)mmalloc(sizeof(FILE));
+	addProcessAlloc(entry, procTable[_procCount].stdin);
+	procTable[_procCount].stdout = (FILE*)mmalloc(sizeof(FILE));
+	addProcessAlloc(entry, procTable[_procCount].stdout);
+	procTable[_procCount].stderr = (FILE*)mmalloc(sizeof(FILE));
+	addProcessAlloc(entry, procTable[_procCount].stderr);
+	
 	//Preserve caller's st IO to that process
 	procTable[_procCount].stdin->w = procTable[currentRunning].stdin->w;
 	procTable[_procCount].stdout->w = procTable[currentRunning].stdout->w;

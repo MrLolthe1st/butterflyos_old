@@ -102,12 +102,13 @@ void ferr(int i)
 
 ELF_Process *  relocELF(void * p)
 {
-	EHeader * elf = p;//printTextToWindow(7,mywin,"%x\n",sizeof(EHeader));
-
+	EHeader * elf = p;
+	//Check magic
 	if (elf->magic == 0x464c457f)
 	{
+	
 		unsigned int TText = 0;
-		ELF_Process * proc = (ELF_Process*)malloc(sizeof(ELF_Process));
+		ELF_Process * proc = (ELF_Process*)mmalloc(sizeof(ELF_Process));
 		for (int i = 0; i < elf->e_shnum; i++)
 		{
 			ESHeader *sh = (ESHeader *)(0x28 * i + (int)elf + elf->e_shoff);
@@ -116,7 +117,8 @@ ELF_Process *  relocELF(void * p)
 				if (!sh->sh_size) continue;
 				if (sh->sh_flags & 2)
 				{
-					unsigned int mem = (unsigned int)malloc(sh->sh_size);
+					unsigned int mem = (unsigned int)mmalloc(sh->sh_size);
+					addProcessAlloc(proc, mem);
 					memset((char*)mem, 0, sh->sh_size);
 					sh->sh_offset = (int)mem - (int)elf;
 				}
@@ -169,7 +171,7 @@ ELF_Process *  relocELF(void * p)
 				}
 			}
 		}
-		unsigned int commonSectionPtr = (uint)malloc(commonSectionLength + 4);//Allocate common section
+		unsigned int commonSectionPtr = (uint)mmalloc(commonSectionLength + 4);//Allocate common section
 		addProcessAlloc(proc, commonSectionPtr);
 		unsigned int comId = 0;
 		for (int i = 0; i < elf->e_shnum; i++)

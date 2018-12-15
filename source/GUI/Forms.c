@@ -276,7 +276,7 @@ void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 				w->cursorY--;
 			}
 		}
-		free(text);
+		//free(text);
 	}
 
 	w->updating = 0;

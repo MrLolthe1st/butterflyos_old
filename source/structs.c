@@ -62,7 +62,10 @@ dirEntry;
 typedef struct _pralloc
 {
 	void * addr;
+	int prior;
 	struct _pralloc * next;
+	struct _pralloc * l;
+	struct _pralloc * r;
 } processAlloc;
 typedef struct
 {
@@ -106,7 +109,7 @@ typedef struct __attribute__((packed)) _E {
 	unsigned int mmx[2 * 8];//244
 	unsigned int priority;//248
 	unsigned int priorityL;//252
-	void * elf_process;//256
+	ELF_Process * elf_process;//256
 	char ** argv;//260
 	unsigned int argc;//264
 	unsigned int runnedFrom;//268
