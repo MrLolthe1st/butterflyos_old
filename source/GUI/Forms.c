@@ -7,6 +7,8 @@
 #define COLOR_AQUA 0xB3E5FC
 #define COLOR_YELLOW 0xFFEB3B
 #define COLOR_WHITE 0xE0E0E0
+
+// ------------------------------------------------------------------------------------------------
 const unsigned int colors[] = {
 	0,
 	COLOR_BLUE,
@@ -23,6 +25,8 @@ int startY = 30;		//Window cascade start
 int windowsCount = 0; 	//Count, useless
 unsigned int cid = 1; 	//Window id's
 
+
+// ------------------------------------------------------------------------------------------------
 IDT_HANDLER(videoService)
 {
 	unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0, esi = 0, edi = 0;
@@ -35,10 +39,14 @@ IDT_HANDLER(videoService)
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void initWindows()
 {
 
 }
+
+// ------------------------------------------------------------------------------------------------
 //Draws desktop
 void drawDesktop()
 {
@@ -51,6 +59,8 @@ void drawDesktop()
 	OutTextXY(width - 270, height - 19 - 32, "ButterflyOS stable build 0.1.2.0", 0xDD2C00, 1);
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void printChars(unsigned char color, Window * w, char * text)
 {
 	switch (*text) {
@@ -127,6 +137,8 @@ void printChars(unsigned char color, Window * w, char * text)
 		w->cursorY--;
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 //Formats string
 char* formatString(char* str, va_list ap)
 {
@@ -191,6 +203,8 @@ char* formatString(char* str, va_list ap)
 	return l;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 
 	kprintf(text);
@@ -284,6 +298,8 @@ void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 	w->lastUpdate = *sec100;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 //Print text to window
 void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 
@@ -295,6 +311,8 @@ void printTextToWindow(unsigned char color, Window * w, char * text, ...) {
 	va_end(args);
 	printTextToWindowFormatted(color, w, buf);
 }
+
+// ------------------------------------------------------------------------------------------------
 void updateWindows()
 {
 	//Redraws screen
@@ -324,6 +342,8 @@ void updateWindows()
 
 }
 
+
+// ------------------------------------------------------------------------------------------------
 //Close window by id
 void closeWindowID(unsigned int id) {
 	Window * w = windows;
@@ -348,6 +368,8 @@ void closeWindowID(unsigned int id) {
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 //Close window 
 void closeWindow(Window * ws) {
 	if (!ws)
@@ -373,17 +395,23 @@ void closeWindow(Window * ws) {
 		w = w->next;
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void enableBuffering(Window * w)
 {
 	w->buffered = 1;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void BufferWindow(Window * w)
 {
 	lockTaskSwitch(1);
 	memcpy(w->videoOk, w->video, (w->wwidth) * (w->wheight) * 3);
 	unlockTaskSwitch();
 }
+
+// ------------------------------------------------------------------------------------------------
 //Opens a window
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
@@ -432,6 +460,8 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	return win;										//Return window to user
 }
 
+
+// ------------------------------------------------------------------------------------------------
 //NC
 void Draw(Window * toDraw) {
 	Bar(toDraw->x - 1, toDraw->y - 20, toDraw->x + toDraw->wwidth, toDraw->y, 0x1976D2);

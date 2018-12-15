@@ -425,6 +425,8 @@ static void PciReadBar(unsigned int id, unsigned int index, unsigned int *addres
 #define ADDR 0xCF8
 #define DATA 0xCFC
 #define ENABLE (1 << 31)
+
+// ------------------------------------------------------------------------------------------------
 static uint
 pcireadl(uchar bus, uchar dev, uchar func, uchar offset)
 {
@@ -492,11 +494,15 @@ struct pci_func
 unsigned long long *pages_for_ahci_start;
 unsigned long long *pages_for_ahci_end;
 struct pci_func pci_e1000, pci_ahci;
+
+// ------------------------------------------------------------------------------------------------
 static inline void sysOutLong(unsigned short port, uint32_t val)
 {
 	__asm__("outl %0, %1"
 		: : "a"(val), "Nd"(port));
 }
+
+// ------------------------------------------------------------------------------------------------
 static inline uint32_t sysInLong(unsigned short port)
 {
 	uint32_t ret;
@@ -504,6 +510,8 @@ static inline uint32_t sysInLong(unsigned short port)
 		: "=a"(ret) : "Nd"(port));
 	return ret;
 }
+
+// ------------------------------------------------------------------------------------------------
 unsigned short pciConfigReadWord(unsigned short bus, unsigned short slot,
 	unsigned short func, unsigned short offset)
 {
@@ -518,6 +526,8 @@ unsigned short pciConfigReadWord(unsigned short bus, unsigned short slot,
 	tmp = (unsigned short)((sysInLong(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
 	return (tmp);
 }
+
+// ------------------------------------------------------------------------------------------------
 uint32_t ReadWord(unsigned short bus, unsigned short slot, unsigned short func,
 	unsigned short offset)
 {
@@ -534,6 +544,8 @@ uint32_t ReadWord(unsigned short bus, unsigned short slot, unsigned short func,
 }
 #define AHCI_MMIO_BUFFER 0xfebf0000
 #define e1000_MMIO_BUFFER 0xfebc0000
+
+// ------------------------------------------------------------------------------------------------
 void get_mmio_space_size(struct pci_func *pci_device)
 {
 	uint32_t address;
@@ -596,6 +608,8 @@ IRQ_HANDLER1(irq_ideSlave)
 	_ide_irq();
 }
 
+
+// ------------------------------------------------------------------------------------------------
 static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 {
 
@@ -633,14 +647,18 @@ static void PciVisit(unsigned int bus, unsigned int dev, unsigned int func)
 	p.vendorid = info.vendorId;
 	p.dev = dev;
 	p.func = func;
-	if (info.classCode == 0x01 && info.subclass == 0x01 && (info.progIntf == 0x8A || info.progIntf == 0x80)) {
+	if (info.classCode == 0x01 && info.subclass == 0x01 && 
+		(info.progIntf == 0x8A || info.progIntf == 0x80)) {
 
-		outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 8, 0xCF8); // Send the parameters.
+		outportd((1 << 31) | (bus << 16) | (dev << 11)
+			| (func << 8) | 8, 0xCF8); // Send the parameters.
 		if ((inportd(0xCFC) >> 16) != 0xFFFF) { // If device exists (class isn't 0xFFFF)
 												// Check if this device needs an IRQ assignment:
-			outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
+			outportd((1 << 31) | (bus << 16) | (dev << 11) 
+				| (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
 			outportb(0xCFC, 0xFE); // Change the IRQ field to 0xFE
-			outportd((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
+			outportd((1 << 31) | (bus << 16) | (dev << 11) 
+				| (func << 8) | 0x3C, 0xCF8); // Read the interrupt line field
 			if ((inportd(0xCFC) & 0xFF) == 0xFE) {
 				// This device needs an IRQ assignment.
 			}
@@ -669,6 +687,7 @@ struct mem_req {
 	size_t len;
 };
 void _probe_port(void *abar_temp);
+
 // ------------------------------------------------------------------------------------------------
 void PciInit()
 {

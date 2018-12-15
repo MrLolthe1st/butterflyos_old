@@ -1,5 +1,7 @@
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
+
+// ------------------------------------------------------------------------------------------------
 void smp_core(uint procId)
 {
 	//initCoProc();

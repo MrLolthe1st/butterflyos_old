@@ -22,7 +22,9 @@ void initDevices() {
 	//memset(&devices, 0, 64 * sizeof(device));
 	printString("Devices module initialized!\n");
 }
+
 unsigned int last = 0;
+
 unsigned int GenerateUID() {
 	unsigned int id = (last + 1);
 	for (int i = 0; i < last % 16; i++)
@@ -30,6 +32,7 @@ unsigned int GenerateUID() {
 	last = id;
 	return last;
 }
+
 device addDevice(unsigned short port, unsigned char bits, unsigned char deviceType) {
 	printString("Added device #");
 	// printInt(devicesCount + 1, 2);

@@ -5,10 +5,14 @@
 #define HOOK_MOUSE_MOVE				0x0005
 #define HOOK_DEVICE_CONNECTION		0x0006
 #define HOOK_DEVICE_DISCONNECT		0x0007
+
+// ------------------------------------------------------------------------------------------------
 typedef struct {
 	unsigned int code;
 	void * data;
 } HookEvent;
+
+// ------------------------------------------------------------------------------------------------
 typedef struct _hook
 {
 	unsigned int type;
@@ -16,8 +20,15 @@ typedef struct _hook
 	struct _hook * next;
 	struct _hook * prev;
 } Hook;
+
+// ------------------------------------------------------------------------------------------------
 Hook * hookChain = 0;
-//Installs an application-defined hook procedure into a hook chain. You would install a hook procedure to monitor the system for certain types of events. These events are associated either with a specific thread or with all threads in the same desktop as the calling thread.
+
+// ------------------------------------------------------------------------------------------------
+/*Installs an application-defined hook procedure into a hook chain. You would install a hook 
+procedure to monitor the system for certain types of events. These events are associated either 
+with a specific thread or with all threads in the same desktop as the calling thread.
+*/
 Hook * SetHook(unsigned int hookType, void * handler)
 {
 	if (!hookChain)
@@ -51,6 +62,8 @@ Hook * SetHook(unsigned int hookType, void * handler)
 	nhook->handler = handler;
 	return nhook;
 }
+
+// ------------------------------------------------------------------------------------------------
 //Removes a hook procedure installed in a hook chain by the SetHook function.
 char UnhookHook(Hook * h)
 {
@@ -70,6 +83,8 @@ char UnhookHook(Hook * h)
 	}
 	return false;
 }
+
+// ------------------------------------------------------------------------------------------------
 //Sends event to all hooks from hook chain.
 void hookEvent(unsigned int type, HookEvent * e)
 {

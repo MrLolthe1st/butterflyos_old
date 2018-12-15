@@ -1,5 +1,7 @@
 #pragma GCC push_options
 #pragma GCC optimize ("O2")
+
+// ------------------------------------------------------------------------------------------------
 char upcase(char s)
 {
 
@@ -7,6 +9,8 @@ char upcase(char s)
 		return s + ('A' - 'a');
 	else return s;
 }
+
+// ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) _F32_e
 {
 	char name[8];
@@ -23,6 +27,8 @@ typedef  struct  __attribute__((packed)) _F32_e
 	u16 clusterLo;
 	uint size;
 } F32E;
+
+// ------------------------------------------------------------------------------------------------
 typedef  struct __attribute__((packed)) _fil
 {
 	uint startCluster;
@@ -30,6 +36,8 @@ typedef  struct __attribute__((packed)) _fil
 	uint nool1;
 	uint size;
 } FileInfoF32;
+
+// ------------------------------------------------------------------------------------------------
 char F32OkName(char q)
 {
 	if ((q >= 'A'&&q <= 'Z') ||
@@ -39,6 +47,8 @@ char F32OkName(char q)
 		return 1;
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) dentr_y
 {
 	char name[255];
@@ -47,6 +57,8 @@ typedef  struct  __attribute__((packed)) dentr_y
 	uchar attrs;
 	struct dentr_y * next;
 } direntry;
+
+// ------------------------------------------------------------------------------------------------
 direntry * FAT32GetDir(uint diskId, char * fileName)
 {
 	char bootSect[512];
@@ -229,6 +241,8 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 
 	return res;
 }
+
+// ------------------------------------------------------------------------------------------------
 FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 {
 	char bootSect[512];
@@ -440,6 +454,7 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 }
 
 
+// ------------------------------------------------------------------------------------------------
 void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 {
 	char bootSect[512];
@@ -491,6 +506,8 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 }
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
+
+// ------------------------------------------------------------------------------------------------
 uint findFreeFATEntry(uint diskId, uint reserved)
 {
 	for (int i = 0; i < 0xFFFFFFF; i++)
@@ -503,6 +520,8 @@ uint findFreeFATEntry(uint diskId, uint reserved)
 	}
 }
 #pragma GCC pop_options
+
+// ------------------------------------------------------------------------------------------------
 int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, uint cnt)
 {
 	char bootSect[512];
@@ -575,8 +594,8 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	free(cluster);
 	return 0;
 }
-/*
-*/
+
+// ------------------------------------------------------------------------------------------------
 int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 {
 	//printTextToWindow(2, mywin, "Clearing file chain...\n");
@@ -617,7 +636,7 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 	WriteToDisk(reserved + (lastCluster >> 7), 1, (void*)((uint)f32drives[diskId].FATTable + (lastCluster >> 7) * 512), diskId);
 }
 
-
+// ------------------------------------------------------------------------------------------------
 
 void  FAT32CreateFile(uint diskId, char * fileName)
 {
@@ -859,6 +878,8 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	free(cluster);
 	free(lastcluster);
 }
+
+// ------------------------------------------------------------------------------------------------
 void  FAT32CreateDirectory(uint diskId, char * fileName)
 {
 	char bootSect[512];

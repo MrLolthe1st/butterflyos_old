@@ -3,6 +3,8 @@
 #define FILE_RIGHTS_WRITE 2
 #define FILE_RIGHTS_APPEND 4
 
+
+// ------------------------------------------------------------------------------------------------
 typedef  struct __attribute__((packed)) _feil
 {
 	uint add1;
@@ -10,6 +12,8 @@ typedef  struct __attribute__((packed)) _feil
 	uint add3;
 	uint size;
 } FileInfo;
+
+// ------------------------------------------------------------------------------------------------
 FileInfo * FileSeek(uint diskId, char * f)
 {
 	//kprintf("[%x %s]", diskId, f);
@@ -18,8 +22,12 @@ FileInfo * FileSeek(uint diskId, char * f)
 		return (FileInfo*)FAT32Seek(diskId, f);
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 uint fread(void * addr, uint size, uint count, FILE *f);
 unsigned int fwrite(void *buf, uint size, uint count, FILE *stream);
+
+// ------------------------------------------------------------------------------------------------
 int feof(FILE *f)
 {
 	if (f->currentByte == f->size)
@@ -27,15 +35,21 @@ int feof(FILE *f)
 	else return 0;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 int remove(char * f)
 {
 	//TODO!
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 int ferror(FILE *f)
 {
 	return f->error;
 }
+
+// ------------------------------------------------------------------------------------------------
 int putc(int ch, FILE * f)
 {
 	if (f->size)
@@ -56,17 +70,23 @@ int putc(int ch, FILE * f)
 	else return -1;
 
 }
+
+// ------------------------------------------------------------------------------------------------
 int fputc(int ch, FILE * f)
 {
 	fwrite(&ch, 1, 1, f);
 	return ch;
 }
+
+// ------------------------------------------------------------------------------------------------
 int fgetc(FILE *f)
 {
 	int res;
 	fread(&res, 1, 1, f);
 	return res;
 }
+
+// ------------------------------------------------------------------------------------------------
 int getc(FILE * f)
 {
 	if (f->size)
@@ -77,6 +97,8 @@ int getc(FILE * f)
 	f->length--;
 	return f->buffer[f->head - 1];
 }
+
+// ------------------------------------------------------------------------------------------------
 uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
 {
 	if (drives[f->diskId].type == 0)
@@ -84,6 +106,8 @@ uint FileAppendBytes(FILE * f, void * bytes, uint cnt)
 		return FAT32Append(f->diskId, f->add2, f->add3, bytes, cnt);
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 uint FileClear(FILE * f)
 {
 	if (drives[f->diskId].type == 0)
@@ -91,11 +115,15 @@ uint FileClear(FILE * f)
 		return FAT32ClearChain(f->diskId, f->add2, f->add3);
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void FileCreate(uint diskId, void * f)
 {
 	if (drives[diskId].type == 0)
 		FAT32CreateFile(diskId, f);
 }
+
+// ------------------------------------------------------------------------------------------------
 void concatdir(char * dir, const char * cmd)
 {
 	if (cmd[0] == '\\') {
@@ -171,6 +199,8 @@ void concatdir(char * dir, const char * cmd)
 	}
 
 }
+
+// ------------------------------------------------------------------------------------------------
 FILE *fopen(const char *fname, const char *mode)
 {
 
@@ -252,6 +282,8 @@ FILE *fopen(const char *fname, const char *mode)
 	free(q);
 	return n;
 }
+
+// ------------------------------------------------------------------------------------------------
 direntry * DirectoryListing(char *fname)
 {
 	char * ups = malloc(512);
@@ -290,12 +322,16 @@ direntry * DirectoryListing(char *fname)
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void attachIoToWindow(Window * w)
 {
 	procTable[currentRunning].stdin->w = w;
 	procTable[currentRunning].stdout->w = w;
 	procTable[currentRunning].stderr->w = w;
 }
+
+// ------------------------------------------------------------------------------------------------
 int fprintf(FILE * stream, char * text, ...)
 {
 	char buf[1024];
@@ -310,10 +346,14 @@ int fprintf(FILE * stream, char * text, ...)
 		printTextToWindowFormatted(7, out->w, buf);
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 int fflush(FILE * stream)
 {
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 void printf(char * text, ...)
 {
 	FILE * out = procTable[currentRunning].stdout;
@@ -330,6 +370,8 @@ void printf(char * text, ...)
 #define stdin_stream 0
 #define stdout_stream 1
 #define stderr_stream 2
+
+// ------------------------------------------------------------------------------------------------
 FILE *  getProcessSTDStream(int id)
 {
 	if (id == stdin_stream)
@@ -340,6 +382,8 @@ FILE *  getProcessSTDStream(int id)
 		return procTable[currentRunning].stderr;
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 uint fseek(FILE *stream, long offset, int origin) {
 	long long z = stream->currentByte;
 	if (origin == 0)
@@ -354,12 +398,16 @@ uint fseek(FILE *stream, long offset, int origin) {
 	}
 	return 0;
 }
+
+// ------------------------------------------------------------------------------------------------
 long ftell(FILE * f)
 {
 	if (!f)
 		return -1;
 	return f->currentByte;
 }
+
+// ------------------------------------------------------------------------------------------------
 int rewind(FILE * f)
 {
 	if (!f)
@@ -368,6 +416,8 @@ int rewind(FILE * f)
 	return 1;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 unsigned int FileWrite(FILE * f, void * addr, uint cnt)
 {
 
@@ -375,6 +425,8 @@ unsigned int FileWrite(FILE * f, void * addr, uint cnt)
 		FAT32Append(f->diskId, f->add2, f->add3, addr, cnt);
 
 }
+
+// ------------------------------------------------------------------------------------------------
 unsigned int fwrite(void *buf, uint size, uint count, FILE *stream)
 {
 	//kprintf("%x %x!", stream->add2, stream->add3);
@@ -382,6 +434,8 @@ unsigned int fwrite(void *buf, uint size, uint count, FILE *stream)
 	return FileWrite(stream, buf, size*count);
 	//stream->currentByte += size * count;
 }
+
+// ------------------------------------------------------------------------------------------------
 void FileRead(FILE * f, void * addr, uint from, uint cnt)
 {
 
@@ -390,6 +444,8 @@ void FileRead(FILE * f, void * addr, uint from, uint cnt)
 
 
 }
+
+// ------------------------------------------------------------------------------------------------
 uint fread(void * addr, uint size, uint count, FILE *f)
 {
 	if (!f)
@@ -397,6 +453,8 @@ uint fread(void * addr, uint size, uint count, FILE *f)
 	FileRead(f, addr, f->currentByte, size*count);
 	f->currentByte += size * count;
 }
+
+// ------------------------------------------------------------------------------------------------
 int fclose(FILE * f)
 {
 	if (!f)
@@ -404,6 +462,8 @@ int fclose(FILE * f)
 	free(f);
 	return 1;
 }
+
+// ------------------------------------------------------------------------------------------------
 
 void mkdir(char *p, uint mode)
 {

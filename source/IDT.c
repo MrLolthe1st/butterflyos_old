@@ -203,54 +203,59 @@ void keyb_init()
 #define keys_buff 0x9810
 //0x90 - nop
 uint sugg = 0;
+
+// ------------------------------------------------------------------------------------------------
 #define IDT_HANDLERM(func) unsigned char func = 0x90;\
 __asm__(#func ": \n \
-pushl %esp\n\
-pushl %eax\n\
-pushl %ebx\n\
-pushl %ecx\n\
-pushl %edx\n\
-pushl %esi\n\
-pushl %edi\n\
-pushl %ebp\n\
-movl %esp,_sugg\n\
-\n call __"# func " \n\
-popl %ebp\n\
-popl %edi\n\
-popl %esi\n\
-popl %edx\n\
-popl %ecx\n\
-popl %ebx\n\
-popl %eax\n\
-add $4,%esp\
-\n iret \n");\
+		pushl	%esp			\n\
+		pushl	%eax			\n\
+		pushl	%ebx			\n\
+		pushl	%ecx			\n\
+		pushl	%edx			\n\
+		pushl	%esi			\n\
+		pushl	%edi			\n\
+		pushl	%ebp			\n\
+		movl	%esp,	_sugg	#Save pointer to stack\n\
+		\n call __"# func "		\n\
+		popl	%ebp			\n\
+		popl	%edi			\n\
+		popl	%esi			\n\
+		popl	%edx			\n\
+		popl	%ecx			\n\
+		popl	%ebx			\n\
+		popl	%eax			\n\
+		add		$4,		%esp	\n\
+		iret");\
 void _## func()
+
+// ------------------------------------------------------------------------------------------------
 void multiHandler() {
 	int stack = 0x500000, s2 = 0;
+	//Firstly, get stack pointer from sugg
 	__asm__("movl %%esp,%0\n movl _sugg,%1": "=r" (stack), "=r" (s2) : );
 	//Save SSE registers
 	__asm__("\
-		push %%edi\n\
-		mov %0,%%edi			\n\
-		movups %%xmm0,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm1,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm2,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm3,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm4,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm5,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm6,(%%edi)	\n\
-		add $16, %%edi			\n\
-		movups %%xmm7,(%%edi)	\n\
-		add $16, %%edi			\n\
-		pop %%esi\n\
+		push	%%edi					\n\
+		mov		%0,		%%edi			\n\
+		movups	%%xmm0,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm1,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm2,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm3,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm4,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm5,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm6,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		movups	%%xmm7,	(%%edi)			\n\
+		add		$16,	%%edi			\n\
+		pop		%%esi					\n\
 		"::"r" (&procTable[currentRunning].sse));
-	
+	//Save registers
 	stack = s2;
 	procTable[currentRunning].ebp = *((int *)(stack));
 	procTable[currentRunning].edi = *((int *)(stack + 4));
@@ -263,6 +268,7 @@ void multiHandler() {
 	procTable[currentRunning].currentAddr = (void*)*((unsigned int *)(stack + 32));
 	procTable[currentRunning].eflags = *((unsigned int *)(stack + 40));
 	if (!locked) {
+		//Switch process
 		if (procTable[currentRunning].priorityL > 0)
 			procTable[currentRunning].priorityL--;
 
@@ -273,61 +279,68 @@ void multiHandler() {
 			while (!procTable[currentRunning].state & 1) currentRunning = (currentRunning + 1) % procCount;
 		}
 	}
-	__asm__("\n\
-		mov %1,%%edi		\n\
-		movups (%%esi),%%xmm0	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm1	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm2	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm3	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm4	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm5	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm6	\n\
-		add $16, %%esi			\n\
-		movups (%%esi),%%xmm7	\n\
-		add $16, %%esi			\n\
-		mov %0,%%esi\n\
-		mov 0(%%esi),%%eax\n\
-		mov 4(%%esi),%%ebx\n\
-		mov 8(%%esi),%%ecx\n\
-		mov 12(%%esi),%%edx\n\
-		mov 16(%%esi),%%ebp\n\
-		mov 20(%%esi),%%esp\n\
-		mov 32(%%esi),%%edi\n\
-		pushl %%edi\n\
-		mov $0x8,%%edi\n\
-		pushl %%edi\n\
-		mov 44(%%esi),%%edi\n\
-		pushl %%edi\n\
-		mov 28(%%esi),%%edi\n\
-		mov 24(%%esi),%%esi\n\
-		iret\n\
+	//Just load current values from current process
+	__asm__("								\n\
+		mov		%1,			%%edi			\n\
+		movups	(%%esi),	%%xmm0			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm1			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm2			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm3			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm4			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm5			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm6			\n\
+		add		$16,		%%esi			\n\
+		movups	(%%esi),	%%xmm7			\n\
+		add		$16,		%%esi			\n\
+		mov		%0,			%%esi			\n\
+		mov		0(%%esi),	%%eax			\n\
+		mov		4(%%esi),	%%ebx			\n\
+		mov		8(%%esi),	%%ecx			\n\
+		mov		12(%%esi),	%%edx			\n\
+		mov		16(%%esi),	%%ebp			\n\
+		mov		20(%%esi),	%%esp			\n\
+		mov		32(%%esi),	%%edi			\n\
+		pushl	%%edi						\n\
+		mov		$0x8,		%%edi			\n\
+		pushl	%%edi						\n\
+		mov		44(%%esi),	%%edi			\n\
+		pushl	%%edi						\n\
+		mov		28(%%esi),	%%edi			\n\
+		mov		24(%%esi),	%%esi			\n\
+		iret								\n\
 		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning), "r" (&procTable[currentRunning].sse));
 
 }
 
+// ------------------------------------------------------------------------------------------------
 IDT_HANDLERM(multitasking) {
-	__asm__("movb $0x20, %al \n\
-		outb %al, $0x20\n\
-		");
-	*((uint*)((uint)g_localApicAddr + 0xb0)) = 0;
-	*sec100 = (*sec100) + 1; // % 100;
+	//Fastest way to decrease error percentage
+	__asm__("movb	$0x20,	%al		\n\
+			outb	%al,	$0x20	\n\
+			");
 
-	__asm__("\
-	call _multiHandler");
+	// *((uint*)((uint)g_localApicAddr + 0xb0)) = 0;
+
+	*sec100 = (*sec100) + 1;
+
+	__asm__("call _multiHandler");
 
 }
+
+// ------------------------------------------------------------------------------------------------
 IDT_HANDLERM(multitasking2) {
-	__asm__("\
-	call _multiHandler");
+	__asm__("call _multiHandler");
 }
 
 #include "ELF.c"
+
+// ------------------------------------------------------------------------------------------------
 void processEnd() {
 	lockTaskSwitch(1);
 	//Free all allocations from process
@@ -347,34 +360,23 @@ void processEnd() {
 	//Resume process
 	if (procTable[currentRunning].runnedFrom)
 		procTable[procTable[currentRunning].runnedFrom].state ^= 1;
-	
+
 	memcpy((char*)&procTable[currentRunning], (char*)&procTable[procCount - 1], sizeof(Process));
 	procTable[procCount - 1].priorityL = 1;
 	procCount--;
-	
+
 	procTable[procCount].state = 0;
 	currentRunning = procCount;
 	//mm_print_out();
 	unlockTaskSwitch();
-	
+
 	for (;;);
 }
-typedef struct _eqa {
-	unsigned int name;
-	unsigned int value;
-	unsigned int size;
-	unsigned char info;
-	unsigned char other;
-	unsigned short shndx;
-}
-Elf32_Sym;
-typedef struct {
-	unsigned int addr;
-	unsigned int info;
 
-}
-rel;
+
 uint stack_size = 65536 * 2;
+
+// ------------------------------------------------------------------------------------------------
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 
 	//Try to open file
@@ -431,7 +433,7 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	//Current address is a .text entry in ELF File
 	procTable[_procCount].currentAddr = entry->entry;
 	//Save pointer to buffer, that allocated to read file
-	procTable[_procCount].startAddr = (void*)progq; 
+	procTable[_procCount].startAddr = (void*)progq;
 	procTable[_procCount].priority = 2;
 	procTable[_procCount].priorityL = 2;
 	//Flags is [------I------PR-]
@@ -443,8 +445,7 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	addProcessAlloc(entry, procTable[_procCount].stdout);
 	procTable[_procCount].stderr = (FILE*)mmalloc(sizeof(FILE));
 	addProcessAlloc(entry, procTable[_procCount].stderr);
-	
-	//Preserve caller's st IO to that process
+	//Preserve caller's std IO to that process
 	procTable[_procCount].stdin->w = procTable[currentRunning].stdin->w;
 	procTable[_procCount].stdout->w = procTable[currentRunning].stdout->w;
 	procTable[_procCount].stderr->w = procTable[currentRunning].stderr->w;
@@ -478,11 +479,15 @@ void inst(unsigned char interruptID, void * address, unsigned char flags) {
 	for (int k = 0; k < 8; k++)
 		* (it + interruptID * 8 + k) = a[k];
 }
+
+// ------------------------------------------------------------------------------------------------
 void int_l() {
 	unsigned short * limit = (short*)IR;
 	unsigned int * place = (uint*)(IR + 2); *limit = 256 * 8 - 1; *place = IT;
 	__asm__("lidt 0(,%0,)"::"a" (IR));
 }
+
+// ------------------------------------------------------------------------------------------------
 IDT_HANDLER(irq_ex) {
 	unsigned int o = 0;
 	kprintf("div zero");
@@ -494,6 +499,7 @@ unsigned char * mouse_cur;
 unsigned char updatingW = 0;
 unsigned char buttons = 0;
 
+// ------------------------------------------------------------------------------------------------
 //Top window
 void windowToTop(int id) {
 	Window * prev = windows;
@@ -543,6 +549,7 @@ int wox = 0, woy = 0, dragging = 0;
 void makeMouseHook(uint event, uint ev2)
 {
 	HookEvent he;
+	//Allocate data, 3 * int
 	he.data = (void*)malloc(12);
 	uint * w = (uint *)he.data;
 	w[0] = ev2;
@@ -553,27 +560,26 @@ void makeMouseHook(uint event, uint ev2)
 }
 void mouseHandler()
 {
-	if (mouseX < 0) {
+	if (mouseX < 0)
 		mouseX = 0;
-	}
-	if (mouseX >= width - 2) {
+
+	if (mouseX >= width - 2)
 		mouseX = width - 2;
-	}
+
 	if ((1 << 5) & mouse_byte[0] != 0)
 		mouseY += mouse_byte[2];
 	else
 		mouseY -= mouse_byte[2];
-	if (mouseY < 1) {
+
+	if (mouseY < 1)
 		mouseY = 1;
-	}
-	if (mouseY >= height - 3) {
+
+	if (mouseY >= height - 3)
 		mouseY = height - 3;
-	}
+
 	if (drawed) {
 		CopyToVMemoryD(lastX - 1, lastY - 1, 19, 19, under);
-		// CopyFromVMemoryD(mouseX,mouseY,17,17,under);
 		CopyFromVMemoryD(mouseX - 1, mouseY - 1, 19, 19, under);
-		//OutTextXYM(0,0,
 		lastX = mouseX;
 		lastY = mouseY;
 		CopyToVMemoryTransparent(mouseX, mouseY, (unsigned short)16, (unsigned short)16, mouse_cur);
@@ -660,8 +666,9 @@ void mouseHandler()
 				focused = 1;
 			activeWindow = clickedIn->id;
 			lastInteractWinId = clickedIn->id;
+
 			WindowEvent we;
-			//printTextToWindow(6, mywin, "\nE%x\n", clickedIn -> handler);
+
 			Window * lastActive = windows;
 			while (lastActive) {
 				if (lastActive->id == lastActiveId)
@@ -718,6 +725,7 @@ void mouseHandler()
 	if (drawed)
 		CopyFromVMemory(mouseX - 1, mouseY - 1, 19, 19, under);
 }
+
 IRQ_HANDLER1(irq_mouse) {
 	unsigned char status = inportb(0x64);
 	if (updatingW) return;
@@ -749,17 +757,9 @@ IRQ_HANDLER1(irq_mouse) {
 			mouseX -= mouse_byte[1];
 		else
 			mouseX += mouse_byte[1];
-
-		//if(!(1&mouse_byte[0]))
-		//  CopyToVMemoryD(lastX,lastY,17,17,under);
 		mouseHandler();
-		//CopyFromVMemory(mouseX,mouseY,17,17,under);
-		//   CopyToVMemoryTransparentD(mouseX,mouseY,(unsigned short)16,(unsigned short)16,mouse_cur);
-		//   CopyToVMemoryTransparent(mouseX,mouseY,(unsigned short)16,(unsigned short)16,mouse_cur);
 		break;
 	}
-	//}
-	//for(;;);
 }
 
 IDT_HANDLER(irq_ex1) {
@@ -988,7 +988,7 @@ void IoApicInit()
 	}
 }
 
-
+// ------------------------------------------------------------------------------------------------
 void iint() {
 	keyb_init();
 	mouse_cur = malloc(16 * 16 * 4 + 16);
@@ -1047,7 +1047,7 @@ void iint() {
 	inst(0x20 + 12, &irq_mouse, 0x8e); //PS/2 Mouse
 	//inst(0x20 + 14, & ATA1, 0x8e); //ATA Primary IRQ
 	//inst(0x20 + 15, & ATA2, 0x8e); //ATA Secondary IRQ
-	for(int i=0;i<32;i++) inst(i, &irq_ex, 0x8e);
+	for (int i = 0; i < 32; i++) inst(i, &irq_ex, 0x8e);
 	inst(0x30, &kbdService, 0x8e); //Keyboard service
 	inst(0x41, &multitasking2, 0x8e); //For sleeps and etc
 	//    inst(0x40, &videoService, 0x8e);

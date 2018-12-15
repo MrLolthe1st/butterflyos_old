@@ -3,6 +3,8 @@ typedef struct __attribute__((packed)) _Pixel {
 	unsigned char g;
 	unsigned char r;
 }Pixel;
+
+// ------------------------------------------------------------------------------------------------
 int width = 1024;
 int height = 768;
 #define widthf 1024.0
@@ -13,25 +15,35 @@ unsigned char * videoMemory;
 unsigned char * fontPointer = 0;
 unsigned char * videoBuffer;
 unsigned int STU = 0, ok = 1;
+
+// ------------------------------------------------------------------------------------------------
 //Puts pixel to video buffer
 void putPixel(int x, int y, unsigned int color) {
 	if (x >= 0 && y >= 0 && x < width&&y < height)
 		* ((Pixel *)(videoBuffer + x * bpp + y * width * bpp)) = *((Pixel *)& color);
 }
+
+// ------------------------------------------------------------------------------------------------
 //Puts pixel on the screen
 void putPixelD(int x, int y, unsigned int color) {
 	if (x >= 0 && y >= 0 && x < width&&y < height)
 		* ((Pixel *)(videoMemory + x * bpp + y * width * bpp)) = *((Pixel *)& color);
 }
+
+// ------------------------------------------------------------------------------------------------
 //Puts pixel in some image in memory
 void putPixelVideo(unsigned int x, unsigned int y, unsigned int color, unsigned int w, unsigned int h, unsigned char * where) {
 	if (x >= 0 && y >= 0 && x < w&&y < h)
 		*((Pixel *)((int)where + x * 3 + y * w * 3)) = *((Pixel *)& color);
 }
+
+// ------------------------------------------------------------------------------------------------
 unsigned char fmma(unsigned char a, unsigned char b)
 {
 
 }
+
+// ------------------------------------------------------------------------------------------------
 void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 {
 	int zz = darker / size;
@@ -97,12 +109,16 @@ void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 		}
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 unsigned int u;
 //Waits CRT back way
 void waitRetrace() {
 	while (inportb(0x3DA) & 0x8) {};
 	while (!(inportb(0x3DA) & 0x8)) {}
 }
+
+// ------------------------------------------------------------------------------------------------
 //Copies video buffer to video memory
 void swapBuffer() {
 	//Waits retrace
@@ -130,6 +146,8 @@ void swapBuffer() {
 		.byte 0x61							#Restore registers from stack		\
 		"::"r" (videoMemory), "r" (videoBuffer), "r" (ccnt));
 }
+
+// ------------------------------------------------------------------------------------------------
 //Copies image to the screen
 void CopyToVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	int j;
@@ -172,6 +190,8 @@ void CopyToVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 		"::"r" (videoMemory + j * width * 4 + x1 * 4), "r" (mmw), "r" (b + (j - y1) * w * 3));
 }
 
+// ------------------------------------------------------------------------------------------------
+
 //Copy 
 void CopyToVMemoryTransparentD(unsigned int x1, unsigned int y1, unsigned int w, unsigned int h, unsigned char * b) {
 	unsigned int i, j;
@@ -183,6 +203,8 @@ void CopyToVMemoryTransparentD(unsigned int x1, unsigned int y1, unsigned int w,
 				* ((Pixel *)(videoBuffer + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void CopyFromVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	//return;
 	int j; int sx1 = x1;
@@ -228,6 +250,8 @@ void CopyFromVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 		"::"r" (bb2), "r" (mmw), "r" (buf));
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void CopyToVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 	int j;
 	int sx1 = x1;
@@ -274,10 +298,14 @@ void CopyToVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void CopyToVmemS(int x1, int y1, int w, int h, int c, int l, char * b) {
 
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void CopyToVMemoryTransparent(int x1, int y1, int w, int h, char * b) {
 	int i, j;
 
@@ -288,6 +316,8 @@ void CopyToVMemoryTransparent(int x1, int y1, int w, int h, char * b) {
 				* ((Pixel *)(videoMemory + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void CopyFromVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 	//return;
 	int j;
@@ -333,6 +363,8 @@ void CopyFromVMemory(int x1, int y1, int w, int h, unsigned char * b) {
 		"::"r" (bbstart), "r" (mmw), "r" (bufStart));
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void BarL(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, unsigned int color) {
 	__asm__(
 		"push %%eax\n\
@@ -359,6 +391,8 @@ void BarL(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, un
 	"::"r" (color), "r" (videoBuffer), "r" (width), "r" (x2), "r" (x1));
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 	if (x1 >= width || y1 >= height)
 		return;
@@ -409,6 +443,8 @@ void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 		pop %%ecx\n\
 		"::"r" (videoBuffer + width * bpp * y + x1 * bpp), "r" (x2 - x1 + 1), "r" (&color));
 }
+
+// ------------------------------------------------------------------------------------------------
 void BarVideo(int x1, int y1, int x2, int y2, unsigned int color, int ww, int wh, void * vvideoBuffer) {
 	if (x1 >= ww || y1 >= wh)
 		return;
@@ -439,6 +475,8 @@ void BarVideo(int x1, int y1, int x2, int y2, unsigned int color, int ww, int wh
 			"::"r" (bufStart), "r" (x2 - x1 + 1), "r" (&color));
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void Line(int x1, int y1, int x2, int y2, unsigned int color) {
 
 	const int deltaX = abs(x2 - x1);
@@ -465,6 +503,8 @@ void Line(int x1, int y1, int x2, int y2, unsigned int color) {
 
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void LineVideo(int x1, int y1, int x2, int y2, unsigned int color, int w, int h, void * ww) {
 
 	const int deltaX = abs(x2 - x1);
@@ -491,6 +531,8 @@ void LineVideo(int x1, int y1, int x2, int y2, unsigned int color, int w, int h,
 	}
 
 }
+
+// ------------------------------------------------------------------------------------------------
 void BarV(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, unsigned int color, unsigned int w, unsigned char * where) {
 	if (x1 < 0 || y1 < 0 || x1 > width - 1 || y1 > height - 1) return;
 	unsigned int y;
@@ -512,6 +554,8 @@ void BarV(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, un
 		pop %%ecx\n\
 		"::"r" (where + w * 3 * y + x1 * 3), "r" (x2 - x1 + 1), "r" (&color));
 }
+
+// ------------------------------------------------------------------------------------------------
 
 void drawcharv(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return;
@@ -536,6 +580,8 @@ void drawcharv(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int
 						putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, fgcolor, w, h, where);
 }
 
+// ------------------------------------------------------------------------------------------------
+
 void drawcharvf(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	if (x < 0 || y < 0 || x > width - 1 || y > height - 1) return;
 	unsigned int cx, cy, o, o1;
@@ -558,6 +604,8 @@ void drawcharvf(unsigned char c, int x, int y, unsigned int fgcolor, unsigned in
 				for (o1 = 0; o1 < scale; o1++)
 					putPixelVideo(x + cx * scale + o, y + (cy)* scale + o1, ((glyph[cy] & mask[7 - cx]) != 0)*fgcolor, w, h, where);
 }
+
+// ------------------------------------------------------------------------------------------------
 void OutTextXYV(unsigned int x, unsigned int y, char * s, unsigned int color, unsigned int scale, unsigned int w, unsigned int h, unsigned char * where) {
 	unsigned int i = 0;
 	while (s[i] != 0) {
@@ -566,6 +614,8 @@ void OutTextXYV(unsigned int x, unsigned int y, char * s, unsigned int color, un
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void drawchar(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int scale) {
 	unsigned int cx, cy, o, o1;
 	unsigned int mask[8] = {
@@ -588,6 +638,8 @@ void drawchar(unsigned char c, int x, int y, unsigned int fgcolor, unsigned int 
 						putPixel(x + cx * scale + o, y + (cy)* scale + o1, fgcolor);
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void OutTextXY(unsigned int x, unsigned int y, char * s, unsigned int color, unsigned int scale) {
 	unsigned int i = 0;
 	while (s[i] != 0) {
@@ -595,6 +647,8 @@ void OutTextXY(unsigned int x, unsigned int y, char * s, unsigned int color, uns
 		i++;
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void Rect(int x1, int y1, int x2, int y2, unsigned int color) {
 	Line(x1, y1, x1 + x2, y1, color);
 	Line(x1, y1, x1, y1 + y2, color);
@@ -602,6 +656,8 @@ void Rect(int x1, int y1, int x2, int y2, unsigned int color) {
 	Line(x1 + x2, y1, x1 + x2, y1 + y2, color);
 
 }
+
+// ------------------------------------------------------------------------------------------------
 void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color, unsigned int maxWidth, unsigned int scale) {
 	unsigned int i = 0;
 	while (s[i] != 0) {
@@ -610,8 +666,12 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 		i++;
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void * cat;
 
+
+// ------------------------------------------------------------------------------------------------
 char * getBmpAndScaleIt(char * path, int width, int height)
 {
 	FILE * f = fopen("A:\\IMG\\WP.BMP", "r");
@@ -674,6 +734,8 @@ char * getBmpAndScaleIt(char * path, int width, int height)
 	return cat;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void loadFontPointer() {
 	///Bar(0, 0, 600, 600, 0xFF0000);
 	//fontPointer = FAT32ReadFileATA(0, "STANDART.FNT");
@@ -689,6 +751,8 @@ void loadFontPointer() {
 
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void(*VBE4F07)();
 void SetVisualPage(unsigned char page) {
 	__asm__(
@@ -698,6 +762,8 @@ void SetVisualPage(unsigned char page) {
 		"r" (page * height) /* bank number in %edx */
 		);
 }
+
+// ------------------------------------------------------------------------------------------------
 
 void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned char * where) {
 	double ceiling, deltaX, d2;
@@ -721,6 +787,8 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 		}
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
 void initSVGA() {
 	//__asm__("movl $70999993,%eax\njmp %eax");
 	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;

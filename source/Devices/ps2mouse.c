@@ -10,6 +10,8 @@
 
 char mouse_byte[3];
 void * under, *under2;
+
+// ------------------------------------------------------------------------------------------------
 void mouse_wait(unsigned char a_type) {
 	unsigned int timeout = 100000;
 	if (!a_type) {
@@ -30,6 +32,8 @@ void mouse_wait(unsigned char a_type) {
 	}
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void mouse_write(unsigned char write) {
 	mouse_wait(1);
 	outportb(MOUSE_STATUS, MOUSE_WRITE);
@@ -37,12 +41,16 @@ void mouse_write(unsigned char write) {
 	outportb(MOUSE_PORT, write);
 }
 
+
+// ------------------------------------------------------------------------------------------------
 unsigned char mouse_read() {
 	mouse_wait(0);
 	char t = inportb(MOUSE_PORT);
 	return t;
 }
 
+
+// ------------------------------------------------------------------------------------------------
 void initPS2Mouse() {
 	under = malloc(19 * 19 * 4);
 	under2 = malloc(19 * 19 * 4);
