@@ -235,6 +235,11 @@ nalloc:;
 }
 #pragma GCC pop_options
 void addProcessAlloc(ELF_Process * p, void * addr);
+int rb_mem_cmp(struct rb_tree *self, struct rb_node *node_a, struct rb_node *node_b) {
+	uint addr1 = (uint)node_a->value;
+	uint addr2 = (uint)node_b->value;
+	return addr1 - addr2;
+}
 char * malloc(size_t size)
 {
 	char * addr = mmalloc(size);
@@ -249,10 +254,17 @@ void insertTreapAlloc(processAlloc * t, processAlloc * e)
 
 void addProcessAlloc(ELF_Process * p, void * addr)
 {
-	processAlloc * z = (processAlloc*)mmalloc(sizeof(processAlloc));
-	z->next = p->allocs;
-	z->addr = addr;
-	p->allocs = z;
+	if (!p->tree)
+	{
+		p->tree = rb_tree_create(rb_mem_cmp);
+	}
+	rb_tree_insert(p->tree, addr);
+	//printTextToWindow(3, mywin, "~%d~", p->tree->size);
+/*
+processAlloc * z = (processAlloc*)mmalloc(sizeof(processAlloc));
+z->next = p->allocs;
+z->addr = addr;
+p->allocs = z;*/
 }
 void mm_init(uint32_t kernel_end) {
 	last_alloc = kernel_end + 0x1000;
@@ -268,7 +280,7 @@ void mm_init(uint32_t kernel_end) {
 
 void mm_print_out() {
 
-	printTextToWindow(3,mywin,"Memory used: %d bytes\n", memory_used);
+	printTextToWindow(3, mywin, "Memory used: %d bytes\n", memory_used);
 	printTextToWindow(3, mywin, "Memory free: %d bytes\n", heap_end - heap_begin - memory_used);
 	printTextToWindow(3, mywin, "Heap size: %d bytes\n", heap_end - heap_begin);
 	printTextToWindow(3, mywin, "Heap start: 0x%x\n", heap_begin);
@@ -288,6 +300,13 @@ void free(void * mem)
 	if (!procTable[currentRunning].elf_process)
 		//May send segfault?
 		return;
+	if (!procTable[currentRunning].elf_process->tree)
+		return;
+	if (rb_tree_remove(procTable[currentRunning].elf_process->tree, mem)) {
+		//printTextToWindow(3, mywin, "$%d:%d$", currentRunning, procTable[currentRunning].elf_process->tree->size);
+		ffree(mem);
+	}
+	/*
 	processAlloc * p = procTable[currentRunning].elf_process->allocs;
 	if (!p)
 		return;
@@ -311,7 +330,7 @@ void free(void * mem)
 		}
 		prev = p;
 		p = p->next;
-	}
+	}*/
 }
 
 void pfree(void * mem) {

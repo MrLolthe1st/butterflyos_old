@@ -345,14 +345,14 @@ void processEnd() {
 	lockTaskSwitch(1);
 	//Free all allocations from process
 	ELF_Process * z = procTable[currentRunning].elf_process;
-	processAlloc * p = z->allocs;
-	while (p)
-	{
-		ffree(p->addr);
-		processAlloc * pz = p->next;
-		ffree(p);
-		p = pz;
+	struct rb_iter *iter = rb_iter_create();
+	if (iter) {
+		for (void *v = rb_iter_last(iter, z->tree); v; v = rb_iter_prev(iter)) {
+			ffree(v);
+		}
+		rb_iter_dealloc(iter);
 	}
+	rb_tree_dealloc(z->tree, NULL);
 	//What is it, i'm don't know
 	for (int i = 0; i < procCount; i++)
 		if (procTable[i].runnedFrom == currentRunning)

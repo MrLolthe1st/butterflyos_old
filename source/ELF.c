@@ -163,6 +163,7 @@ ELF_Process *  relocELF(void * p)
 						}
 
 					}
+					//printTextToWindow(3, mywin, "%s\n", varName);
 					if (varName[1] == 'm'&&varName[2] == 'a'&&varName[3] == 'i'&&varName[4] == 'n'&&varName[5] == 0) {
 						offset_main = *((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4));
 					}
@@ -239,7 +240,7 @@ ELF_Process *  relocELF(void * p)
 			}
 		}
 		proc->entry = 0x34 + offset_main + (uint)elf;
-		printTextToWindow(3, mywin, "!!!%x!!", elf->e_entry + (uint)elf);
+		//printTextToWindow(3, mywin, "!!!%x!!", elf->e_entry + (uint)elf);
 		return proc;
 	}
 	else

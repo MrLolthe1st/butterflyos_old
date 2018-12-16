@@ -34,7 +34,7 @@ if '%errorlevel%' NEQ '0' (
 	call programs\edit\compile_nr.bat
 	call programs\cmd\compile_nr.bat
 "compilers\nasm\nasm.exe" -f elf "source\elf.asm" -o "binaries\elf.o"
-gcc -ffreestanding -std=c11 -c -o binaries\kernell.o source\kernel.c -w
+gcc -nostdlib -ffreestanding -std=c11 -c -o binaries\kernell.o source\kernel.c -w
 ld -Ttext 0x100000 -o binaries\kernel.o binaries\elf.o binaries\kernell.o 
 objcopy binaries\kernel.o -O binary
 "compilers\nasm\nasm.exe"  "source\boot.asm" -o "binaries\BOOT"

@@ -35,8 +35,10 @@ void nope(int a, ...)
 
 }
 unsigned int nextS;
+
 #include "windowsEventsCodes.c"
 #include "stdarg.h"
+int kprintf(const char* str, ...);
 void __kprintf_va_list(char* str, va_list ap);
 #include "structs.c"
 #include "mathf.c"
@@ -60,7 +62,7 @@ short getKey()
 	(*keysInQueue)--;
 	short c = *((unsigned short *)KeysQueue + 3 + 2 * (*queueFirst));
 	*queueFirst = ((*queueFirst) + 1) % 256;
-	printTextToWindow(3, mywin, "%x", c);
+	//printTextToWindow(3, mywin, "%x", c);
 	return c;
 }
 unsigned int usbPoll = 1;
@@ -70,6 +72,7 @@ unsigned int usbPoll = 1;
 #include "string.c"
 #include "video.c"
 #include "Devices/ports.c"
+#include "rb_tree\rb_tree.c"
 #include "memory.c"
 #include "hooks\hooks.c"
 #include "globalVariables.c"
@@ -104,6 +107,7 @@ void unlockTaskSwitch()
 #include "usb\uhci.c"
 #include "usb\storage.c"
 #include "usb\mouse.c"
+
 #include "usb\keyboard.c"
 #include "usb\hub.c"
 #include "internet\internet.c"
@@ -226,6 +230,7 @@ void k_main()
 	mm_init(0x400000);
 	procTable[0].elf_process = mmalloc(sizeof(ELF_Process));
 	procTable[0].elf_process->allocs = 0;
+	
 	kprintf("Memory count: 0x%x bytes\n", pheap_end);
 	initGlobals();
 	initPS2Mouse();

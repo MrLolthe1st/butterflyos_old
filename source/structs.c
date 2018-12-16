@@ -71,6 +71,7 @@ typedef struct
 {
 	void * entry;
 	processAlloc *allocs;
+	struct rb_tree * tree;
 } ELF_Process;
 typedef struct __attribute__((packed)) _FHandler {
 	char * name;
