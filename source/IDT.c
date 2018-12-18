@@ -281,7 +281,7 @@ void multiHandler() {
 	}
 	//Just load current values from current process
 	__asm__("								\n\
-		mov		%1,			%%edi			\n\
+		mov		%1,			%%esi			\n\
 		movups	(%%esi),	%%xmm0			\n\
 		add		$16,		%%esi			\n\
 		movups	(%%esi),	%%xmm1			\n\

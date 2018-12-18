@@ -239,6 +239,7 @@ void k_main()
 
 	void * processTable = mmalloc(sizeof(Process) * 1024);
 	procTable = processTable;
+	
 	*((unsigned int*)0x09921) = (size_t)processTable;
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
@@ -360,7 +361,7 @@ void k_main()
 	runProcess(cmd_path, 2, 0, 0, cmd_work_dir);
 	DateTime dtt;
 	RtcGetTime(&dtt);
-	printTextToWindow(7, mywin, "ButterflyOS started! Booted from %c, current time and date: %02d.%02d.%04d %02d:%02d\n", bootedFrom + 'A', dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
+	printTextToWindow(7, mywin, "ButterflyOS started! %x %x Booted from %c, current time and date: %02d.%02d.%04d %02d:%02d\n", (uint)&procTable[0].eax, (uint)&procTable[0].sse[0], bootedFrom + 'A', dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
 	if (*g_activeCpuCount > 1)
 		for (;;) {
 			UsbPoll();
