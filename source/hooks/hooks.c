@@ -21,8 +21,11 @@ typedef struct _hook
 	struct _hook * prev;
 } Hook;
 
+
 // ------------------------------------------------------------------------------------------------
 Hook * hookChain = 0;
+
+
 
 // ------------------------------------------------------------------------------------------------
 /*Installs an application-defined hook procedure into a hook chain. You would install a hook 
@@ -94,5 +97,7 @@ void hookEvent(unsigned int type, HookEvent * e)
 		if (h->type == type)
 			h->handler(e);
 		h = h->next;
+		if (h == hookChain)
+			break;
 	}
 }

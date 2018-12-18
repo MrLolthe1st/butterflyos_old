@@ -1,4 +1,3 @@
-gcc -ffreestanding programs\cmd\cmd.c -c -o programs\cmd\qq.o -w -std=c99
-objcopy programs\cmd\qq.o -O elf32-i386
-copy programs\cmd\qq.o A:\SYSTEM32\CMD.O
-sync64 A
+gcc -ffreestanding programs\selftest\jpeg.c -c -o programs\selftest\qq.o -w -std=c99 -O0 -mfpmath=both
+objcopy programs\selftest\qq.o -O elf32-i386
+copy programs\selftest\qq.o A:\SYSTEM32\JPEG

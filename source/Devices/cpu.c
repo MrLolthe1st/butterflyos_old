@@ -93,8 +93,7 @@ void CpuDetect()
 	if (largestStandardFunc >= 0x01)
 	{
 		cpuid(0x01, &eax, &ebx, &ecx, &edx);
-		if (edx & EDX_SSE)      sse = 1;
-		if (edx & EDX_SSE2)     sse2 = 1;
+		if (edx & ECX_AVX)      AVX_AVAILABLE = 1;
 
 		//printTextToWindow(7, windows,"\n");
 	}
@@ -112,7 +111,7 @@ void CpuDetect()
 
 		if (edx & EDX_64_BIT)
 		{
-			// printTextToWindow(7, windows,"64-bit Architecture\n");
+			 printTextToWindow(7, mywin,"64-bit Architecture\n");
 		}
 	}
 
@@ -132,7 +131,7 @@ void CpuDetect()
 			++p;
 		}
 
-		//printTextToWindow(7, windows,"CPU Name: %s\n", p);
+		printTextToWindow(7, mywin,"CPU Name: %s\n", p);
 	}
 }
 

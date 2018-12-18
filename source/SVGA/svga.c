@@ -124,11 +124,13 @@ void swapBuffer() {
 	//Waits retrace
 	while (inportb(0x3DA) & 0x8) {};
 	while (!(inportb(0x3DA) & 0x8)) {};
+	//if(!AVX_AVAILABLE)
 	__asm__("\
 		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
 		mov %0,%%edi 					#Video memory start to edi			\n\
 		mov %1,%%esi 					#Video buffer start to esi			\n\
+		shr $1,%%ecx 					#Video buffer start to esi			\n\
 		ww1sse2: \
 			movaps  (%%esi),%%xmm0		#Copy 16 bytes to xmm0 from buffer	\n\
 			movaps 	%%xmm0,(%%edi)		#Copy from xmm0 to video memory		\n\
@@ -138,13 +140,38 @@ void swapBuffer() {
 			movaps 	%%xmm0,32(%%edi)	#16 again, but + 32 from current	\n\
 			movaps  48(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
 			movaps 	%%xmm0,48(%%edi)	#16 again, but + 48 from current	\n\
-			add 	$64,%%edi			#Add 64 bytes to edi				\n\
-			add 	$64,%%esi			#Add 64 bytes to esi				\n\
+			movaps  64(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
+			movaps 	%%xmm0,64(%%edi)	#16 again, but + 48 from current	\n\
+			movaps  80(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
+			movaps 	%%xmm0,80(%%edi)	#16 again, but + 48 from current	\n\
+			movaps  96(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
+			movaps 	%%xmm0,96(%%edi)	#16 again, but + 48 from current	\n\
+			movaps  112(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
+			movaps 	%%xmm0,112(%%edi)	#16 again, but + 48 from current	\n\
+			add 	$128,%%edi			#Add 64 bytes to edi				\n\
+			add 	$128,%%esi			#Add 64 bytes to esi				\n\
 			dec		%%ecx				#Decrement count					\n\
 			#test 	%%ecx,%%ecx 		#Compare ecx with zero				\n\
 			jnz 	ww1sse2 			#If not zero, repeat again			\n\
 		.byte 0x61							#Restore registers from stack		\
 		"::"r" (videoMemory), "r" (videoBuffer), "r" (ccnt));
+	/*else
+		__asm__("\
+		.byte 0x60						#Save registers in stack			\n\
+		mov %2,%%ecx 					#Repeat count to ecx				\n\
+		mov %0,%%edi 					#Video memory start to edi			\n\
+		mov %1,%%esi 					#Video buffer start to esi			\n\
+		zww1sse2: \
+			movups  (%%esi),%%ymm0		#Copy 32 bytes to ymm0 from buffer	\n\
+			movups 	%%ymm0,(%%edi)		#Copy from ymm0 to video memory		\n\
+			add 	$32,%%edi			#Add 64 bytes to edi				\n\
+			add 	$32,%%esi			#Add 64 bytes to esi				\n\
+			dec		%%ecx				#Decrement count					\n\
+			#test 	%%ecx,%%ecx 		#Compare ecx with zero				\n\
+			jnz 	zww1sse2 			#If not zero, repeat again			\n\
+		.byte 0x61							#Restore registers from stack		\
+		"::"r" (videoMemory), "r" (videoBuffer), "r" (ccnt));*/
+
 }
 
 // ------------------------------------------------------------------------------------------------

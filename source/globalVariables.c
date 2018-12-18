@@ -1,7 +1,7 @@
-GlobalVariable * globalTableFirst;
+GlobalVariable * globalTableFirst = 0;
 void initGlobals()
 {
-	globalTableFirst = (GlobalVariable*)malloc(12);
+	globalTableFirst = (GlobalVariable*)mmalloc(12);
 	*((unsigned int*)0x09917) = (size_t)globalTableFirst;
 	globalTableFirst->next = 0;
 	globalTableFirst->name = "@globalInit";
@@ -12,7 +12,7 @@ void addGlobalVariable(char * name, void * addr)
 	GlobalVariable * w = globalTableFirst;
 	while (w->next)
 		w = w->next;
-	w->next = (GlobalVariable*)malloc(12);
+	w->next = (GlobalVariable*)mmalloc(12);
 	w = w->next;
 	w->next = 0;
 	w->name = name;
@@ -51,7 +51,7 @@ unsigned int getVariableAddress(char * name)
 		}
 		w = w->next;
 	}
-	if(_getcmpstr(name, "stdin"))
+	//if(_getcmpstr(name, "stdin"))
 		
 	return 0;
 }

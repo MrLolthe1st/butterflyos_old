@@ -161,9 +161,13 @@ ELF_Process *  relocELF(void * p)
 							*((unsigned short*)(sh->sh_offset + (int)elf + 0x10 * i + 0xE)) = 0xfff1;
 							*((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4)) = zz;
 						}
-
+						else {
+							//return 0;
+						}
+						//printTextToWindow(3, mywin, "%s\n", varName);
+						//Wait(10);
 					}
-					//printTextToWindow(3, mywin, "%s\n", varName);
+
 					if (varName[1] == 'm'&&varName[2] == 'a'&&varName[3] == 'i'&&varName[4] == 'n'&&varName[5] == 0) {
 						offset_main = *((unsigned int*)(sh->sh_offset + (int)elf + 0x10 * i + 0x4));
 					}

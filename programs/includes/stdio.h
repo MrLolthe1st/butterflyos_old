@@ -1,5 +1,7 @@
 #define uint unsigned int
 
+#define NULL 0
+#define EOF -1
 unsigned char testForGUI();
 void memcpy(unsigned char * s, unsigned char * d, unsigned int count);
 void memcpy1(unsigned char * d, unsigned char * s, unsigned int count);

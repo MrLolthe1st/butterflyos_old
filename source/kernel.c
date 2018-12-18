@@ -9,7 +9,7 @@ to turn off debbuging messages
 
 #define size_t unsigned int
 
-
+int AVX_AVAILABLE = 0;
 short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 int cday, cmonth, cyear;
 #define VMAlloc malloc
@@ -228,30 +228,31 @@ void k_main()
 	printString("Counting memory...\n");
 	g_usbControllerList = 0;
 	mm_init(0x400000);
-	procTable[0].elf_process = mmalloc(sizeof(ELF_Process));
-	procTable[0].elf_process->allocs = 0;
-	
-	kprintf("Memory count: 0x%x bytes\n", pheap_end);
-	initGlobals();
-	initPS2Mouse();
-	initKeys();
-	void * processTable = malloc(sizeof(Process) * 1024);
+
+	void * processTable = mmalloc(sizeof(Process) * 1024);
 	procTable = processTable;
 	*((unsigned int*)0x09921) = (size_t)processTable;
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
 	procTable[0].priorityL = 1;
 	procCount = 1;
-	stacks = (size_t*)malloc(65536 * 16);
+	procTable[0].elf_process = mmalloc(sizeof(ELF_Process));
+	procTable[0].elf_process->allocs = 0;
+	procTable[0].elf_process->tree = 0;
+	stacks = (size_t*)mmalloc(65536 * 16);
 	*((unsigned int*)0x09925) = (size_t)stacks;
 	*((unsigned int*)0x09929) = (size_t)stacks;
 	*((unsigned int*)0x09933) = (size_t)&smp_core;
+	kprintf("Memory count: 0x%x bytes\n", pheap_end);
+	initGlobals();
+	initPS2Mouse();
+	initKeys();
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
 	mywin = openWindow(640, 680, 0, 0, "System Info");
-	AcpiInit();
-	iint();
+	AcpiInit(); 
+	iint(); 
 	//Wait(1000);
 	//unsigned char nnn = 0x90;
 	//while(getKey()!=0);
@@ -309,7 +310,7 @@ void k_main()
 	*(cur_dir + 1) = 0;
 	unsigned short pos = 0;
 
-	//CpuDetect();
+	CpuDetect();
 	//for(;;);
 	//
 	mywin->handler = &Win1Handler;
