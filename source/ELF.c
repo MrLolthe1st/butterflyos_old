@@ -163,8 +163,9 @@ ELF_Process *  relocELF(void * p)
 						}
 						else {
 							//return 0;
+							printTextToWindow(3, mywin, "%s\n", varName);
 						}
-						//printTextToWindow(3, mywin, "%s\n", varName);
+						//
 						//Wait(10);
 					}
 

@@ -102,9 +102,9 @@ btree * huf_insert(btree * where, int val, int clen, int nlen)
 	}
 	return huf_insert(where->parent, val, clen - 1, nlen);
 }
-int matrix[8][8][16][16]={0};
+int matrix[8][8][16][16];
 int mcnt[16] = {0};
-float sx[16][16][16][16] = {0};
+float sx[16][16][16][16];
 int RChannel[16][16];
 int GChannel[16][16];
 int BChannel[16][16];
@@ -121,29 +121,90 @@ static btree *init_branches(btree *racine)
 			int imageg[16][16];
 			int imageb[16][16];
 //int YCbCrToRGB()
+
+
+#pragma GCC push_options
+#pragma GCC optimize ("Ofast")
 float sxx[16][16][8][8];
+void preo(int j)
+{
+	for(int x=0;x<8;x++){
+                        for(int y=0;y<8;y++){
+							float tmp = 0;
+                            for(int u=0;u<8;u++)
+                                for(int v=0;v<8;v++)
+                                {
+                                    tmp+=sxx[x][y][u][v]*matrix[v][u][mcnt[j]][j];
+                                }
+                            sx[y][x][mcnt[j]][j]=tmp/4;
+                        }
+                    }
+}Window *w ;
+void draw(int ofx, int ofy)
+{
+	for(int i=0;i<16;i++){
+				for(int j=0;j<16;j++)
+				{
+					if(ofx+j>719)
+						break;
+					float valr = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][2]*1.402 + 128;
+					if(valr>255)
+						valr=255;
+					if(valr<0)
+						valr=0;
+					//imager[i][j] = (int) valr;
+					float valg = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]-sx[j>>1][i>>1][0][1]*0.34414-sx[j>>1][i>>1][0][2]*0.71414 + 128;
+					if(valg>255)
+						valg=255;
+					if(valg<0)
+						valg=0;
+					//imageg[i][j] = (int) valg;
+					int valb = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][1]*1.772 + 128;
+					if(valb>255)
+						valb=255;
+					if(valb<0)
+						valb=0;
+					//imageb[i][j] = (int) valr;
+					#ifndef WIN32
+
+					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 2))=valr;
+					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 1))=valg;
+					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 0))=valb;
+					#endif
+				}
+			}
+}
+#pragma GCC pop_options
+
 int main(int argc, char ** argv)
 {
 
 	//if(argc!=1)
 	//	return;
-
+_zzk();
+}
+#pragma GCC push_options
+#pragma GCC optimize ("Ofast")
+void _zzk(){
+	printf("Can't find file 22!\n");
 	FILE * z = fopen("as.jpg", "rb");
 	if (!z)
 	{
-		//printf("Can't find file %s!\n", argv[0]);
+	//	printf("Can't find file 22!\n", argv[0]);
 		return;
 	}
+
 	fseek(z, 0, 2);
 	int sz = ftell(z);
 	rewind(z);
+	printf("%d", sz);
 	unsigned short current = 0;
 	fread(&current, 1, 2, z);
 
 	if (current != 0xD8FF)
 		return 0;
     #ifndef WIN32
-	Window *w = openWindow(720, 780, 1, &handle, "Jpeg");
+	w= openWindow(720, 780, 1, &handle, "Jpeg");
 	#endif // WIN32
 	int cursz = 8; int q = 0;
 	int Imgsx = 0, Imgsy = 0;
@@ -194,13 +255,11 @@ int main(int argc, char ** argv)
 					float v2 = 1;
 					if(v==0)
 						v2= sqrt2;
-					
-					//val*=cos(((x+x)+1)*u*pi)*cos(((y+y)+1)*v*pi);
 					sxx[x][y][u][v]=cos(((x+x)+1)*u*pi)*cos(((y+y)+1)*v*pi)*v1*v2;
 				}
-			//sx[y][x][mcnt[j]][j]=sx[y][x][mcnt[j]][j]/4;
 		}
 	}
+
 	while (1) {
         if(ftell(z)>=sz)
             break;
@@ -225,7 +284,7 @@ int main(int argc, char ** argv)
 			current -= 3;
 			int mask = 0;
 			fread(&mask, 1, 1, z);
-			int len = 1 + (mask >> 4) & 0xF;
+			int len = 1 + ((mask >> 4) & 0xF);
 			int idx = mask & 0xF;
 			int sx = (current);
 			unsigned char * data = malloc(sx);
@@ -274,7 +333,7 @@ int main(int argc, char ** argv)
             int dest[16] = {0};
 			for (int i = 0; i < 16; i++)
 			{
-				int coef = 0;
+				unsigned char coef = 0;
 				fread(&coef, 1, 1, z);
                 dest[i]=coef;
 				huf_len[i][q & 0xF][q >> 4] = coef;
@@ -288,9 +347,12 @@ int main(int argc, char ** argv)
 			huffs[q & 0xF][q >> 4]->parent = 0;
 			huffs[q & 0xF][q >> 4]->val = 0;
 			huffs[q & 0xF][q >> 4]->len = 0;
-			int *symbole =malloc(4*cnt);
-            for(int i=0;i<cnt;i++)
-                fread(&symbole[i], 1, 1, z);
+			int *symbole =malloc(4*cnt + 20);
+            for(int i=0;i<cnt;i++){
+				unsigned char wsz;
+                fread(&wsz, 1, 1, z);
+				symbole[i] = wsz;
+			}
 			unsigned char k = 0;
             unsigned char descendu=0;
             for (unsigned char i = 0; i < 16; i++) {
@@ -350,10 +412,8 @@ int main(int argc, char ** argv)
             int cnt = 0;
 			int juye = 1;
 			int lsval = 0;
-			#pragma GCC push_options
-			#pragma GCC Optimize ("fast")
+            unsigned char * nuf = malloc(4096);
             while(juye){
-                unsigned char * nuf = malloc(4096);
                 fread(nuf, 4096, 1, z);
 				for(int i=0;i<4096;i++)
 				{
@@ -365,12 +425,12 @@ int main(int argc, char ** argv)
 					lsval = nuf[i];
 					cnt++;
 				}
-				free(nuf);
                // //printf("%02x ", ew);
             }
+			free(nuf);
             cnt--;
 			//printf("!%d~!~", cnt);
-            unsigned char * fs = malloc(1 + cnt);
+            unsigned char * fs = malloc(2 + cnt);
             fseek(z, spos, 0);
             fread(fs, cnt, 1, z);
             int i1 = 0;
@@ -382,24 +442,22 @@ int main(int argc, char ** argv)
 						fs[j]=fs[j+1];
 					}
 					cnt--;
-					i++;
 				}
 			}
             int mask = 0x80;
             int cpos = 0; int lcoef=0;
 			int lcoef1 = 0;
 			int lcoef2 = 0;
-			int ofx=0;int ofy=0;
-			while(cpos<cnt){
+			int ofx=0;int ofy=0;cpos=0;
+			treutr:
 				//mask<<=1;
                 for(int i=0;i<16;i++){
                     mcnt[i]=0;
-
-                    
                 }
             for(int j=0;j<scanC;j++){
                 //lcoef = 0;
                 while(1){
+					int curcnt = mcnt[j];
                     int matrixpos = 0;
 					for(; matrixpos<64;)
 					{
@@ -424,6 +482,8 @@ int main(int argc, char ** argv)
                             mask=0x100;
                             cpos++;
                         }
+                        if(!cur)
+                            return 1;
                         mask>>=1;
 
                     }
@@ -456,11 +516,12 @@ int main(int argc, char ** argv)
 
                     matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = coef;
                     matrixpos++;
-                    //printf("DC Coef: %d\n", cur->val);
+                   // printf("DC Coef: %d\n", cur->val);
                     //cur =huffs[idxa][1];
                     while(matrixpos<64){
-                        //printf("!%d %d\n", cpos, cnt);
+
                         cur =huffs[idxa][1];
+
                         while(cur->l||cur->r)
                         {
                             if(mask&fs[cpos])
@@ -478,7 +539,8 @@ int main(int argc, char ** argv)
                         if(!cur->val)
                             break;
                         for(int i=0;i<(cur->val)>>4;i++){
-                            //if(matrixpos<64)
+                            if(matrixpos>63)
+                                break;
                             matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = 0;
                             matrixpos++;
                         }
@@ -496,41 +558,23 @@ int main(int argc, char ** argv)
                         }
 
                         if(!fwer)
-                            acoef = acoef - (1<<coeflen)+1;//if(matrixpos>63) break;
-                       // if(matrixpos<64)
+                            acoef = acoef - (1<<coeflen)+1;
+                            if(matrixpos>63)
+                                break;
                         matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = acoef;
-                      //  //printf("Coef: %d,", acoef,matrixpos);
-                     //   //printf("%d %d\n", zigzagx[matrixpos], zigzagy[matrixpos]);
                         matrixpos++;
-                        //printf("$%d %d\n", cpos, cnt);
                     }
-					while(matrixpos<64)
-					{
-						matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = 0;
-                        matrixpos++;
-					}
-                    //printf("\n");
                     for(int i=0;i<8;i++){
                         for(int ou=0;ou<8;ou++){
                             matrix[ou][i][mcnt[j]][j]*=quant[ou][i][dct[j]&0xFF];
+                        }
+                    }
 
-							////printf("%03d ", matrix[ou][i][mcnt[j]][j]);
-                        }
-                       // //printf("\n");
-                    }
                     //printf("!%d!",  dct[j]&0xFF);
-                    for(int x=0;x<8;x++){
-                        for(int y=0;y<8;y++){
-                            for(int u=0;u<8;u++)
-                                for(int v=0;v<8;v++)
-                                {
-                                    sx[y][x][mcnt[j]][j]+=sxx[x][y][u][v]*matrix[v][u][mcnt[j]][j];
-                                }
-                            sx[y][x][mcnt[j]][j]=sx[y][x][mcnt[j]][j]/4;
-                        }
-                    }
+
+                    preo(j);
                     mcnt[j]++;
-			//printf("~%d %d\n", cpos, cnt);
+
                     if(mcnt[j]==((dct[j]>>12)&0xF)*((dct[j]>>8)&0xF))
                             break;
 
@@ -540,35 +584,7 @@ int main(int argc, char ** argv)
                 }
             }
 			//printf("%d %d\n", cpos, cnt);
-			for(int i=0;i<16;i++){
-				for(int j=0;j<16;j++)
-				{
-					float valr = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][2]*1.402 + 128;
-					if(valr>255)
-						valr=255;
-					if(valr<0)
-						valr=0;
-					//imager[i][j] = (int) valr;
-					float valg = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]-sx[j>>1][i>>1][0][1]*0.34414-sx[j>>1][i>>1][0][2]*0.71414 + 128;
-					if(valg>255)
-						valg=255;
-					if(valg<0)
-						valg=0;
-					//imageg[i][j] = (int) valg;
-					int valb = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][1]*1.772 + 128;
-					if(valb>255)
-						valb=255;
-					if(valb<0)
-						valb=0;
-					//imageb[i][j] = (int) valr;
-					#ifndef WIN32
-					
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 2))=valr;
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 1))=valg;
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 0))=valb;
-					#endif
-				}
-			}
+			draw(ofx,ofy);
 				ofx+=16;
 				if(ofx>Imgsx)
 				{
@@ -579,7 +595,9 @@ int main(int argc, char ** argv)
 					//lcoef2 = 0;
 				}
 				//break;
-			}
+			if(cpos<cnt)
+				goto treutr;
+
 		}
 
 	}

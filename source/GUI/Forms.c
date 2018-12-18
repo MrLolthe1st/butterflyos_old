@@ -142,7 +142,7 @@ void printChars(unsigned char color, Window * w, char * text)
 //Formats string
 char* formatString(char* str, va_list ap)
 {
-	char * t = malloc(4096);
+	char * t = mmalloc(4096);
 	char * l = t;
 	//mutex_lock(&m_kprintf);
 	char* s = 0;
@@ -290,7 +290,7 @@ void printTextToWindowFormatted(unsigned char color, Window * w, char * text) {
 				w->cursorY--;
 			}
 		}
-		//free(text);
+		//ffree(text);
 	}
 
 	w->updating = 0;
@@ -359,8 +359,8 @@ void closeWindowID(unsigned int id) {
 				prev->next = w->next;
 			else
 				windows = w->next;
-			free(w->video);
-			free(w);
+			ffree(w->video);
+			ffree(w);
 			break;
 		}
 		prev = w;
@@ -387,8 +387,8 @@ void closeWindow(Window * ws) {
 				prev->next = w->next;
 			else
 				windows = w->next;
-			free(w->video);
-			free(w);
+			ffree(w->video);
+			ffree(w);
 			break;
 		}
 		prev = w;
@@ -416,7 +416,7 @@ void BufferWindow(Window * w)
 Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption) {
 	//Allocate new window structure
 
-	Window * win = (Window*)malloc(sizeof(Window));
+	Window * win = (Window*)mmalloc(sizeof(Window));
 	Window * node = windows;
 	//Get active window pointer
 	while (node != 0 && node->next != 0) node = node->next;
@@ -433,8 +433,8 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->handler = (void*)handler;					//Event handler
 	win->wwidth = wwidth;							//Window width
 	win->wheight = wheight;							//Window height
-	win->video = malloc(wwidth * (wheight) * 3);	//Video memory
-	win->videoOk = malloc(wwidth * (wheight) * 3);	//Video memory
+	win->video = mmalloc(wwidth * (wheight) * 3);	//Video memory
+	win->videoOk = mmalloc(wwidth * (wheight) * 3);	//Video memory
 	win->type = (unsigned char)type & 0xFF;			//Type
 	win->lastx = startX;							//Starting X
 	win->lasty = startY;							//Starting Y

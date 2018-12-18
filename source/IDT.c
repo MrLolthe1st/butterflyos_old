@@ -374,7 +374,7 @@ void processEnd() {
 }
 
 
-uint stack_size = 65536 * 2;
+uint stack_size = 65536 * 4;
 
 // ------------------------------------------------------------------------------------------------
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {

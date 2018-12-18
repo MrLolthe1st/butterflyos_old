@@ -210,6 +210,14 @@ void CmdHttp(char * a1, char *a2)
 
 	TcpConnect(conn, &dstAddr, port);
 }
+void * memmove(void *dest, const void *src, size_t n)
+{
+    unsigned char *tmp  = malloc(n);
+    memcpy(tmp,src,n);
+    memcpy(dest,tmp,n);
+	free(tmp);
+    return dest;
+}
 void k_main()
 {
 	//hubinit=&_usbHubInit;
@@ -239,7 +247,7 @@ void k_main()
 	procTable[0].elf_process = mmalloc(sizeof(ELF_Process));
 	procTable[0].elf_process->allocs = 0;
 	procTable[0].elf_process->tree = 0;
-	stacks = (size_t*)mmalloc(65536 * 16);
+	stacks = (size_t*)mmalloc(65536 * 32);
 	*((unsigned int*)0x09925) = (size_t)stacks;
 	*((unsigned int*)0x09929) = (size_t)stacks;
 	*((unsigned int*)0x09933) = (size_t)&smp_core;
@@ -263,6 +271,7 @@ void k_main()
 	//Wait(50);
 	initGlobals();
 	addGlobalVariable("malloc", (void*)&malloc);
+	addGlobalVariable("memmove", (void*)&memmove);
 	addGlobalVariable("free", (void*)&free);
 	addGlobalVariable("printTextToWindow", (void*)&printTextToWindow);
 	addGlobalVariable("closeWindow", (void*)&closeWindow);
@@ -310,7 +319,7 @@ void k_main()
 	*(cur_dir + 1) = 0;
 	unsigned short pos = 0;
 
-	CpuDetect();
+	//CpuDetect();
 	//for(;;);
 	//
 	mywin->handler = &Win1Handler;

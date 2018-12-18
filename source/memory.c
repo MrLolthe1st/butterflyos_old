@@ -149,7 +149,7 @@ unsigned int count_memory(void) {
 		//kprintf("Testing Mem: 0x%x",mem);
 
 		//for(int i=0;i<1000;i++) i = i;
-	} while (memkb < 128 && mem_count != 0);
+	} while (memkb < 512 && mem_count != 0);
 
 	//if(mem/1024>=1024
 	//__asm__("movl %%eax, %%cr0" :: "g" (cr0) : "eax");
@@ -209,7 +209,7 @@ char * mmalloc(size_t size) {
 nalloc:;
 	if (last_alloc + size + sizeof(alloc_t) >= heap_end) {
 		//set_task(0);
-		printString("Cannot allocate %d bytes! Out of memory.\n"); unlockTaskSwitch();
+		printTextToWindow(3, mywin, "Cannot allocate %d bytes! Out of memory.\n"); unlockTaskSwitch();
 	}
 	alloc_t * alloc = (alloc_t *)last_alloc;
 	alloc->status = 1;
@@ -236,8 +236,8 @@ nalloc:;
 #pragma GCC pop_options
 void addProcessAlloc(ELF_Process * p, void * addr);
 int rb_mem_cmp(struct rb_tree *self, struct rb_node *node_a, struct rb_node *node_b) {
-	uint addr1 = (uint)node_a->value;
-	uint addr2 = (uint)node_b->value;
+	int addr1 = (uint)node_a->value;
+	int addr2 = (uint)node_b->value;
 	return addr1 - addr2;
 }
 char * malloc(size_t size)
@@ -271,9 +271,9 @@ void mm_init(uint32_t kernel_end) {
 	heap_begin = last_alloc;
 	pheap_end = count_memory();
 	pheap_begin = pheap_end - (MAX_PAGE_ALIGNED_ALLOCS * 4096);
-	heap_end = pheap_begin;
+	heap_end = pheap_end;
 	memset((char *)heap_begin, 0, heap_end - heap_begin);
-	pheap_desc = (uint8_t *)malloc(MAX_PAGE_ALIGNED_ALLOCS);
+	//pheap_desc = (uint8_t *)malloc(MAX_PAGE_ALIGNED_ALLOCS);
 	/*kprintf("Kernel heap starts at 0x%x\n", last_alloc);
 	kprintf("All memory: 0x%x bytes\n", pheap_end);*/
 }
@@ -291,7 +291,7 @@ void mm_print_out() {
 void ffree(void * mem) {
 	if (!mem)
 		return;
-	alloc_t * alloc = (mem - sizeof(alloc_t));
+	alloc_t * alloc = ((unsigned int)mem - sizeof(alloc_t));
 	memory_used -= alloc->size + sizeof(alloc_t);
 	alloc->status = 0;
 }
