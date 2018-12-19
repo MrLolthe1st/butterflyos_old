@@ -41,7 +41,7 @@ lap:
 	mov di,0x0000
 	mov dx,0x11e
 	retry1:
-	sub dx,6
+	sub dx,3
 	mov cx,dx
 	mov ax,0x4F01
 	int 0x10
