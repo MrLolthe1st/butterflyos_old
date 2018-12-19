@@ -207,7 +207,6 @@ void CmdHttp(char * a1, char *a2)
 	conn->ctx = buf;
 	conn->onState = HttpOnTcpState;
 	conn->onData = HttpOnTcpData;
-
 	TcpConnect(conn, &dstAddr, port);
 }
 void * memmove(void *dest, const void *src, size_t n)
@@ -273,6 +272,10 @@ void k_main()
 	initGlobals();
 	addGlobalVariable("malloc", (void*)&malloc);
 	addGlobalVariable("memmove", (void*)&memmove);
+	addGlobalVariable("calloc", (void*)&calloc);
+	addGlobalVariable("realloc", (void*)&realloc);
+	addGlobalVariable("abort", (void*)&processEnd);
+	addGlobalVariable("exit", (void*)&processEnd);
 	addGlobalVariable("free", (void*)&free);
 	addGlobalVariable("printTextToWindow", (void*)&printTextToWindow);
 	addGlobalVariable("closeWindow", (void*)&closeWindow);

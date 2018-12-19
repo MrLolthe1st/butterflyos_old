@@ -983,9 +983,7 @@ bool TcpConnect(TcpConn *conn, const Ipv4Addr *addr, u16 port)
 	// Find network interface through the routing table.
 	const NetRoute *route = NetFindRoute(addr);
 	if (!route)
-	{
 		return false;
-	}
 
 	NetIntf *intf = route->intf;
 

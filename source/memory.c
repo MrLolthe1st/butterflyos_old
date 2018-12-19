@@ -295,6 +295,15 @@ void ffree(void * mem) {
 	memory_used -= alloc->size + sizeof(alloc_t);
 	alloc->status = 0;
 }
+void * calloc(size_t mem)
+{
+	return malloc(mem);
+}
+void realloc(char * addr, size_t mem)
+{
+	free(addr);
+	return malloc(mem);
+}
 void free(void * mem)
 {
 	if (!procTable[currentRunning].elf_process)

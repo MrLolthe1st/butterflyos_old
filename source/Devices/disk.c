@@ -62,6 +62,7 @@ unsigned int AHCI_BASE = 0;
 #define DISK_TYPE_PCI_IDE	0x4
 
 #define ulon unsigned long long
+
 typedef struct __attribute((packed)) _LogicDrive {
 	uint avaliable;
 	uint diskId;
@@ -79,6 +80,7 @@ typedef struct PACKED _fat32drive
 
 }f32drive;
 
+// ------------------------------------------------------------------------------------------------
 typedef enum
 {
 	FIS_TYPE_REG_H2D = 0x27,	// Register FIS - host to device
@@ -381,46 +383,46 @@ int check_type(HBA_PORT *port)
 // ------------------------------------------------------------------------------------------------
 typedef struct PACKED identify_data
 {
-	uint16_t flags; // 0
-	uint16_t unused1[9]; // 9
-	char     serial[20]; // 19
-	uint16_t unused2[3]; // 22
-	char     firmware[8]; // 26
-	char    model[40]; // 46
-	uint16_t sectors_per_int; // 47
-	uint16_t unused3; // 48
-	uint16_t capabilities[2]; // 50
-	uint16_t unused4[2]; // 52
-	uint16_t valid_ext_data; // 53
-	uint16_t unused5[5]; // 58
-	uint16_t size_of_rw_mult; // 59
-	uint32_t sectors_28; // 61
-	uint16_t unused6[38]; // 99
-	uint64_t sectors_48; // 103
-	uint16_t unused7[2]; // 105
-	uint16_t phys_log_size; // 106
-	uint16_t unused8[10]; // 116
-	uint32_t sector_size; // 118
-	uint16_t unused9[137];
+	uint16_t	flags; // 0
+	uint16_t	unused1[9]; // 9
+	char		serial[20]; // 19
+	uint16_t	unused2[3]; // 22
+	char		firmware[8]; // 26
+	char		model[40]; // 46
+	uint16_t	sectors_per_int; // 47
+	uint16_t	unused3; // 48
+	uint16_t	capabilities[2]; // 50
+	uint16_t	unused4[2]; // 52
+	uint16_t	valid_ext_data; // 53
+	uint16_t	unused5[5]; // 58
+	uint16_t	size_of_rw_mult; // 59
+	uint32_t	sectors_28; // 61
+	uint16_t	unused6[38]; // 99
+	uint64_t	sectors_48; // 103
+	uint16_t	unused7[2]; // 105
+	uint16_t	phys_log_size; // 106
+	uint16_t	unused8[10]; // 116
+	uint32_t	sector_size; // 118
+	uint16_t	unused9[137];
 } identify_data;
 
 // ------------------------------------------------------------------------------------------------
 typedef struct __attribute__((packed)) tDiskDev {
-	unsigned long long sectorsCount;
-	unsigned char type;
-	unsigned char structNo;
-	void * link;
-	char data[512];
+	unsigned long long		sectorsCount;
+	unsigned char			type;
+	unsigned char			structNo;
+	void *					link;
+	char					data[512];
 }
 DiskDev;
 
 // ------------------------------------------------------------------------------------------------
 typedef struct __attribute__((packed)) tATA {
-	unsigned short port;
-	unsigned short slavebit;
-	unsigned int LBA28;
-	unsigned long long LBA48;
-	unsigned char isLBA48Supported;
+	unsigned short			port;
+	unsigned short			slavebit;
+	unsigned int			LBA28;
+	unsigned long long		LBA48;
+	unsigned char			isLBA48Supported;
 }
 ATA;
 
@@ -430,21 +432,34 @@ typedef struct __attribute__((packed)) _AHCI {
 } AHCI;
 // ------------------------------------------------------------------------------------------------
 // Disk devices, and logical drives
-ATA ATADevices[4];
-AHCI AHCIDevices[32];
-uint AHCICount = 0, ataCount = 0;
+ATA		ATADevices[4];
+AHCI	AHCIDevices[32];
+
+uint	AHCICount = 0,
+ataCount = 0;
+
 DiskDev diskDevices[64];
-char deviceCount = 0, dcount = 0;
+
+char	deviceCount = 0,
+dcount = 0;
+
+f32drive f32drives[26];
+
+LogicDrive drives[26];
+
 unsigned short returned[256];
+
 void start_cmd(HBA_PORT *port);
+
 void stop_cmd(HBA_PORT *port);
+
 int find_cmdslot(HBA_PORT *m_port);
+
 HBA_MEM * abar;
+
 void detectAta();
 
 
-f32drive f32drives[26];
-LogicDrive drives[26];
 
 
 // ------------------------------------------------------------------------------------------------
@@ -550,7 +565,7 @@ int ataWrite48(char drive_id, unsigned long long LBA, char cnt, void * addr) {
 	char xx = inportb(port + 7);
 	while (xx & 0x80) xx = inportb(port + 7);
 	for (int i = 0; i < 256 * cnt; i++) {
-		outportw(port, ((*((unsigned char *)addr + i * 2 + 1)) << 8) + 
+		outportw(port, ((*((unsigned char *)addr + i * 2 + 1)) << 8) +
 			(*((unsigned char *)addr + i * 2)));
 		//Flush command
 		outportb(port + 7, 0xE7);
@@ -625,8 +640,8 @@ int detect_devtype(int port, int slavebit) {
 	ATADevices[deviceCount].slavebit = slavebit;
 	if (returned[83] & (1 << 10)) {
 		ATADevices[deviceCount].isLBA48Supported = 1;
-		ATADevices[deviceCount].LBA48 = ((long long)returned[103] << 48) + 
-			((long long)returned[102] << 32) + ((long long)returned[101] << 16) 
+		ATADevices[deviceCount].LBA48 = ((long long)returned[103] << 48) +
+			((long long)returned[102] << 32) + ((long long)returned[101] << 16)
 			+ (long long)returned[100];
 		diskDevices[dcount].sectorsCount = ATADevices[deviceCount].LBA48;
 
@@ -1058,7 +1073,7 @@ void _probe_port(void *abar_temp1)
 					AHCICount++;
 
 					kprintf("Added disk device #%d, structNo = %x, type = %x, size %dMBytes\n",
-						dcount, diskDevices[dcount].structNo, diskDevices[dcount].type, 
+						dcount, diskDevices[dcount].structNo, diskDevices[dcount].type,
 						diskDevices[dcount].sectorsCount >> 11);
 					checkDiskPatritions(dcount);
 					dcount++;
@@ -1107,7 +1122,7 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		return _read(AHCIDevices[diskDevices[param].structNo].port, (long long)LBA, 
+		return _read(AHCIDevices[diskDevices[param].structNo].port, (long long)LBA,
 			cnt, (uint16_t*)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
@@ -1118,7 +1133,7 @@ uint ReadController(unsigned long long LBA, char cnt, void * addr, unsigned char
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		return ide_read_sectors(diskDevices[param].structNo, (uchar)cnt, (uint)LBA, 
+		return ide_read_sectors(diskDevices[param].structNo, (uchar)cnt, (uint)LBA,
 			0x8, (uint)addr);
 	}
 	readingInProcess = 0;
@@ -1141,7 +1156,7 @@ uint WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	}
 	else if (diskDevices[param].type == DISK_TYPE_SATA_AHCI)
 	{
-		return write_port(AHCIDevices[diskDevices[param].structNo].port, LBA, 
+		return write_port(AHCIDevices[diskDevices[param].structNo].port, LBA,
 			(unsigned long long)cnt, (uint)addr);
 	}
 	else if (diskDevices[param].type == DISK_TYPE_USB)
@@ -1151,7 +1166,7 @@ uint WriteController(unsigned long long LBA, char cnt, void * addr, unsigned cha
 	}
 	else if (diskDevices[param].type == DISK_TYPE_PCI_IDE)
 	{
-		return ide_write_sectors(diskDevices[param].structNo, (uchar)cnt, 
+		return ide_write_sectors(diskDevices[param].structNo, (uchar)cnt,
 			(uint)LBA, 0x8, (uint)addr);
 	}
 
@@ -1338,7 +1353,7 @@ void checkDiskPatritions(uint i)
 					break;
 				}
 			kprintf("%x", drives[0].avaliable);
-			kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, 
+			kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy,
 				(endLBA - startLBA + 1) >> 11);
 			drives[uy].avaliable = 1;
 			drives[uy].diskId = i;
@@ -1363,7 +1378,7 @@ void checkDiskPatritions(uint i)
 				uy = lt; break;
 			}
 
-		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy, 
+		kprintf("Found patrition. Letter: %c:, size %dMBytes\n", 'A' + uy,
 			diskDevices[i].sectorsCount >> 11);
 		drives[uy].avaliable = 1;
 		drives[uy].diskId = i;

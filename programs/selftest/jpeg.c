@@ -17,13 +17,14 @@ unsigned short bswap16(unsigned short q)
 {
 	return ((q & 0xFF) << 8) + ((q >> 8) & 0xff);
 }
-int zigzag_table8[8][8];	int quant[16][16][16];
-int scan[16][16][256];
-int huf_codes[4096][16][2];
-int huf_len[16][16][2];
-int dct[256];
-int zigzagx[64];
-int zigzagy[64];
+unsigned char zigzag_table8[8][8];
+	unsigned char quant[16][16][16];
+unsigned char scan[16][16][256];
+unsigned char huf_codes[4096][16][2];
+short huf_len[16][16][2];
+short dct[256];
+short zigzagx[64];
+short zigzagy[64];
 double sqrt(double x) {
 	double r;
 	__asm__ __volatile__("fsqrt": "=t"(r) : "0"(x) : "memory");
@@ -81,8 +82,8 @@ btree * huf_insert(btree * where, int val, int clen, int nlen)
 		where->parent = 0;
 		where->val = val;
 		where->len = clen;
-		if (clen == nlen){
-            last_insert = where;
+		if (clen == nlen) {
+			last_insert = where;
 			return where;
 		}
 
@@ -96,83 +97,234 @@ btree * huf_insert(btree * where, int val, int clen, int nlen)
 	}
 	if (!where->r)
 	{
-		where->r=huf_insert(where->r, val, clen + 1, nlen);
+		where->r = huf_insert(where->r, val, clen + 1, nlen);
 		where->r->parent = where;
 		return where;
 	}
 	return huf_insert(where->parent, val, clen - 1, nlen);
 }
-int matrix[8][8][16][16];
-int mcnt[16] = {0};
+int matrix[16][16][16][16];
+int mcnt[16] = { 0 };
 float sx[16][16][16][16];
-int RChannel[16][16];
-int GChannel[16][16];
-int BChannel[16][16];
 static btree *init_branches(btree *racine)
 {
-    btree *fils=malloc(sizeof(btree));
-    fils->parent = racine;
-    fils->r = NULL;
-    fils->l = NULL;
-    return fils;
+	btree *fils = malloc(sizeof(btree));
+	fils->parent = racine;
+	fils->r = NULL;
+	fils->l = NULL;
+	return fils;
 }
 
-			int imager[16][16];
-			int imageg[16][16];
-			int imageb[16][16];
 //int YCbCrToRGB()
 
 
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
+//#pragma GCC option("arch=native","tune=native","no-zero-upper") //Enable AVX
+//#pragma GCC target("avx")  //Enable AVX
 float sxx[16][16][8][8];
-void preo(int j)
+typedef struct {
+	int a[16][16];
+} wow;
+typedef struct {
+	float a[8][8];
+} wow1;
+
+float compute(int x, int y, wow * matrix1)
 {
-	for(int x=0;x<8;x++){
-                        for(int y=0;y<8;y++){
-							float tmp = 0;
-                            for(int u=0;u<8;u++)
-                                for(int v=0;v<8;v++)
-                                {
-                                    tmp+=sxx[x][y][u][v]*matrix[v][u][mcnt[j]][j];
-                                }
-                            sx[y][x][mcnt[j]][j]=tmp/4;
-                        }
-                    }
-}Window *w ;
+	float tmp = 0;
+	float tmp2 = 0;
+	wow1 * sxx1 = &sxx[x][y];
+	for (unsigned char u = 0; u < 8; u++){
+		
+		for (unsigned char v = 0; v < 8; v++)
+		{
+			tmp += sxx1->a[u][v]*matrix1->a[v][u];
+		}
+	}
+	return tmp;
+}
+
+void preo(int j, int curcnt1)
+{
+	wow * matrix1 = &matrix[curcnt1][j];
+	
+	for (unsigned char x = 0; x < 8; x++) {
+		for (unsigned char y = 0; y < 8; y++) {
+			
+			sx[y][x][curcnt1][j] = compute(x, y, matrix1) / 4;
+		}
+	}
+}Window *w;
+int Imgsx = 0, Imgsy = 0;
 void draw(int ofx, int ofy)
 {
-	for(int i=0;i<16;i++){
-				for(int j=0;j<16;j++)
-				{
-					if(ofx+j>719)
-						break;
-					float valr = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][2]*1.402 + 128;
-					if(valr>255)
-						valr=255;
-					if(valr<0)
-						valr=0;
-					//imager[i][j] = (int) valr;
-					float valg = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]-sx[j>>1][i>>1][0][1]*0.34414-sx[j>>1][i>>1][0][2]*0.71414 + 128;
-					if(valg>255)
-						valg=255;
-					if(valg<0)
-						valg=0;
-					//imageg[i][j] = (int) valg;
-					int valb = sx[j&7][i&7][(i>>3)*2+(j>>3)][0]+sx[j>>1][i>>1][0][1]*1.772 + 128;
-					if(valb>255)
-						valb=255;
-					if(valb<0)
-						valb=0;
-					//imageb[i][j] = (int) valr;
-					#ifndef WIN32
+	for (int i = 0; i < 16; i++) {
+		if (ofy + i < Imgsy)
+			for (int j = 0; j < 16; j++)
+			{
+				if (ofx + j >= 719 || ofx + j >= Imgsx)
+					break;
+				float valr = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] + sx[j >> 1][i >> 1][0][2] * 1.402 + 128;
+				if (valr > 255)
+					valr = 255;
+				if (valr < 0)
+					valr = 0;
+				//imager[i][j] = (int) valr;
+				float valg = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] - sx[j >> 1][i >> 1][0][1] * 0.34414 - sx[j >> 1][i >> 1][0][2] * 0.71414 + 128;
+				if (valg > 255)
+					valg = 255;
+				if (valg < 0)
+					valg = 0;
+				//imageg[i][j] = (int) valg;
+				int valb = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] + sx[j >> 1][i >> 1][0][1] * 1.772 + 128;
+				if (valb > 255)
+					valb = 255;
+				if (valb < 0)
+					valb = 0;
+				//imageb[i][j] = (int) valr;
+#ifndef WIN32
 
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 2))=valr;
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 1))=valg;
-					*((unsigned char*)((unsigned int)w->video + (ofy+i)*720*3 + (ofx+j)*3 + 0))=valb;
-					#endif
-				}
+				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 2)) = valr;
+				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 1)) = valg;
+				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 0)) = valb;
+#endif
 			}
+	}
+}
+
+			int comp[16];
+int lcoef, lcoef1, lcoef2;
+int prep(int j, int *cpos1, int *mask1, unsigned char *fs)
+{
+	int cpos = *cpos1;
+	short mask = *mask1;
+						int curcnt1 = mcnt[j];
+					//int curcnt = curcnt1;
+					int matrixpos = 0;
+					for (; matrixpos < 64;)
+					{
+						sx[zigzagx[matrixpos]][zigzagy[matrixpos]][curcnt1][j] = 0;
+						matrix[curcnt1][j][zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
+						matrixpos++;
+					}
+					matrixpos = 0;
+					//printf("!%d %d\n", cpos, cnt);
+					int idxd = (comp[j] >> 4) & 0xF;
+					int idxa = (comp[j]) & 0xF;
+					//printf("DC:%d AC:%d\n", idxd, idxa);
+					btree * cur = huffs[idxd][0];
+					//	printf("~n", cpos, cnt);
+					while (cur->r || cur->l)
+					{
+						if (mask&fs[cpos])
+							cur = cur->r;
+						else
+							cur = cur->l;
+						if (mask == 1) {
+							mask = 0x100;
+							cpos++;
+						}
+						if (!cur)
+							return 1;
+						mask >>= 1;
+
+					}
+
+					int coef = 0;
+					int fwer = (fs[cpos] & mask ? 1 : 0);
+					for (int i = 0; i < cur->val; i++)
+					{
+						coef = coef * 2 + (fs[cpos] & mask ? 1 : 0);
+						if (mask == 1) {
+							mask = 0x100;
+							cpos++;
+						}
+						mask >>= 1;
+					}
+					if (!fwer&&cur->val > 0)
+						coef = coef - (1 << cur->val) + 1;
+					if (j == 0) {
+						coef += lcoef;
+						lcoef = coef;
+					}
+					if (j == 1) {
+						coef += lcoef1;
+						lcoef1 = coef;
+					}
+					if (j == 2) {
+						coef += lcoef2;
+						lcoef2 = coef;
+					}
+					wow * matrix1=&matrix[curcnt1][j];
+					matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = coef;
+					matrixpos++;
+					// printf("DC Coef: %d\n", cur->val);
+					//cur =huffs[idxa][1];
+					while (matrixpos < 64) {
+
+						cur = huffs[idxa][1];
+
+						while (cur->r || cur->l)
+						{
+							if (mask&fs[cpos])
+								cur = cur->r;
+							else
+								cur = cur->l;
+							if (mask == 1) {
+								mask = 0x100;
+								cpos++;
+							}
+							mask >>= 1;
+
+						}
+						//printf("#%d %d\n", cpos, cnt);
+						if (!cur->val)
+							break;
+						for (int i = 0; i < (cur->val) >> 4; i++) {
+							if (matrixpos > 63)
+								break;
+							matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
+							matrixpos++;
+						}
+						int coeflen = cur->val & 0xF;
+						int acoef = 0;
+						fwer = (fs[cpos] & mask ? 1 : 0);
+						for (int i = 0; i < coeflen; i++)
+						{
+							acoef = acoef * 2 + (fs[cpos] & mask ? 1 : 0);
+							if (mask == 1) {
+								mask = 0x100;
+								cpos++;
+							}
+							mask >>= 1;
+						}
+
+						if (!fwer)
+							acoef = acoef - (1 << coeflen) + 1;
+						if (matrixpos > 63)
+							break;
+						matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = acoef;
+						matrixpos++;
+					}
+					for (int i = 0; i < 8; i++) {
+						for (int ou = 0; ou < 8; ou++) {
+							matrix1->a[ou][i]*= quant[ou][i][dct[j] & 0xFF];
+						}
+					}
+
+					//printf("!%d!",  dct[j]&0xFF);
+
+					preo(j, curcnt1);
+					mcnt[j]++;
+*mask1 = mask;
+	*cpos1 = cpos;
+					if (mcnt[j] == ((dct[j] >> 12) & 0xF)*((dct[j] >> 8) & 0xF))
+						return 1;
+
+					//Wait(1000);
+	
+	return 0;
 }
 #pragma GCC pop_options
 
@@ -181,16 +333,16 @@ int main(int argc, char ** argv)
 
 	//if(argc!=1)
 	//	return;
-_zzk();
+	_zzk(argc, argv);
 }
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
-void _zzk(){
-	printf("Can't find file 22!\n");
-	FILE * z = fopen("as.jpg", "rb");
+void _zzk(int argc, char ** argv) {
+	//printf("Can't find file 22!\n");
+	FILE * z = fopen(argv[0], "rb");
 	if (!z)
 	{
-	//	printf("Can't find file 22!\n", argv[0]);
+		//	printf("Can't find file 22!\n", argv[0]);
 		return;
 	}
 
@@ -203,11 +355,10 @@ void _zzk(){
 
 	if (current != 0xD8FF)
 		return 0;
-    #ifndef WIN32
-	w= openWindow(720, 780, 1, &handle, "Jpeg");
-	#endif // WIN32
+#ifndef WIN32
+	w = openWindow(720, 780, 1, &handle, "Jpeg");
+#endif // WIN32
 	int cursz = 8; int q = 0;
-	int Imgsx = 0, Imgsy = 0;
 	for (int i = 0; i <= cursz * 2 - 1; i++)
 	{
 		if ((i % 2))
@@ -236,33 +387,33 @@ void _zzk(){
 			}
 		}
 	}
-    for(int i=0;i<8;i++)
-        for(int j=0;j<8;j++)
-        {
-            zigzagx[zigzag_table8[j][i]-1] = j;
-            zigzagy[zigzag_table8[j][i]-1] = i;
+	for (int i = 0; i < 8; i++)
+		for (int j = 0; j < 8; j++)
+		{
+			zigzagx[zigzag_table8[j][i] - 1] = j;
+			zigzagy[zigzag_table8[j][i] - 1] = i;
 
-        }
-	float sqrt2 = sqrt(2)/2;
-	for(int x=0;x<8;x++){
-		for(int y=0;y<8;y++){
-			for(int u=0;u<8;u++)
-				for(int v=0;v<8;v++)
+		}
+	float sqrt2 = sqrt(2) / 2;
+	for (int x = 0; x < 8; x++) {
+		for (int y = 0; y < 8; y++) {
+			for (int u = 0; u < 8; u++)
+				for (int v = 0; v < 8; v++)
 				{
 					float v1 = 1;
-					if(u==0)
-						v1= sqrt2;
+					if (u == 0)
+						v1 = sqrt2;
 					float v2 = 1;
-					if(v==0)
-						v2= sqrt2;
-					sxx[x][y][u][v]=cos(((x+x)+1)*u*pi)*cos(((y+y)+1)*v*pi)*v1*v2;
+					if (v == 0)
+						v2 = sqrt2;
+					sxx[x][y][u][v] = cos(((x + x) + 1)*u*pi)*cos(((y + y) + 1)*v*pi)*v1*v2;
 				}
 		}
 	}
 
-	while (1) {
-        if(ftell(z)>=sz)
-            break;
+	conread:
+		if (ftell(z) >= sz)
+			goto endread;
 		fread(&current, 2, 1, z);
 		current = bswap16(current);
 		if (current == 0xFFFE)
@@ -270,12 +421,13 @@ void _zzk(){
 			fread(&current, 2, 1, z);
 			current = bswap16(current);
 			current -= 2;
-			char * s = malloc(current + 1);
-			s[current] = 0;
-			fread(s, current, 1, z);
+			//char * s = malloc(current + 1);
+			//s[current] = 0;
+			fseek(z, current, 1);
+			//fread(s, current, 1, z);
 			//printf("Comment: %x bytes, %s\n", (unsigned int)current, s);
-			free(s);
-			continue;
+			//free(s);
+			goto conread;
 		}
 		if (current == 0xFFDB)
 		{
@@ -299,7 +451,7 @@ void _zzk(){
 				//printf("\n");
 			}
 			free(data);
-			continue;
+			goto conread;
 		}
 		if (current == 0xffc0)
 		{
@@ -313,14 +465,14 @@ void _zzk(){
 			Imgsx = bswap16(Imgsx);
 			int cnt = 0;
 			fread(&cnt, 1, 1, z);
-			for(int i=0;i<cnt;i++)
-            {
-                int wz;
-                fread(&wz, 1, 3, z);
-                dct[i] = bswap16(wz>>8);
-                ////printf("%06x, ", dct[wz&0xFF]);
-            }
-			continue;
+			for (int i = 0; i < cnt; i++)
+			{
+				int wz;
+				fread(&wz, 1, 3, z);
+				dct[i] = bswap16(wz >> 8);
+				////printf("%06x, ", dct[wz&0xFF]);
+			}
+			goto conread;
 		}
 		if (current == 0xFFC4)
 		{
@@ -330,12 +482,12 @@ void _zzk(){
 			int q = 0;
 			fread(&q, 1, 1, z);
 			int cnt = 0;
-            int dest[16] = {0};
+			int dest[16] = { 0 };
 			for (int i = 0; i < 16; i++)
 			{
 				unsigned char coef = 0;
 				fread(&coef, 1, 1, z);
-                dest[i]=coef;
+				dest[i] = coef;
 				huf_len[i][q & 0xF][q >> 4] = coef;
 				cnt += coef;
 				////printf("%02d ", coef);
@@ -347,77 +499,86 @@ void _zzk(){
 			huffs[q & 0xF][q >> 4]->parent = 0;
 			huffs[q & 0xF][q >> 4]->val = 0;
 			huffs[q & 0xF][q >> 4]->len = 0;
-			int *symbole =malloc(4*cnt + 20);
-            for(int i=0;i<cnt;i++){
+			int *symbole = malloc(4 * cnt + 20);
+			for (int i = 0; i < cnt; i++) {
 				unsigned char wsz;
-                fread(&wsz, 1, 1, z);
+				fread(&wsz, 1, 1, z);
 				symbole[i] = wsz;
 			}
 			unsigned char k = 0;
-            unsigned char descendu=0;
-            for (unsigned char i = 0; i < 16; i++) {
-                unsigned int nombre_symboles = dest[i];
-                unsigned char a_descendre = i + 1 - descendu;
-                for (unsigned char j = 0; j < nombre_symboles; j++) {
-                    while (a_descendre > 0) {
-                        if (huffman_table->l == NULL) {
-                            btree *huffman_tablefg = init_branches(huffman_table);
-                            huffman_table->l = huffman_tablefg;
-                            huffman_table = huffman_table->l;
-                            a_descendre = a_descendre - 1;
-                            descendu +=1;
-                        } else if(huffman_table->r == NULL) {
-                            btree *huffman_tablefd = init_branches(huffman_table);
-                            huffman_table->r = huffman_tablefd;
-                            huffman_table = huffman_table->r;
-                            a_descendre = a_descendre - 1;
-                            descendu +=1;
-                        } else {
-                            huffman_table = huffman_table->parent;
-                            a_descendre = a_descendre + 1;
-                            descendu -=1;
-                        }
-                    }
-                    //huffman_table->feuille = true;
-                    huffman_table->val = symbole[k];
-                    k = k + 1;
-                    huffman_table = huffman_table->parent;
-                    a_descendre = a_descendre + 1;
-                    descendu -=1;
-                }
-            }
+			unsigned char descendu = 0;
+			for (unsigned char i = 0; i < 16; i++) {
+				unsigned int nombre_symboles = dest[i];
+				unsigned char a_descendre = i + 1 - descendu;
+				for (unsigned char j = 0; j < nombre_symboles; j++) {
+					while (a_descendre > 0) {
+						if (huffman_table->l == NULL) {
+							btree *huffman_tablefg = init_branches(huffman_table);
+							huffman_table->l = huffman_tablefg;
+							huffman_table = huffman_table->l;
+							a_descendre = a_descendre - 1;
+							descendu += 1;
+						}
+						else if (huffman_table->r == NULL) {
+							btree *huffman_tablefd = init_branches(huffman_table);
+							huffman_table->r = huffman_tablefd;
+							huffman_table = huffman_table->r;
+							a_descendre = a_descendre - 1;
+							descendu += 1;
+						}
+						else {
+							huffman_table = huffman_table->parent;
+							a_descendre = a_descendre + 1;
+							descendu -= 1;
+						}
+					}
+					//huffman_table->feuille = true;
+					huffman_table->val = symbole[k];
+					k = k + 1;
+					huffman_table = huffman_table->parent;
+					a_descendre = a_descendre + 1;
+					descendu -= 1;
+				}
+			}
 			//printf("\n");
-			continue;
+			goto conread;
 		}
-		if(current==0xFFDA)
+		if (current == 0xFFDA)
 		{
-            int hlen = 0;
-            fread(&hlen, 2, 1, z);
-            hlen = bswap16(hlen);
-            int scanC = 0;
-            fread(&scanC, 1, 1, z);
-            char * s = malloc(9);
-            int comp[16];
-            for(int i=0;i<scanC;i++)
-            {
-                int q;
-                fread(&q, 2, 1, z);
-                comp[i]=q>>8;
-            }
-            int pos[10];
+			int hlen = 0;
+			fread(&hlen, 2, 1, z);
+			hlen = bswap16(hlen);
+			int scanC = 0;
+			fread(&scanC, 1, 1, z);
+			char * s = malloc(9);
+			for (int i = 0; i < scanC; i++)
+			{
+				int q;
+				fread(&q, 2, 1, z);
+				comp[i] = q >> 8;
+			}
+			int pos[10];
 
-            fread(&pos,hlen-(scanC*2)-2-1,1, z);
-//            pos = 0;
-            int spos=ftell(z);
-            int cnt = 0;
+			fread(&pos, hlen - (scanC * 2) - 2 - 1, 1, z);
+			//            pos = 0;
+			int spos = ftell(z);
+			int cnt = 0;
 			int juye = 1;
 			int lsval = 0;
-            unsigned char * nuf = malloc(4096);
-            while(juye){
-                fread(nuf, 4096, 1, z);
-				for(int i=0;i<4096;i++)
+			unsigned char * nuf = malloc(4096*16*4);
+			unsigned char * fss=0;;
+			int wok = 0;
+			while (juye) {
+				fread(nuf, 4096*16*4, 1, z);
+				wok+=4096*16*4;
+				unsigned char * lp = malloc(wok);
+				memcpy(lp, fss, wok - 4096*16*4);
+				if(fss) free(fss);
+				fss=lp;
+				memcpy((uint)fss+wok-4096*16*4, nuf, 4096*16*4);
+				for (int i = 0; i < 4096*16*4; i++)
 				{
-					if(lsval==0xFF&&nuf[i]==0xD9)
+					if (lsval == 0xFF && nuf[i] == 0xD9)
 					{
 						juye = 0;
 						break;
@@ -425,183 +586,61 @@ void _zzk(){
 					lsval = nuf[i];
 					cnt++;
 				}
-               // //printf("%02x ", ew);
-            }
-			free(nuf);
-            cnt--;
-			//printf("!%d~!~", cnt);
-            unsigned char * fs = malloc(2 + cnt);
-            fseek(z, spos, 0);
-            fread(fs, cnt, 1, z);
-            int i1 = 0;
-            for(int i=0;i<cnt;i++)
+				// //printf("%02x ", ew);
+			}
+			//free(nuf);
+			cnt--;
+			//
+			//fseek(z, spos, 0);
+			//fread(fss, cnt, 1, z);
+			unsigned char * fs = malloc(2 + cnt);
+			int c2 = 0;
+			int clenn = 0, cntw = 0;
+			for (clenn = 0; c2 < cnt; clenn++)
 			{
-				if(fs[i]==0xFF&&fs[i+1]==0x0)
-				{
-					for(int j=i+1;j<cnt-1;j++){
-						fs[j]=fs[j+1];
-					}
-					cnt--;
+				fs[clenn] = fss[c2];
+				if (fss[c2] == 0xFF) {
+					if (fss[c2 + 1] == 0 && c2 < cnt)c2++;
+					//clenn--;
+					cntw++;
+				}
+				c2++;
+			}
+			//printf("!%d~!~", cntw);
+			//Wait(1000);
+			free(fss);
+			cnt = clenn;
+
+			int mask = 0x80;
+			int cpos = 0; 
+			int ofx = 0; int ofy = 0; cpos = 0;
+				
+		treutr:
+			//mask<<=1;
+			for (int i = 0; i < 16; i++) {
+				mcnt[i] = 0;
+			}
+			for (int j = 0; j < scanC; j++) {
+				//lcoef = 0;
+				while (!prep(j, &cpos, &mask, fs)) {
+
 				}
 			}
-            int mask = 0x80;
-            int cpos = 0; int lcoef=0;
-			int lcoef1 = 0;
-			int lcoef2 = 0;
-			int ofx=0;int ofy=0;cpos=0;
-			treutr:
-				//mask<<=1;
-                for(int i=0;i<16;i++){
-                    mcnt[i]=0;
-                }
-            for(int j=0;j<scanC;j++){
-                //lcoef = 0;
-                while(1){
-					int curcnt = mcnt[j];
-                    int matrixpos = 0;
-					for(; matrixpos<64;)
-					{
-						sx[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = 0;
-						matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = 0;
-                        matrixpos++;
-					}
-					matrixpos=0;
-			//printf("!%d %d\n", cpos, cnt);
-                    int idxd = (comp[j]>>4)&0xF;
-                    int idxa = (comp[j])&0xF;
-                    //printf("DC:%d AC:%d\n", idxd, idxa);
-                    btree * cur =huffs[idxd][0];
-		//	printf("~n", cpos, cnt);
-                    while(cur->l||cur->r)
-                    {
-                        if(mask&fs[cpos])
-                            cur=cur->r;
-                        else
-                            cur=cur->l;
-                        if(mask==1){
-                            mask=0x100;
-                            cpos++;
-                        }
-                        if(!cur)
-                            return 1;
-                        mask>>=1;
-
-                    }
-
-                    int coef = 0;
-                    int fwer =(fs[cpos]&mask?1:0);
-                    for(int i=0;i<cur->val;i++)
-                    {
-                        coef= coef*2 + (fs[cpos]&mask?1:0);
-                        if(mask==1){
-                            mask=0x100;
-                            cpos++;
-                        }
-                        mask>>=1;
-                    }
-                    if(!fwer&&cur->val>0)
-                        coef = coef - (1<<cur->val)+1;
-					if(j==0){
-						coef+=lcoef;
-						lcoef=coef;
-					}
-					if(j==1){
-						coef+=lcoef1;
-						lcoef1=coef;
-					}
-					if(j==2){
-						coef+=lcoef2;
-						lcoef2=coef;
-					}
-
-                    matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = coef;
-                    matrixpos++;
-                   // printf("DC Coef: %d\n", cur->val);
-                    //cur =huffs[idxa][1];
-                    while(matrixpos<64){
-
-                        cur =huffs[idxa][1];
-
-                        while(cur->l||cur->r)
-                        {
-                            if(mask&fs[cpos])
-                                cur=cur->r;
-                            else
-                                cur=cur->l;
-                            if(mask==1){
-                                mask=0x100;
-                                cpos++;
-                            }
-                            mask>>=1;
-
-                        }
-                        //printf("#%d %d\n", cpos, cnt);
-                        if(!cur->val)
-                            break;
-                        for(int i=0;i<(cur->val)>>4;i++){
-                            if(matrixpos>63)
-                                break;
-                            matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = 0;
-                            matrixpos++;
-                        }
-						int coeflen = cur->val&0xF;
-                        int acoef = 0;
-                        fwer =(fs[cpos]&mask?1:0);
-                        for(int i=0;i<coeflen;i++)
-                        {
-                            acoef= acoef*2 + (fs[cpos]&mask?1:0);
-                            if(mask==1){
-                                mask=0x100;
-                                cpos++;
-                            }
-                            mask>>=1;
-                        }
-
-                        if(!fwer)
-                            acoef = acoef - (1<<coeflen)+1;
-                            if(matrixpos>63)
-                                break;
-                        matrix[zigzagx[matrixpos]][zigzagy[matrixpos]][mcnt[j]][j] = acoef;
-                        matrixpos++;
-                    }
-                    for(int i=0;i<8;i++){
-                        for(int ou=0;ou<8;ou++){
-                            matrix[ou][i][mcnt[j]][j]*=quant[ou][i][dct[j]&0xFF];
-                        }
-                    }
-
-                    //printf("!%d!",  dct[j]&0xFF);
-
-                    preo(j);
-                    mcnt[j]++;
-
-                    if(mcnt[j]==((dct[j]>>12)&0xF)*((dct[j]>>8)&0xF))
-                            break;
-
-						//Wait(1000);
-
-
-                }
-            }
-			//printf("%d %d\n", cpos, cnt);
-			draw(ofx,ofy);
-				ofx+=16;
-				if(ofx>Imgsx)
-				{
-					ofx=0;
-					ofy+=16;
-					//lcoef = 0;
-					//lcoef1 = 0;
-					//lcoef2 = 0;
-				}
-				//break;
-			if(cpos<cnt)
+			draw(ofx, ofy);
+			ofx += 16;
+			if (ofx >= Imgsx)
+			{
+				ofx = 0;
+				ofy += 16;
+			}
+			if (cpos < cnt)
 				goto treutr;
 
 		}
+		
+		goto conread;
+	endread:
+	//printf("\n");
 
-	}
-    //printf("\n");
-
-return 0;
+	return 0;
 }

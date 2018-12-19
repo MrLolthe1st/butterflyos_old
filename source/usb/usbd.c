@@ -806,6 +806,7 @@ void UsbPoll()
 {
 	//if (!pcidone) return;
 	usbPoll = 0;
+	
 	for (UsbController *c = g_usbControllerList; c; c = c->next)
 	{
 		if (c->poll)

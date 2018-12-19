@@ -13,28 +13,28 @@ char upcase(char s)
 // ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) _F32_e
 {
-	char name[8];
-	char ext[3];
-	unsigned char attributes;
-	unsigned char firstDelChar;
-	unsigned char firstDelChar2;
-	u16 createdTime;
-	u16 createdDate;
-	u16 lastAccessDate;
-	u16 clusterHi;
-	u16 lastModifiedTime;
-	u16 lastModifiedDate;
-	u16 clusterLo;
+	char			name[8];
+	char			ext[3];
+	u8				attributes;
+	u8				firstDelChar;
+	u8				firstDelChar2;
+	u16				createdTime;
+	u16				createdDate;
+	u16				lastAccessDate;
+	u16				clusterHi;
+	u16				lastModifiedTime;
+	u16				lastModifiedDate;
+	u16				clusterLo;
 	uint size;
 } F32E;
 
 // ------------------------------------------------------------------------------------------------
 typedef  struct __attribute__((packed)) _fil
 {
-	uint startCluster;
-	uint nool;
-	uint nool1;
-	uint size;
+	uint	startCluster;
+	uint	nool;
+	uint	nool1;
+	uint	size;
 } FileInfoF32;
 
 // ------------------------------------------------------------------------------------------------
@@ -43,7 +43,9 @@ char F32OkName(char q)
 	if ((q >= 'A'&&q <= 'Z') ||
 		(q >= 'a'&&q <= 'z') ||
 		(q >= '0'&&q <= '9') ||
-		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' || q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' || q == '}' || q == '~'))
+		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' 
+			|| q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' 
+			|| q == '}' || q == '~'))
 		return 1;
 	return 0;
 }
@@ -51,11 +53,11 @@ char F32OkName(char q)
 // ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) dentr_y
 {
-	char name[255];
-	uint modified;
-	uint size;
-	uchar attrs;
-	struct dentr_y * next;
+	char				name[255];
+	uint				modified;
+	uint				size;
+	uchar				attrs;
+	struct dentr_y *	next;
 } direntry;
 
 // ------------------------------------------------------------------------------------------------
@@ -539,7 +541,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	lastCluster = 0;
 	void * qf = buf;
 	ReadFromDisk(FatStart + (startingCluster - 2) * sectorsPerCluster, sectorsPerCluster, cluster, diskId);
-		
+
 	F32E * entrs = (F32E*)cluster;
 	currentCluster = entrs[clustIndex].clusterLo + (entrs[clustIndex].clusterHi << 16); uint sz = entrs[clustIndex].size;
 	if (currentCluster == 0)
@@ -563,7 +565,7 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 		lastCluster = currentCluster;
 		currentCluster = f32drives[diskId].FATTable[currentCluster];
 	}
-	
+
 	uint curOffs = (sz) % (512 * sectorsPerCluster);
 	ReadFromDisk(FatStart + (lastCluster - 2)* sectorsPerCluster, sectorsPerCluster, cluster, diskId);
 	currentCluster = lastCluster;

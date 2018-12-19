@@ -1,22 +1,36 @@
 GlobalVariable * globalTableFirst = 0;
+struct rb_tree * globalVarsTree;
+int _strcmp(const char *s1, const char *s2)
+{
+	while (*s1 == *s2)
+	{
+		if (*s1 == '\0')
+		{
+			return 0;
+		}
+
+		++s1;
+		++s2;
+	}
+
+	return *s1 - *s2;
+}
+int global_cmp(struct rb_tree *self, struct rb_node *node_a, struct rb_node *node_b) {
+	GlobalVariable * v1 = (GlobalVariable*)node_a->value;
+	GlobalVariable * v2 = (GlobalVariable*)node_b->value;
+	return _strcmp(v1->name, v2->name);
+}
 void initGlobals()
 {
-	globalTableFirst = (GlobalVariable*)mmalloc(12);
-	*((unsigned int*)0x09917) = (size_t)globalTableFirst;
-	globalTableFirst->next = 0;
-	globalTableFirst->name = "@globalInit";
+	globalVarsTree = rb_tree_create(global_cmp);
 
 }
 void addGlobalVariable(char * name, void * addr)
 {
-	GlobalVariable * w = globalTableFirst;
-	while (w->next)
-		w = w->next;
-	w->next = (GlobalVariable*)mmalloc(12);
-	w = w->next;
-	w->next = 0;
-	w->name = name;
-	w->ptr = (int)addr;
+	GlobalVariable * v = (GlobalVariable*)mmalloc(sizeof(GlobalVariable));
+	v->name = name;
+	v->ptr = (int)addr;
+	rb_tree_insert(globalVarsTree, v);
 }
 
 
@@ -35,23 +49,9 @@ int _getcmpstr(char * a, char *b)
 
 unsigned int getVariableAddress(char * name)
 {
-
-	GlobalVariable * w = globalTableFirst;
-	while (w)
-	{
-		char * c = w->name;
-		char * b = name;
-		while (*c&&*b&&*c == *b)
-		{
-			c++; b++;
-		}
-		if (*c == *b&&*c == 0)
-		{
-			return w->ptr;
-		}
-		w = w->next;
-	}
-	//if(_getcmpstr(name, "stdin"))
-		
-	return 0;
+	GlobalVariable * v = (GlobalVariable*)mmalloc(sizeof(GlobalVariable));
+	v->name = name;
+	GlobalVariable * w = rb_tree_find(globalVarsTree, v);
+	free(v);
+	return w->ptr;
 }
