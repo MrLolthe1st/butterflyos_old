@@ -9,13 +9,13 @@ void main(int argc, char ** argv)
 
 	if(argc!=2)
 		return;
-	FILE * z = fopen(argv[0],"r");
+	FILE * z = fopen(argv[0],"rb");
 	if(!z)
 	{
 		printf("Can't find file %s!\n", argv[0]);
 		return;
 	}
-	FILE * u = fopen(argv[1],"w");
+	FILE * u = fopen(argv[1],"wb");
 
 	fseek(z,0,2);
 	uint sz = ftell(z);

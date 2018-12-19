@@ -1,7 +1,5 @@
 #pragma GCC push_options
 #pragma GCC optimize ("O2")
-
-// ------------------------------------------------------------------------------------------------
 char upcase(char s)
 {
 
@@ -9,58 +7,46 @@ char upcase(char s)
 		return s + ('A' - 'a');
 	else return s;
 }
-
-// ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) _F32_e
 {
-	char			name[8];
-	char			ext[3];
-	u8				attributes;
-	u8				firstDelChar;
-	u8				firstDelChar2;
-	u16				createdTime;
-	u16				createdDate;
-	u16				lastAccessDate;
-	u16				clusterHi;
-	u16				lastModifiedTime;
-	u16				lastModifiedDate;
-	u16				clusterLo;
+	char name[8];
+	char ext[3];
+	unsigned char attributes;
+	unsigned char firstDelChar;
+	unsigned char firstDelChar2;
+	u16 createdTime;
+	u16 createdDate;
+	u16 lastAccessDate;
+	u16 clusterHi;
+	u16 lastModifiedTime;
+	u16 lastModifiedDate;
+	u16 clusterLo;
 	uint size;
 } F32E;
-
-// ------------------------------------------------------------------------------------------------
 typedef  struct __attribute__((packed)) _fil
 {
-	uint	startCluster;
-	uint	nool;
-	uint	nool1;
-	uint	size;
+	uint startCluster;
+	uint nool;
+	uint nool1;
+	uint size;
 } FileInfoF32;
-
-// ------------------------------------------------------------------------------------------------
 char F32OkName(char q)
 {
 	if ((q >= 'A'&&q <= 'Z') ||
 		(q >= 'a'&&q <= 'z') ||
 		(q >= '0'&&q <= '9') ||
-		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' 
-			|| q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' 
-			|| q == '}' || q == '~'))
+		(q == '!' || q == '#' || q == '$' || q == '%' || q == '\'' || q == '(' || q == ')' || q == '-' || q == '@' || q == '^' || q == '_' || q == '`' || q == '{' || q == '}' || q == '~'))
 		return 1;
 	return 0;
 }
-
-// ------------------------------------------------------------------------------------------------
 typedef  struct  __attribute__((packed)) dentr_y
 {
-	char				name[255];
-	uint				modified;
-	uint				size;
-	uchar				attrs;
-	struct dentr_y *	next;
+	char name[255];
+	uint modified;
+	uint size;
+	uchar attrs;
+	struct dentr_y * next;
 } direntry;
-
-// ------------------------------------------------------------------------------------------------
 direntry * FAT32GetDir(uint diskId, char * fileName)
 {
 	char bootSect[512];
@@ -243,8 +229,6 @@ direntry * FAT32GetDir(uint diskId, char * fileName)
 
 	return res;
 }
-
-// ------------------------------------------------------------------------------------------------
 FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 {
 	char bootSect[512];
@@ -456,7 +440,6 @@ FileInfoF32 * FAT32Seek(uint diskId, char * fileName)
 }
 
 
-// ------------------------------------------------------------------------------------------------
 void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 {
 	char bootSect[512];
@@ -508,8 +491,6 @@ void * FAT32ReadFileB(uint diskId, uint clu, uint st, uint cnt, void* buf)
 }
 #pragma GCC push_options
 #pragma GCC optimize ("Ofast")
-
-// ------------------------------------------------------------------------------------------------
 uint findFreeFATEntry(uint diskId, uint reserved)
 {
 	for (int i = 0; i < 0xFFFFFFF; i++)
@@ -522,8 +503,6 @@ uint findFreeFATEntry(uint diskId, uint reserved)
 	}
 }
 #pragma GCC pop_options
-
-// ------------------------------------------------------------------------------------------------
 int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, uint cnt)
 {
 	char bootSect[512];
@@ -596,8 +575,8 @@ int FAT32Append(uint diskId, uint startingCluster, uint clustIndex, void* buf, u
 	free(cluster);
 	return 0;
 }
-
-// ------------------------------------------------------------------------------------------------
+/*
+*/
 int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 {
 	//printTextToWindow(2, mywin, "Clearing file chain...\n");
@@ -638,7 +617,7 @@ int  FAT32ClearChain(uint diskId, uint startingCluster, uint clustIndex)
 	WriteToDisk(reserved + (lastCluster >> 7), 1, (void*)((uint)f32drives[diskId].FATTable + (lastCluster >> 7) * 512), diskId);
 }
 
-// ------------------------------------------------------------------------------------------------
+
 
 void  FAT32CreateFile(uint diskId, char * fileName)
 {
@@ -880,8 +859,6 @@ void  FAT32CreateFile(uint diskId, char * fileName)
 	free(cluster);
 	free(lastcluster);
 }
-
-// ------------------------------------------------------------------------------------------------
 void  FAT32CreateDirectory(uint diskId, char * fileName)
 {
 	char bootSect[512];
