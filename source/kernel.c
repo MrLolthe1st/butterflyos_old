@@ -233,12 +233,14 @@ void k_main()
 	setCursor(0);
 	enableFPU();
 	printString("Counting memory...\n");
-	g_usbControllerList = 0;
-	mm_init(0x400000);
+	g_usbControllerList = 0; 
+	avltree_new1(&allocationAvlTree, allocationAvlTreeNodes, __cmp_address);
+
+	mm_init(0x500000 + (AVL_TREE_ENTRIES_COUNT*sizeof(node_t)));
 
 	void * processTable = mmalloc(sizeof(Process) * 1024);
 	procTable = processTable;
-	
+	for (;;);
 	*((unsigned int*)0x09921) = (size_t)processTable;
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
