@@ -7,16 +7,21 @@
 void main(int argc, char ** argv)
 {	
 
-	if(argc!=2)
-		return;
-	FILE * z = fopen(argv[0],"rb");
-	if(!z)
-	{
-		printf("Can't find file %s!\n", argv[0]);
+	if(argc!=3){
+		printf("COPY: Use: copy <filename>|<directory> <filename>|<directory>\n");
 		return;
 	}
-	FILE * u = fopen(argv[1],"wb");
-
+	FILE * z = fopen(argv[1],"rb");
+	if(!z)
+	{
+		printf("Can't find input file %s!\n", argv[1]);
+		return;
+	}
+	FILE * u = fopen(argv[2],"wb");
+	if(!u)
+	{
+		printf("Can't create file to write %s!\n", argv[2]);
+	}
 	fseek(z,0,2);
 	uint sz = ftell(z);
 	rewind(z);

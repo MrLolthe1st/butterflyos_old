@@ -380,6 +380,7 @@ uint stack_size = 65536 * 4;
 void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * dir) {
 
 	//Try to open file
+	kprintf("1");
 	FILE * fp = fopen(fileName, "r");
 	fseek(fp, 0, 2);
 	if (!fp)
@@ -389,9 +390,11 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	uint z = ftell(fp);
 	rewind(fp);
 	//mm_print_out();
+	kprintf("1");
 	void(*progq)() = (void*)mmalloc(z);
 	fread((void*)progq, z, 1, fp);
 	fclose(fp);
+	kprintf("1");
 	//Reserve a process
 	int _procCount = procCount;
 	procTable[_procCount].state = 0;

@@ -259,8 +259,10 @@ FILE *fopen(const char *fname, const char *mode)
 	FileInfo * q = FileSeek(ups[0] - 'A', (char*)((uint)ups + 3));
 	uint ut = 0;
 
+	kprintf("!%x!",q);
 	//printTextToWindow(7, mywin, "Path: %s && %x\n", ups, q);
 	if (!q && !(n->rights & 2)) {
+		kprintf("2");
 		free(n);
 
 		return 0;

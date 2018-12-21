@@ -1,14 +1,10 @@
-#ifdef WIN32
-#include <stdio.h>
-#include <stdlib.h>
-#endif // WIN32
-#ifndef WIN32
+
 #include "..\includes\stdio.h"
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
 #define buf_size 165536
-#endif // WIN32
+
 
 int handle(void * a) {
 
@@ -23,8 +19,8 @@ unsigned char scan[16][16][256];
 unsigned char huf_codes[4096][16][2];
 short huf_len[16][16][2];
 short dct[256];
-short zigzagx[64];
-short zigzagy[64];
+unsigned char zigzagx[64];
+unsigned char zigzagy[64];
 double sqrt(double x) {
 	double r;
 	__asm__ __volatile__("fsqrt": "=t"(r) : "0"(x) : "memory");
@@ -103,7 +99,7 @@ btree * huf_insert(btree * where, int val, int clen, int nlen)
 	}
 	return huf_insert(where->parent, val, clen - 1, nlen);
 }
-int matrix[16][16][16][16];
+float matrix[16][16][8][8];
 int mcnt[16] = { 0 };
 float sx[16][16][16][16];
 static btree *init_branches(btree *racine)
@@ -124,206 +120,243 @@ static btree *init_branches(btree *racine)
 //#pragma GCC target("avx")  //Enable AVX
 float sxx[16][16][8][8];
 typedef struct {
-	int a[16][16];
+	float a[8][8];
 } wow;
 typedef struct {
 	float a[8][8];
 } wow1;
-
+float table[64];
+float tmp[4]={0};
+float tmp2[4]={0};
+float tmp3[4]={0.25,0.25,0.25,0.25};
+#ifndef Wdw
+float compute(int x, int y, wow * matrix1)
+{	
+	__asm__("\
+	push %%esi\n\
+	push %%edi\n\
+	push %%ecx\n\
+	movl %2, %%edi\n\
+	movl %1, %%esi\n\
+	movups (%3), %%xmm1\n\
+	mov $8, %%ecx\n\
+	__uu:\n\
+		movups (%%esi), %%xmm0\n\
+		mulps (%%edi), %%xmm0\n\
+		addps %%xmm0, %%xmm1\n\
+		movups 16(%%esi), %%xmm0\n\
+		mulps 16(%%edi), %%xmm0\n\
+		addps %%xmm0, %%xmm1\n\
+		add $32, %%esi\n\
+		add $32, %%edi\n\
+		dec %%ecx\n\
+		#test %%ecx, %%ecx\n\
+		jnz __uu\n\
+	movups %%xmm1, (%0)\n\
+	pop %%ecx\n\
+	pop %%edi\n\
+	pop %%esi\n\
+	"::"r"(&tmp),"r"(&sxx[y][x]),"r"(matrix1), "r"(&tmp2));
+	
+	return (tmp[0]+tmp[1]+tmp[2]+tmp[3]);
+}
+#endif
+/*
 float compute(int x, int y, wow * matrix1)
 {
 	float tmp = 0;
 	float tmp2 = 0;
 	wow1 * sxx1 = &sxx[x][y];
-	for (unsigned char u = 0; u < 8; u++){
+	for (int u = 0; u < 8; u++){
 		
-		for (unsigned char v = 0; v < 8; v++)
+		for (int v = 0; v < 8; v++)
 		{
 			tmp += sxx1->a[u][v]*matrix1->a[v][u];
 		}
 	}
 	return tmp;
-}
-
+}*/
+typedef struct{
+	float a[16][16];
+} color;
 void preo(int j, int curcnt1)
 {
 	wow * matrix1 = &matrix[curcnt1][j];
-	
+	color * c = &sx[curcnt1][j];
 	for (unsigned char x = 0; x < 8; x++) {
 		for (unsigned char y = 0; y < 8; y++) {
 			
-			sx[y][x][curcnt1][j] = compute(x, y, matrix1) / 4;
+			c->a[y][x] = compute(x, y, matrix1);
 		}
 	}
 }Window *w;
 int Imgsx = 0, Imgsy = 0;
+int ofmx[4] = {0, 8, 0, 8};
+int ofmy[4] = {0, 0, 8, 8};
+
+int ofmxx[4] = {0, 4, 0, 4};
+int ofmyy[4] = {0, 0, 4, 4};
 void draw(int ofx, int ofy)
 {
-	for (int i = 0; i < 16; i++) {
-		if (ofy + i < Imgsy)
-			for (int j = 0; j < 16; j++)
-			{
-				if (ofx + j >= 719 || ofx + j >= Imgsx)
-					break;
-				float valr = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] + sx[j >> 1][i >> 1][0][2] * 1.402 + 128;
-				if (valr > 255)
-					valr = 255;
-				if (valr < 0)
-					valr = 0;
-				//imager[i][j] = (int) valr;
-				float valg = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] - sx[j >> 1][i >> 1][0][1] * 0.34414 - sx[j >> 1][i >> 1][0][2] * 0.71414 + 128;
-				if (valg > 255)
-					valg = 255;
-				if (valg < 0)
-					valg = 0;
-				//imageg[i][j] = (int) valg;
-				int valb = sx[j & 7][i & 7][(i >> 3) * 2 + (j >> 3)][0] + sx[j >> 1][i >> 1][0][1] * 1.772 + 128;
-				if (valb > 255)
-					valb = 255;
-				if (valb < 0)
-					valb = 0;
-				//imageb[i][j] = (int) valr;
-#ifndef WIN32
+	if(ofx>Imgsx)
+		return;
+	if(ofy>Imgsy)
+		return;
+	for (int k=0;k<4;k++){
+		color * yy = &sx[k][0];
+		color * bb = &sx[0][1];
+		color * rr = &sx[0][2];
+		for (int i = 0; i < 8; i++) {
+			int coy = (ofy + i + ofmy[k]) * 720 * 3 ;
+			coy += (ofx + 0 +ofmx[k])*3;
+			if (ofy + i < Imgsy)
+				for (int j = 0; j < 8; j++, coy+=3)
+				{
+					if (ofx + j >= 719 || ofx + j >= Imgsx)
+						break;
+					float valr = yy->a[j][i]*0.25 + rr->a[(j>>1) +ofmxx[k]][(i>>1) +ofmyy[k]] * 0.3505 + 128;
+					if (valr > 255)
+						valr = 255;
+					if (valr < 0)
+						valr = 0;
+					//imager[i][j] = (int) valr;
+					float valg = yy->a[j][i]*0.25 - bb->a[(j>>1)+ofmxx[k]][(i>>1)+ofmyy[k]] * 0.086035 - rr->a[(j>>1)+ofmxx[k]][(i>>1)+ofmyy[k]] * 0.178535 + 128;
+					if (valg > 255)
+						valg = 255;
+					if (valg < 0)
+						valg = 0;
+					//imageg[i][j] = (int) valg;
+					int valb = yy->a[j][i]*0.25 + bb->a[(j>>1)+ofmxx[k]][(i>>1)+ofmyy[k]] * 0.443 + 128;
+					if (valb > 255)
+						valb = 255;
+					if (valb < 0)
+						valb = 0;
+					//imageb[i][j] = (int) valr;
+	#ifndef WIN32
 
-				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 2)) = valr;
-				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 1)) = valg;
-				*((unsigned char*)((unsigned int)w->video + (ofy + i) * 720 * 3 + (ofx + j) * 3 + 0)) = valb;
-#endif
-			}
+					*((unsigned char*)((unsigned int)w->video + coy + 2)) = valr;
+					*((unsigned char*)((unsigned int)w->video + coy + 1)) = valg;
+					*((unsigned char*)((unsigned int)w->video + coy + 0)) = valb;
+	#endif
+				}
+		}
 	}
 }
 
 			int comp[16];
-int lcoef, lcoef1, lcoef2;
+int lcoef[3]={0};
 int prep(int j, int *cpos1, int *mask1, unsigned char *fs)
 {
 	int cpos = *cpos1;
 	short mask = *mask1;
-						int curcnt1 = mcnt[j];
-					//int curcnt = curcnt1;
-					int matrixpos = 0;
-					for (; matrixpos < 64;)
-					{
-						sx[zigzagx[matrixpos]][zigzagy[matrixpos]][curcnt1][j] = 0;
-						matrix[curcnt1][j][zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
-						matrixpos++;
-					}
-					matrixpos = 0;
-					//printf("!%d %d\n", cpos, cnt);
-					int idxd = (comp[j] >> 4) & 0xF;
-					int idxa = (comp[j]) & 0xF;
-					//printf("DC:%d AC:%d\n", idxd, idxa);
-					btree * cur = huffs[idxd][0];
-					//	printf("~n", cpos, cnt);
-					while (cur->r || cur->l)
-					{
-						if (mask&fs[cpos])
-							cur = cur->r;
-						else
-							cur = cur->l;
-						if (mask == 1) {
-							mask = 0x100;
-							cpos++;
-						}
-						if (!cur)
-							return 1;
-						mask >>= 1;
+		int curcnt1 = mcnt[j];
+	//int curcnt = curcnt1;
+	int matrixpos = 0;
+	wow * matrix1=&matrix[curcnt1][j];
+	color * sxc =&sx[curcnt1][j];
+	for (; matrixpos < 64;)
+	{
+		sxc->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
+		matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
+		matrixpos++;
+	}
+	matrixpos = 0;
+	//printf("!%d %d\n", cpos, cnt);
+	int idxd = (comp[j] >> 4) & 0xF;
+	int idxa = (comp[j]) & 0xF;
+	//printf("DC:%d AC:%d\n", idxd, idxa);
+	btree * cur = huffs[idxd][0];
+	//	printf("~n", cpos, cnt);
+	while (cur->r || cur->l)
+	{
+		if (mask&fs[cpos])
+			cur = cur->r;
+		else
+			cur = cur->l;
+		if (mask == 1) {
+			mask = 0x100;
+			cpos++;
+		}
+		if (!cur)
+			return 1;
+		mask >>= 1;
 
-					}
+	}
 
-					int coef = 0;
-					int fwer = (fs[cpos] & mask ? 1 : 0);
-					for (int i = 0; i < cur->val; i++)
-					{
-						coef = coef * 2 + (fs[cpos] & mask ? 1 : 0);
-						if (mask == 1) {
-							mask = 0x100;
-							cpos++;
-						}
-						mask >>= 1;
-					}
-					if (!fwer&&cur->val > 0)
-						coef = coef - (1 << cur->val) + 1;
-					if (j == 0) {
-						coef += lcoef;
-						lcoef = coef;
-					}
-					if (j == 1) {
-						coef += lcoef1;
-						lcoef1 = coef;
-					}
-					if (j == 2) {
-						coef += lcoef2;
-						lcoef2 = coef;
-					}
-					wow * matrix1=&matrix[curcnt1][j];
-					matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = coef;
-					matrixpos++;
-					// printf("DC Coef: %d\n", cur->val);
-					//cur =huffs[idxa][1];
-					while (matrixpos < 64) {
+	int coef = 0;
+	int fwer = (fs[cpos] & mask ? 1 : 0);
+	for (int i = 0; i < cur->val; i++)
+	{
+		coef = coef * 2 + (fs[cpos] & mask ? 1 : 0);
+		if (mask == 1) {
+			mask = 0x100;
+			cpos++;
+		}
+		mask >>= 1;
+	}
+	if (!fwer&&cur->val > 0)
+		coef = coef - (1 << cur->val) + 1;
+	coef+=lcoef[j];
+	lcoef[j]=coef;
+	matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = coef*quant[zigzagx[matrixpos]][zigzagy[matrixpos]][dct[j] & 0xFF];
+	matrixpos++;
+	// printf("DC Coef: %d\n", cur->val);
+	//cur =huffs[idxa][1];
+	while (matrixpos < 64) {
 
-						cur = huffs[idxa][1];
+		cur = huffs[idxa][1];
 
-						while (cur->r || cur->l)
-						{
-							if (mask&fs[cpos])
-								cur = cur->r;
-							else
-								cur = cur->l;
-							if (mask == 1) {
-								mask = 0x100;
-								cpos++;
-							}
-							mask >>= 1;
+		while (cur->r || cur->l)
+		{
+			if (mask&fs[cpos])
+				cur = cur->r;
+			else
+				cur = cur->l;
+			if (mask == 1) {
+				mask = 0x100;
+				cpos++;
+			}
+			mask >>= 1;
 
-						}
-						//printf("#%d %d\n", cpos, cnt);
-						if (!cur->val)
-							break;
-						for (int i = 0; i < (cur->val) >> 4; i++) {
-							if (matrixpos > 63)
-								break;
-							matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
-							matrixpos++;
-						}
-						int coeflen = cur->val & 0xF;
-						int acoef = 0;
-						fwer = (fs[cpos] & mask ? 1 : 0);
-						for (int i = 0; i < coeflen; i++)
-						{
-							acoef = acoef * 2 + (fs[cpos] & mask ? 1 : 0);
-							if (mask == 1) {
-								mask = 0x100;
-								cpos++;
-							}
-							mask >>= 1;
-						}
+		}
+		//printf("#%d %d\n", cpos, cnt);
+		if (!cur->val)
+			break;
+		for (int i = 0; i < (cur->val) >> 4; i++) {
+			if (matrixpos > 63)
+				break;
+			matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = 0;
+			matrixpos++;
+		}
+		int coeflen = cur->val & 0xF;
+		int acoef = 0;
+		fwer = (fs[cpos] & mask ? 1 : 0);
+		for (int i = 0; i < coeflen; i++)
+		{
+			acoef = acoef * 2 + (fs[cpos] & mask ? 1 : 0);
+			if (mask == 1) {
+				mask = 0x100;
+				cpos++;
+			}
+			mask >>= 1;
+		}
 
-						if (!fwer)
-							acoef = acoef - (1 << coeflen) + 1;
-						if (matrixpos > 63)
-							break;
-						matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = acoef;
-						matrixpos++;
-					}
-					for (int i = 0; i < 8; i++) {
-						for (int ou = 0; ou < 8; ou++) {
-							matrix1->a[ou][i]*= quant[ou][i][dct[j] & 0xFF];
-						}
-					}
+		if (!fwer)
+			acoef = acoef - (1 << coeflen) + 1;
+		if (matrixpos > 63)
+			break;
+		matrix1->a[zigzagx[matrixpos]][zigzagy[matrixpos]] = acoef*quant[zigzagx[matrixpos]][zigzagy[matrixpos]][dct[j] & 0xFF];
+		matrixpos++;
+	}
 
-					//printf("!%d!",  dct[j]&0xFF);
+	//printf("!%d!",  dct[j]&0xFF);
 
-					preo(j, curcnt1);
-					mcnt[j]++;
-*mask1 = mask;
+	preo(j, curcnt1);
+	mcnt[j]++;
+	*mask1 = mask;
 	*cpos1 = cpos;
-					if (mcnt[j] == ((dct[j] >> 12) & 0xF)*((dct[j] >> 8) & 0xF))
-						return 1;
-
-					//Wait(1000);
-	
+	if (mcnt[j] == ((dct[j] >> 12) & 0xF)*((dct[j] >> 8) & 0xF))
+		return 1;	
 	return 0;
 }
 #pragma GCC pop_options
@@ -339,17 +372,16 @@ int main(int argc, char ** argv)
 #pragma GCC optimize ("Ofast")
 void _zzk(int argc, char ** argv) {
 	//printf("Can't find file 22!\n");
-	FILE * z = fopen(argv[0], "rb");
+	FILE * z = fopen(argv[1], "rb");
 	if (!z)
 	{
-		//	printf("Can't find file 22!\n", argv[0]);
+		printf("Can't find file %s!\n", argv[1]);
 		return;
 	}
 
 	fseek(z, 0, 2);
 	int sz = ftell(z);
 	rewind(z);
-	printf("%d", sz);
 	unsigned short current = 0;
 	fread(&current, 1, 2, z);
 
@@ -565,18 +597,18 @@ void _zzk(int argc, char ** argv) {
 			int cnt = 0;
 			int juye = 1;
 			int lsval = 0;
-			unsigned char * nuf = malloc(4096*16*4);
+			unsigned char * nuf = malloc(262144);
 			unsigned char * fss=0;;
 			int wok = 0;
 			while (juye) {
-				fread(nuf, 4096*16*4, 1, z);
-				wok+=4096*16*4;
+				fread(nuf, 262144, 1, z);
+				wok+=262144;
 				unsigned char * lp = malloc(wok);
-				memcpy(lp, fss, wok - 4096*16*4);
+				memcpy(lp, fss, wok - 262144);
 				if(fss) free(fss);
 				fss=lp;
-				memcpy((uint)fss+wok-4096*16*4, nuf, 4096*16*4);
-				for (int i = 0; i < 4096*16*4; i++)
+				memcpy((uint)fss+wok-262144, nuf, 262144);
+				for (int i = 0; i < 262144; i++)
 				{
 					if (lsval == 0xFF && nuf[i] == 0xD9)
 					{
@@ -620,12 +652,9 @@ void _zzk(int argc, char ** argv) {
 			for (int i = 0; i < 16; i++) {
 				mcnt[i] = 0;
 			}
-			for (int j = 0; j < scanC; j++) {
-				//lcoef = 0;
-				while (!prep(j, &cpos, &mask, fs)) {
-
-				}
-			}
+			while (!prep(0, &cpos, &mask, fs));
+			while (!prep(1, &cpos, &mask, fs));
+			while (!prep(2, &cpos, &mask, fs));
 			draw(ofx, ofy);
 			ofx += 16;
 			if (ofx >= Imgsx)

@@ -515,7 +515,7 @@ void LocalApicSendStartup(uint apic_id, uint vector)
 }
 void SmpInit()
 {
-	kprintf("Waking up all CPUs\n");
+	printTextToWindow(3, mywin,"Waking up all CPUs\n");
 
 	*g_activeCpuCount = 1;
 	uint localId = LocalApicGetId();

@@ -79,6 +79,8 @@ unsigned int usbPoll = 1;
 #include "kprin.c"
 #include "time.c"
 
+
+
 void lockTaskSwitch(unsigned int id)
 {
 	locked += id;
@@ -240,7 +242,7 @@ void k_main()
 
 	void * processTable = mmalloc(sizeof(Process) * 1024);
 	procTable = processTable;
-	for (;;);
+	//for (;;);
 	*((unsigned int*)0x09921) = (size_t)processTable;
 	procTable[0].state = 1;
 	procTable[0].priority = 1;
@@ -318,8 +320,8 @@ void k_main()
 	addGlobalVariable("fprintf", &fprintf);
 	addGlobalVariable("strerr", 1);
 	addGlobalVariable("procTable", &procTable);
-	unsigned char * cur_dir = malloc(512);
-	unsigned char * cur_cmd = malloc(512);
+	unsigned char * cur_dir = mmalloc(512);
+	unsigned char * cur_cmd = mmalloc(512);
 	unsigned char key = 0x0;
 	*(cur_dir + 0) = '/';
 	*(cur_dir + 1) = 0;
@@ -332,11 +334,12 @@ void k_main()
 	PciInit();
 	initSVGA();
 	updateWindows();
+	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n", (uint)'а');
 	//swapBuffer();
-	SmpInit();
+	SmpInit(); 
 	NetInit();
 	NetPrintRouteTable();
-	CmdHttp("127.0.0.1", "/");
+	//CmdHttp("127.0.0.1", "/");
 	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n", (uint)'а');
 	{
 		printTextToWindow(4, mywin, "USB Devices:\n");

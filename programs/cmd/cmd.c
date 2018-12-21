@@ -55,6 +55,7 @@ void main(int argc, char ** argv)
 		while (key != 13)
 		{
 			while ((key = RecieveKey()) == 0) { Wait(1); };
+			if(key>0xFF) continue;
 			if (key == 13) continue;
 			if (key == 0x9) continue;
 			if ((key==0x8&&cmdLen > 0)||key!=0x8){
@@ -145,6 +146,7 @@ void main(int argc, char ** argv)
 			{
 				char * fname = malloc(256);
 				char * z = (uint)cmd+4;
+				while(*z==' ') ++z;
 				char *ff = fname;
 				while (*z&&*z != ' ')
 				{
@@ -181,7 +183,9 @@ void main(int argc, char ** argv)
 			else if (ucmd[0] == 'M'&&ucmd[1] == 'D'&&ucmd[2]==' ')
 			{
 				memcpy(ucmd, dir, 512);
-				concatdir(dir, (uint)cmd + 3);
+				char * dirv = cmd + 3;
+				while(*dirv==' ')dirv++;
+				concatdir(dir, dirv);
 				mkdir(dir, 0);
 				memcpy(dir, ucmd, 512);
 			}
@@ -196,31 +200,39 @@ void main(int argc, char ** argv)
 					++z;
 
 				}
-				
+				while(*z==' ') z++;
 				uint cid = 0;
 				char ** args;
 				char * fs = z;
+				z = cmd;
 				while (*z)
 				{
-					if (*z == ' ')
+					if (*z == ' '){
 						cid++;
+						while(*z==' ') ++z;
+						continue;
+					}
 					++z;
 				}
-
-				args = malloc(sizeof(*args)*cid);
-				z = fs;
-				int id = -1, zi = 0;
+				cid++;
+				args = malloc(sizeof(*args)*(cid+1));
+				z = cmd;
+				args[0] = malloc(256);
+				int id = 0, zi = 0;
 				while (*z)
 				{
 					if (*z == ' ')
 					{
+						while(*z==' ') ++z;
 						id++;
 						args[id] = malloc(256);
 						zi = 0;
+						continue;
 					}
 					else
 					{
 						args[id][zi] = *z;
+						
 						zi++;
 					}
 					++z;
@@ -228,13 +240,14 @@ void main(int argc, char ** argv)
 				memcpy(ucmd,dir , 512);
 				concatdir(dir, fname);
 				FILE * fp = fopen(dir,"r");
+				id++;
 				if(!fp)
 				{
 					printf("%s isn't a command or executable file!\n",fname);
 					memcpy(dir, ucmd, 512);
 					continue;
 				}
-				runProcess(dir, cid, args, 1, ucmd);
+				runProcess(dir, id, args, 1, ucmd);
 				memcpy(dir, ucmd, 512);
 			}
 			Wait(1);

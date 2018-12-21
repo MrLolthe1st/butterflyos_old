@@ -1063,7 +1063,7 @@ void avltree_insert(avltree_t* me, void* k, void* v)
 {
 	int i;
 	node_t* n;
-
+	//kprintf("[%x:%x;]", k, v);
 	for (i = 0; i < me->size; )
 	{
 		n = &me->nodes[i];
@@ -1086,11 +1086,11 @@ void avltree_insert(avltree_t* me, void* k, void* v)
 
 		if (r == 0)
 		{
-			if ((unsigned int)v<(unsigned int)n->val)
+			if (v<n->val)
 				i = __child_l(i);
-			else
+			else if  (v>n->val)
 				i = __child_r(i);
-			/*  we don't need to rebalance because we just overwrite this slot */
+			else i = 1 << 21;
 
 		}
 		else if (r < 0)
@@ -1109,12 +1109,71 @@ void avltree_insert(avltree_t* me, void* k, void* v)
 
 	/* we're outside of the loop because we need to enlarge */
 	//__enlarge(me);
+	printTextToWindow(3, mywin, "WWWWWWWWWWW%08x:%08x;%d!",v,k, me->count);
+	return 0;
 	n = &me->nodes[i];
 	n->key = k;
 	n->val = v;
 	me->count += 1;
 }
 
+void avltree_insert1(avltree_t* me, void* k, void* v)
+{
+	int i;
+	node_t* n;
+	kprintf("[%x:%x;]", k, v);
+	for (i = 0; i < me->size; )
+	{
+		n = &me->nodes[i];
+
+		/* found an empty slot */
+		if (!n->key)
+		{
+			n->key = k;
+			n->val = v;
+			me->count += 1;
+
+			if (0 == i)
+				return;
+
+			__rebalance(me, __parent(i));
+			return;
+		}
+
+		long r = me->cmp(n->key, k);
+
+		if (r == 0)
+		{
+			if (v<n->val)
+				i = __child_l(i);
+			else if (v>n->val)
+				i = __child_r(i);
+			else Wait(1000);
+
+		}
+		else if (r < 0)
+		{
+			i = __child_l(i);
+		}
+		else if (r > 0)
+		{
+			i = __child_r(i);
+		}
+		else
+		{
+			//assert(0);
+		}
+	}
+
+	/* we're outside of the loop because we need to enlarge */
+	//__enlarge(me);
+	printTextToWindow(3, mywin, "EEEEEEEEEE%08x:%08x;%d!", v, k, me->count);
+	return 0;
+	n = &me->nodes[i];
+	n->key = k;
+	n->val = v;
+	me->count += 1;
+}
 void* avltree_iterator_peek(avltree_t * h, avltree_iterator_t * iter)
 {
 	if (iter->current_node < h->size)

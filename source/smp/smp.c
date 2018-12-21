@@ -12,7 +12,7 @@ void smp_core(uint procId)
 		WindowEvent we;
 		//kprintf("%x!", &videoMemory);
 		ushort uyt;
-		we.data = mmalloc(2);
+		//we.data = mmalloc(2);
 		if (!(*((uchar*)0x3FF)))
 			for (;;)
 			{

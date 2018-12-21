@@ -369,12 +369,15 @@ void main(int argc, char ** argv)
 	pageOffsetX = 0;
 	cursorX = 0;
 	pageOffsetY = 0;
-	if (argc)
-		if (!openFile(argv[0]))
+	if (argc>1)
+	{
+		if (!openFile(argv[1]))
 		{
 			closeWindow(w);
 			return;
-		};
+		}	
+	}
+	else return;
 	//redraw();
 	LoadFile();
 	outText();
