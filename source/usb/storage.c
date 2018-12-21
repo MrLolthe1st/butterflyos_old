@@ -210,7 +210,7 @@ void clearHalt(UsbStorage * s)
 	}
 
 }
-void inquiryRequest(UsbStorage * s)
+int inquiryRequest(UsbStorage * s)
 {
 	clearHalt(s);
 	UsbDevice * dev = s->d;
@@ -253,7 +253,9 @@ void inquiryRequest(UsbStorage * s)
 	t->success = false;
 	t->w = 1;
 	dev->hcIntr(dev, t);
-
+	printTextToWindow(3, mywin, "!!!!Inq: %d!!!!!", *((unsigned char*)((unsigned int)cbw + 1)));
+	if (*((unsigned char*)((unsigned int)cbw + 1)) & 0x7F)
+		return 1;
 
 	t->endp = endpointIn;
 	t->req = 0;
@@ -268,7 +270,7 @@ void inquiryRequest(UsbStorage * s)
 	printMem(cbw, 13); kprintf("\n");
 	kprintf("\n");
 #endif // DEBUG
-
+	return 0;
 }
 
 u8 testUnitReady(UsbStorage * s)
@@ -741,6 +743,7 @@ void _storageInit(UsbDevice * dev)
 		endpointOut->desc = dev->intfDesc->endpoints->next;
 	else
 		endpointOut->desc = dev->intfDesc->endpoints;
+
 	//Reset MassStorage
 
 	if (MassStorageReset(dev, endpointOut))
@@ -768,7 +771,7 @@ void _storageInit(UsbDevice * dev)
 	long long sectorCount = 0;
 	for (int lun = 0; lun <= lunCnt; ++lun) {
 		
-		inquiryRequest(storage);
+		if (inquiryRequest(storage)) return;
 		//Start storage
 		startStorage(storage);
 		//Wait for ready
@@ -793,6 +796,6 @@ void _storageInit(UsbDevice * dev)
 	checkDiskPatritions(dcount);
 
 	dcount++;
-
+	Wait(10000);
 	free(b);
 }

@@ -39,9 +39,11 @@ lap:
 	mov es,ax
 	mov [es:0x0000],byte 1
 	mov di,0x0000
-	mov dx,0x11e
+	mov dx,0x11C
 	retry1:
-	sub dx,3
+	sub dx,1
+	cmp dx, 0x10F
+	jz ext1
 	mov cx,dx
 	mov ax,0x4F01
 	int 0x10
@@ -50,7 +52,8 @@ lap:
 	or bx,0x4000
 	%if 1;Set it to 0, if you won't use GUI.
 	int 10h
-	jc retry1
+	test ah,ah
+	jnz retry1
 	pusha
 	xor ax,ax
 	mov es,ax
@@ -66,6 +69,7 @@ lap:
 	stosb
 	popa
 	%endif
+	ext1:
     mov ax, cs
     mov ds, ax
     mov es, ax

@@ -52,8 +52,8 @@ unsigned char mouse_read() {
 
 // ------------------------------------------------------------------------------------------------
 void initPS2Mouse() {
-	under = malloc(19 * 19 * 4);
-	under2 = malloc(19 * 19 * 4);
+	under = mmalloc(19 * 19 * 4);
+	under2 = mmalloc(19 * 19 * 4);
 
 
 	//mouse_wait(1);

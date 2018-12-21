@@ -23,11 +23,18 @@ void putPixel(int x, int y, unsigned int color) {
 		* ((Pixel *)(videoBuffer + x * bpp + y * width * bpp)) = *((Pixel *)& color);
 }
 
+int uubpp = 0;
 // ------------------------------------------------------------------------------------------------
 //Puts pixel on the screen
 void putPixelD(int x, int y, unsigned int color) {
+	Pixel * p = &color;
 	if (x >= 0 && y >= 0 && x < width&&y < height)
-		* ((Pixel *)(videoMemory + x * bpp + y * width * bpp)) = *((Pixel *)& color);
+	{
+		if (uubpp > 2)
+			*((Pixel *)(videoMemory + x * bpp + y * width * bpp)) = *p;
+		else
+			*((unsigned short*)(videoMemory + x * 2 + width * y * 2)) = (p->b / 8) + ((p->g / 8) << 6) + ((p->r / 8) << 11);
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -42,7 +49,6 @@ unsigned char fmma(unsigned char a, unsigned char b)
 {
 
 }
-
 // ------------------------------------------------------------------------------------------------
 void softBox(int x1, int y1, int x2, int y2, int darker, int size)
 {
@@ -124,6 +130,7 @@ void swapBuffer() {
 	//Waits retrace
 	while (inportb(0x3DA) & 0x8) {};
 	while (!(inportb(0x3DA) & 0x8)) {};
+	if(uubpp>2)
 	__asm__("\
 		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
@@ -145,6 +152,14 @@ void swapBuffer() {
 			jnz 	ww1sse2 			#If not zero, repeat again			\n\
 		.byte 0x61							#Restore registers from stack		\
 		"::"r" (videoMemory), "r" (videoBuffer), "r" (ccnt));
+	else
+	{
+		for (int i = 0; i < width*height; i++)
+		{
+			Pixel * w = ((unsigned int)videoBuffer + i*3 );
+			*((unsigned short*)((unsigned int)videoMemory + i * 2)) = (w->b / 8) + ((w->g / 8) << 6) + ((w->r / 8) << 11);
+		}
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -792,6 +807,9 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 void initSVGA() {
 	//__asm__("movl $70999993,%eax\njmp %eax");
 	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;
+	uubpp = bpp;
+	if (bpp < 3)
+		bpp = 3;
 	width = (unsigned int) * (((unsigned short *)(0x50000 + 18)));
 	height = (unsigned int) * (((unsigned short *)(0x50000 + 20)));
 	//kprintf("!!%x %x!!!", width, height);

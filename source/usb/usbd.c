@@ -785,6 +785,7 @@ static bool UsbDevInit(UsbDevice *dev)
 		}
 		_usbhubinit(dev);
 		_UsbMouseInit(dev); _UsbKbdInit(dev);
+		//kprintf("%d %d %d %d~\n",pickedIntfDesc->intfClass, pickedIntfDesc->intfSubClass, pickedIntfDesc->intfProtocol);
 
 		if (pickedIntfDesc->intfClass == 8 && pickedEndpDesc->attributes)
 		{

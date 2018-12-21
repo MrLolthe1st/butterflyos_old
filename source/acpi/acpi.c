@@ -546,10 +546,14 @@ void SmpInit()
 
 	// Wait for all cpus to be active
 	PitWait(10);
+	int cnt = 0;
 	while (*g_activeCpuCount != g_acpiCpuCount)
 	{
-		kprintf("Waiting... %d\n", *g_activeCpuCount);
+		kprintf("Waiting... %d %d\n", *g_activeCpuCount, g_acpiCpuCount);
 		PitWait(10);
+		cnt++;
+		if (cnt > 300)
+			return;
 	}
 
 	kprintf("All CPUs activated\n");

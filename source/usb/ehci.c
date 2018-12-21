@@ -448,21 +448,22 @@ static uint EhciResetPort(EhciController *hc, uint port)
 
 	*reg |= (1 << 12) | (1 << 20);
 	Wait(1000);
-	//kprintf("!Status: %x\n",*reg);
-	EhciPortSet(reg, PORT_RESET | (1 << 12) | (1 << 20) | (1 << 6));
-	Wait(600);
+	kprintf("!Status: %x\n",*reg);
+	EhciPortSet(reg, PORT_RESET);
+	Wait(1000);
 	EhciPortClr(reg, PORT_RESET);
 
 	// Wait 100ms for port to enable (TODO - what is appropriate length of time?)
 	uint status = 0;
 	///	*reg |=  (1 << 12);
-	for (uint i = 0; i < 5; ++i)
+	for (uint i = 0; i < 10; ++i)
 	{
 		// Delay
 		Wait(300);
 
 		// Get current status
 		status = *reg;
+		kprintf("!Status: %x\n", status);
 		//kprintf("Status: %x\n",status);
 		// Check if device is attached to port
 		if (~status & PORT_CONNECTION)
@@ -1072,7 +1073,7 @@ void _ehci_init(uint id, PciDeviceInfo *info)
 	// Configure all devices to be managed by the EHCI
 	hc->opRegs->configFlag = 1;
 	//WOR(hc,configFlagO, 1);
-	PitWait(500);    // TODO - remove after dynamic port detection
+	PitWait(3500);    // TODO - remove after dynamic port detection
 	kprintf("Device configured. Probing ports...\n");
 	// Probe devices
 	EhciProbe(hc);

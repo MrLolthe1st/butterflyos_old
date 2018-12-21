@@ -129,7 +129,7 @@ float table[64];
 float tmp[4]={0};
 float tmp2[4]={0};
 float tmp3[4]={0.25,0.25,0.25,0.25};
-#ifndef Wdw
+#ifdef Wdw
 float compute(int x, int y, wow * matrix1)
 {	
 	__asm__("\
@@ -161,7 +161,7 @@ float compute(int x, int y, wow * matrix1)
 	return (tmp[0]+tmp[1]+tmp[2]+tmp[3]);
 }
 #endif
-/*
+
 float compute(int x, int y, wow * matrix1)
 {
 	float tmp = 0;
@@ -175,7 +175,7 @@ float compute(int x, int y, wow * matrix1)
 		}
 	}
 	return tmp;
-}*/
+}
 typedef struct{
 	float a[16][16];
 } color;
