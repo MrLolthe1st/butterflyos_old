@@ -28,6 +28,7 @@ typedef struct __attribute__((packed)) _Window {
 	unsigned char *		videoOk;
 	unsigned int		updating;
 	unsigned int		buffered;
+	//unsigned int		rid;
 } Window;
 typedef struct WindowEvent_ {
 	unsigned int code;

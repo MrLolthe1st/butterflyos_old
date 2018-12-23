@@ -262,6 +262,7 @@ void k_main()
 	//nextS = &nnn;
 	//initSVGA1(0;
 	rtc();
+
 	mywin = openWindow(640, 680, 0, 0, "System Info");
 	AcpiInit(); 
 	iint(); 
@@ -333,6 +334,7 @@ void k_main()
 	mywin->handler = &Win1Handler;
 	PciInit();
 	initSVGA();
+	initWindows();
 	updateWindows();
 	printTextToWindow(4, mywin, "\n%xListing of connected devices:\n", (uint)'а');
 	//swapBuffer();

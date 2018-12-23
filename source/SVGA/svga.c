@@ -328,9 +328,24 @@ void CopyToVMemoryTransparent(int x1, int y1, int w, int h, char * b) {
 		for (i = x1; i < x1 + w; i++)
 			if ((*((unsigned short *)(b + (j - y1) * w * 3 + (i - x1) * 3))) //Green and Blue не 0
 				|| (*((unsigned char *)(b + (j - y1) * w * 3 + (i - x1) * 3 + 2)))) //Red Не 0
-				* ((Pixel *)(videoMemory + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
+			{
+				if(uubpp>2)
+				*((Pixel *)(videoMemory + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
+				else {
+					Pixel * ww = ((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
+					*((unsigned short*)((unsigned int)videoMemory + (i+j*width) * 2)) = (ww->b / 8) + ((ww->g / 8) << 6) + ((ww->r / 8) << 11);
+				}
+			}
 }
+void CopyToVMemoryTransparent1(int x1, int y1, int w, int h, char * b) {
+	int i, j;
 
+	for (j = y1; j < min(height - 1, y1 + h); j++)
+		for (i = x1; i < x1 + w; i++)
+			if ((*((unsigned short *)(b + (j - y1) * w * 3 + (i - x1) * 3))!=0xFFFF) //Green and Blue не 0
+				|| (!(*((unsigned char *)(b + (j - y1) * w * 3 + (i - x1) * 3 + 2))) == 0xFF)) //Red Не 0
+				* ((Pixel *)(videoBuffer + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
+}
 
 // ------------------------------------------------------------------------------------------------
 void CopyFromVMemory(int x1, int y1, int w, int h, unsigned char * b) {
@@ -689,7 +704,7 @@ void * cat;
 // ------------------------------------------------------------------------------------------------
 char * getBmpAndScaleIt(char * path, int width, int height)
 {
-	FILE * f = fopen("A:\\IMG\\WP.BMP", "r");
+	FILE * f = fopen(path, "r");
 	kprintf("###%x###", f);
 	if (!f)
 		return;
@@ -707,7 +722,7 @@ char * getBmpAndScaleIt(char * path, int width, int height)
 	char * cat2 = mmalloc(sz);
 	void * mo = mmalloc(w * 3);
 	double pzz = w*1.0 / width;
-	double pzy = 1024.0 / height;
+	double pzy = h*1.0 / height;
 	double ci = 0;
 	for (int cline = 0; cline < height; cline++, ci += pzy) {
 		int cx = 0;

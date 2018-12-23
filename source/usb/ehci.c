@@ -445,13 +445,13 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	volatile u32 *reg = &hc->opRegs->ports[port];
 
 	// Reset the port
-	printTextToWindow(3, mywin, "\n", port, *reg);
+	//printTextToWindow(3, mywin, "\n", port, *reg);
 	*reg |= (1 << 12);
-	Wait(2000);
-	printTextToWindow(3, mywin, "#%dStatus%08x;", port, *reg);
+	Wait(1000);
+	//printTextToWindow(3, mywin, "#%dStatus%08x;", port, *reg);
 	//EhciPortClr(reg, PORT_ENABLE);
 	EhciPortSet(reg, PORT_RESET);
-	Wait(2000);
+	Wait(1000);
 	//while (*reg&PORT_RESET);
 	EhciPortClr(reg, PORT_RESET);
 
@@ -459,14 +459,14 @@ static uint EhciResetPort(EhciController *hc, uint port)
 	uint status = 0;
 	//*reg |=  (1 << 12);
 	int oo = 0;
-	for (uint i = 0; i < 20; ++i)
+	for (uint i = 0; i < 5; ++i)
 	{
 		// Delay
 		Wait(300);
 
 		// Get current status
 		status = *reg;
-		kprintf("!Status: %x\n", status);
+		//kprintf("!Status: %x\n", status);
 		//kprintf("Status: %x\n",status);
 		if (status & (1 << 10) && oo == 0)
 		{
@@ -483,7 +483,7 @@ static uint EhciResetPort(EhciController *hc, uint port)
 		{
 			break;
 		}
-		printTextToWindow(3, mywin, "#%dStatus%08x;", port, *reg);
+		//printTextToWindow(3, mywin, "#%dStatus%08x;", port, *reg);
 		// Acknowledge change in status
 		if (status & (PORT_ENABLE_CHANGE | PORT_CONNECTION_CHANGE))
 		{

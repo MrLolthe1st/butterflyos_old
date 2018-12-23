@@ -39,11 +39,19 @@ IDT_HANDLER(videoService)
 	}
 }
 
-
+char * ico = 0;
+char * ico_big = 0;
+char * menu = 0;
+char * ico_path = "A:\\IMG\\std_ico.bmp";
+char * menu_path = "A:\\IMG\\menu.bmp";
 // ------------------------------------------------------------------------------------------------
 void initWindows()
 {
-
+	ico_path[0] += bootedFrom;
+	menu_path[0] += bootedFrom;
+	ico = getBmpAndScaleIt(ico_path, 16, 16);
+	menu = getBmpAndScaleIt(menu_path, 30, 30);
+	ico_big = getBmpAndScaleIt(ico_path, 30, 30);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -54,7 +62,7 @@ void drawDesktop()
 	CopyToVMemory(0, 0, width, height - 32, cat);
 	//Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
 	//Task Panel
-	Bar(0, height - 32, width - 1, height - 1, 0x01579B);
+	Bar(0, height - 34, width - 1, height - 1, 0x01579B);
 	//Some text...
 	OutTextXY(width - 270, height - 19 - 32, "ButterflyOS stable build 0.1.2.0", 0xDD2C00, 1);
 }
@@ -334,9 +342,24 @@ void updateWindows()
 	//OutTextXY(900, 746, &time, 0xFFFFFF, 1);
 	Window * w = windows;
 	//Active window is on top of windows list
+	int cx = 0;
+	if(menu)
+		CopyToVMemoryTransparent1(10, height - 32, 30, 30, menu);
 	while (w) {
-		if (w->lastUpdate)
+		if (w->lastUpdate) {
+			//Draw(w);
+			//CopyToVMemory()
+			if(ico_big)
+				CopyToVMemory(60 + (cx * 34), height - 32, 30, 30, ico_big);
+			cx++;
+		}
+		w = w->next;
+	}
+	w = windows;
+	while (w) {
+		if (w->lastUpdate) {
 			Draw(w);
+		}
 		w = w->next;
 	}
 
@@ -480,7 +503,9 @@ void Draw(Window * toDraw) {
 			Bar(toDraw->x + toDraw->cursorX * 8, toDraw->y + toDraw->cursorY * 16, toDraw->x + toDraw->cursorX * 8 + 7, toDraw->y + toDraw->cursorY * 16 + 15, COLOR_BLUE);
 		else
 			Bar(toDraw->x + toDraw->cursorX * 8, toDraw->y + toDraw->cursorY * 16, toDraw->x + toDraw->cursorX * 8 + 7, toDraw->y + toDraw->cursorY * 16 + 15, 0);
-	OutFixedTextXY(toDraw->x + 3, toDraw->y - 17, toDraw->caption, 0xFFFFFF, toDraw->wwidth - 90, 1);
+	if(ico)
+	CopyToVMemory(toDraw->x + 3, toDraw->y - 17, 16, 16, ico);
+	OutFixedTextXY(toDraw->x + 3 + 18, toDraw->y - 17, toDraw->caption, 0xFFFFFF, toDraw->wwidth - 90, 1);
 	Bar(toDraw->x + toDraw->wwidth - 26, toDraw->y - 20, toDraw->x + toDraw->wwidth - 1, toDraw->y - 5, 0xFF0000);
 	Bar(toDraw->x + toDraw->wwidth - 50, toDraw->y - 20, toDraw->x + toDraw->wwidth - 28, toDraw->y - 5, 0x90CAF9);
 	Bar(toDraw->x + toDraw->wwidth - 75, toDraw->y - 20, toDraw->x + toDraw->wwidth - 52, toDraw->y - 5, 0x90CAF9);
