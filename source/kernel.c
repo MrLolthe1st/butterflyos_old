@@ -7,8 +7,9 @@ to turn off debbuging messages
 
 */
 
+int drawed1 = 0, prevmode = 0x117;
 #define size_t unsigned int
-
+int svga_inited = 0;
 int AVX_AVAILABLE = 0;
 short mouseX = 4, mouseY = 4, mouse_cycle = 0, lastX = 4, lastY = 4;
 int cday, cmonth, cyear;

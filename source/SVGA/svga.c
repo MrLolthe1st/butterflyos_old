@@ -137,14 +137,14 @@ void swapBuffer() {
 		mov %0,%%edi 					#Video memory start to edi			\n\
 		mov %1,%%esi 					#Video buffer start to esi			\n\
 		ww1sse2: \
-			movaps  (%%esi),%%xmm0		#Copy 16 bytes to xmm0 from buffer	\n\
-			movaps 	%%xmm0,(%%edi)		#Copy from xmm0 to video memory		\n\
-			movaps  16(%%esi),%%xmm0	#16 again, but + 16 from current	\n\
-			movaps 	%%xmm0,16(%%edi)	#16 again, but + 16 from current	\n\
-			movaps  32(%%esi),%%xmm0	#16 again, but + 32 from current	\n\
-			movaps 	%%xmm0,32(%%edi)	#16 again, but + 32 from current	\n\
-			movaps  48(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
-			movaps 	%%xmm0,48(%%edi)	#16 again, but + 48 from current	\n\
+			movups  (%%esi),%%xmm0		#Copy 16 bytes to xmm0 from buffer	\n\
+			movups 	%%xmm0,(%%edi)		#Copy from xmm0 to video memory		\n\
+			movups  16(%%esi),%%xmm0	#16 again, but + 16 from current	\n\
+			movups 	%%xmm0,16(%%edi)	#16 again, but + 16 from current	\n\
+			movups  32(%%esi),%%xmm0	#16 again, but + 32 from current	\n\
+			movups 	%%xmm0,32(%%edi)	#16 again, but + 32 from current	\n\
+			movups  48(%%esi),%%xmm0	#16 again, but + 48 from current	\n\
+			movups 	%%xmm0,48(%%edi)	#16 again, but + 48 from current	\n\
 			add 	$64,%%edi			#Add 64 bytes to edi				\n\
 			add 	$64,%%esi			#Add 64 bytes to esi				\n\
 			dec		%%ecx				#Decrement count					\n\
@@ -172,6 +172,7 @@ void CopyToVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	int startY = max(0, y1);
 	int endY = min(height, y1 + h);
 	int mmw = min(x1 + w, width) - x1;
+	
 	if (bpp == 3)
 		for (j = startY; j < endY; j++)
 			__asm__("\
@@ -721,8 +722,8 @@ char * getBmpAndScaleIt(char * path, int width, int height)
 	cat = ((void *)(cat + *((unsigned int *)(cat + 0x0A))));
 	char * cat2 = mmalloc(sz);
 	void * mo = mmalloc(w * 3);
-	double pzz = w*1.0 / width;
-	double pzy = h*1.0 / height;
+	double pzz = w * 1.0 / width;
+	double pzy = h * 1.0 / height;
 	double ci = 0;
 	for (int cline = 0; cline < height; cline++, ci += pzy) {
 		int cx = 0;
@@ -765,6 +766,9 @@ char * getBmpAndScaleIt(char * path, int width, int height)
 }
 
 
+
+
+
 // ------------------------------------------------------------------------------------------------
 void loadFontPointer() {
 	///Bar(0, 0, 600, 600, 0xFF0000);
@@ -774,7 +778,7 @@ void loadFontPointer() {
 	//
 	//return;
 	swapBuffer();
-	cat = getBmpAndScaleIt("A:\\IMG\\WP.BMP", width, height);
+	//cat = getBmpAndScaleIt("A:\\IMG\\WP.BMP", width, height);
 
 	//swapBuffer();
 	//Bar(0,0,600,600,0x00FF000);
@@ -818,15 +822,147 @@ void draw3D(unsigned int wwidth, unsigned int wheight, unsigned int t, unsigned 
 	}
 }
 
+typedef struct  __attribute__((packed)) {
+	uint16_t attributes;
+	uint8_t winA, winB;
+	uint16_t granularity;
+	uint16_t winsize;
+	uint16_t segmentA, segmentB;
+	uint realFctPtr;
+	uint16_t pitch; // bytes per scanline
+
+	uint16_t Xres, Yres;
+	uint8_t Wchar, Ychar, planes, bpp, banks;
+	uint8_t memory_model, bank_size, image_pages;
+	uint8_t reserved0;
+
+	uint8_t red_mask, red_position;
+	uint8_t green_mask, green_position;
+	uint8_t blue_mask, blue_position;
+	uint8_t rsv_mask, rsv_position;
+	uint8_t directcolor_attributes;
+
+	uint32_t physbase;  // your LFB (Linear Framebuffer) address ;)
+	uint32_t reserved1;
+	uint16_t reserved2;
+} BlockInfo;
+void do_v86()
+{
+
+}
+void entering_v86(uint32_t ss) {
+	__asm__
+	("  pusha\n\
+		mov $_lo, %eax\n\
+		mov 8(%ebp), %ebx\n\
+		mov $0x8400, %edx\n\
+		jmp %edx\n\
+		_lo:		\n\
+		popa\n\
+		\n\
+		");
+}
+void entering_v861(uint32_t ss) {
+	return;
+	__asm__
+	("  pusha\n\
+		mov $_lo1, %eax\n\
+		push %eax\n\
+		pushf\n\
+		orl  $131072, (%esp)\n\
+		movl	$0x0, %eax	\n\
+		pushl	%eax		\n\
+		mov		$0x8400, %eax\n\
+		pushl	%eax		\n\
+		mov 24(%esp), %eax\n\
+		iret				\n\
+		_lo1:				\n\
+		popa\n\
+		");
+}
+void setVMode(unsigned short mode)
+{
+	entering_v86(mode);// iint(); Wait(1);
+	outportb(0x20, 0x11);
+	outportb(0xa0, 0x11);
+	outportb(0x21, 0x20);
+	outportb(0xa1, 0x28);
+	outportb(0x21, 0x04);
+	outportb(0xa1, 0x02);
+	outportb(0x21, 0x01);
+	outportb(0xa1, 0x01);
+	outportb(0x21, 0x00);
+	outportb(0xa1, 0x00);
+	int_l(); 
+	int_e();
+	unsigned short * modes = *((unsigned short*)0x4500E) + *((unsigned short*)0x45010) * 16;
+	int i = 0;
+	BlockInfo * bl = 0x45200;
+	while (modes[i] != 0xFFFF) {
+		
+		if (modes[i] == mode )
+		{
+			width = bl->Xres;
+			height = bl->Yres;
+			bpp = bl->bpp/8;
+			
+			videoMemory = bl->physbase;
+
+			if (videoBuffer)
+				ffree(videoBuffer);
+			videoBuffer = mmalloc(width * height * 4 + 32 + 4096 * 4);
+			uubpp = bpp;
+			if (bpp < 3)
+				bpp = 3;
+			//kprintf("!!%x %x!!!", width, height);
+			//	Wait(10000);
+			mouseX = width / 2, mouseY = height / 2, mouse_cycle = 0, lastX = width / 2, lastY = height / 2;
+			ccnt = (width*height / 64) * 3;
+			if (bpp == 4) {
+				ccnt = (width * height) / 16;
+				ok = 0;
+			}
+			svga_inited = 1;
+		}
+		bl = (uint)bl + 256;
+		i++;
+	}
+	//entering_v86(0, 0, 0x8, &do_v86);
+}
+void print_Avail_modes(Window * mywin)
+{
+	printTextToWindow(4, mywin, "Note: press enter for first mode\n");
+	printTextToWindow(3, mywin, "Available video modes:\n", *((unsigned short*)0x45004));
+	unsigned short * modes = *((unsigned short*)0x4500E) + *((unsigned short*)0x45010) * 16;
+	int i = 0;
+	BlockInfo * bl = 0x45200;
+	while (modes[i] != 0xFFFF) {
+		if (bl->bpp >= 24) {
+			printTextToWindow(3, mywin, "Mode ");
+			printTextToWindow(1, mywin, "%03x %dx%dx%02d      ", modes[i], bl->Xres, bl->Yres, bl->bpp);
+			if (bl->Xres < 1000)
+				printTextToWindow(4, mywin, " ");
+			if (bl->Yres < 1000)
+				printTextToWindow(4, mywin, " ");
+		}
+		bl = (uint)bl + 256;
+		i++;
+	}
+	printTextToWindow(3, mywin, "\nEnter new mode: ");
+}
 // ------------------------------------------------------------------------------------------------
 void initSVGA() {
 	//__asm__("movl $70999993,%eax\njmp %eax");
+	videoBuffer = 0;
+	/*
 	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;
+	width = (unsigned int) * (((unsigned short *)(0x50000 + 18)));
+	height = (unsigned int) * (((unsigned short *)(0x50000 + 20)));
+	printTextToWindow(3, mywin, "(%dx%dx%d)\n", width, height, bpp);
+
 	uubpp = bpp;
 	if (bpp < 3)
 		bpp = 3;
-	width = (unsigned int) * (((unsigned short *)(0x50000 + 18)));
-	height = (unsigned int) * (((unsigned short *)(0x50000 + 20)));
 	//kprintf("!!%x %x!!!", width, height);
 	//	Wait(10000);
 	mouseX = width / 2, mouseY = height / 2, mouse_cycle = 0, lastX = width / 2, lastY = height / 2;
@@ -836,9 +972,42 @@ void initSVGA() {
 		ok = 0;
 	}
 	videoBuffer = mmalloc(width * height * 4 + 32 + 4096*4);
-	videoBuffer = (unsigned char*)((((unsigned int)videoBuffer) / 16) * 16 + 16);
+	//videoBuffer = (unsigned char*)((((unsigned int)videoBuffer) / 16) * 16 + 16);
 	videoMemory = (unsigned char*)(*((unsigned char *)0x50000 + 40) +
-		(*((unsigned char *)0x50000 + 41) << 8) + (*((unsigned char *)0x50000 + 42) << 16) + (*((unsigned char *)0x50000 + 43) << 24));
+		(*((unsigned char *)0x50000 + 41) << 8) + (*((unsigned char *)0x50000 + 42) << 16) + (*((unsigned char *)0x50000 + 43) << 24));*/
+	unsigned short * modes = *((unsigned short*)0x4500E) + *((unsigned short*)0x45010) * 16;
+	int i = 0;
+	BlockInfo * bl = 0x45200;
+	prevmode = 0;
+	while (modes[i] != 0xFFFF) {
+		if (bl->bpp >= 24) {
+			if (bl->Xres == 1024 && bl->Yres == 768)
+			{
+				prevmode = modes[i];
+				setVMode(modes[i]);
+				break;
+			}
+		}
+		bl = (uint)bl + 256;
+		i++;
+	}
+	if (!prevmode) {
+		int i = 0;
+		BlockInfo * bl = 0x45200;
+		prevmode = 0;
+		while (modes[i] != 0xFFFF) {
+			if (bl->bpp >= 24) {
+				if (bl->Xres == 800 && bl->Yres == 600)
+				{
+					prevmode = modes[i];
+					setVMode(modes[i]);
+					break;
+				}
+			}
+			bl = (uint)bl + 256;
+			i++;
+		}
+	}
 	//VBE4F07 = *((unsigned int *)(0x50000 + 256 * 17));
 	loadFontPointer();
 

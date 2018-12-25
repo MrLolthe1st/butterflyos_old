@@ -125,3 +125,4 @@ typedef struct __attribute__((packed)) _E {
 Process * procTable = 0;
 int currentRunning = 0, procCount = 0;
 char* formatString(char* str, va_list ap);
+Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type, void * handler, char * caption);

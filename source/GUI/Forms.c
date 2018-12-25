@@ -59,8 +59,8 @@ void initWindows()
 void drawDesktop()
 {
 	//Draw background
-	CopyToVMemory(0, 0, width, height - 32, cat);
-	//Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
+	//CopyToVMemory(0, 0, width, height - 32, cat);
+	Bar(0, 0, width - 1, height - 1, 0xFFFFFF);
 	//Task Panel
 	Bar(0, height - 34, width - 1, height - 1, 0x01579B);
 	//Some text...

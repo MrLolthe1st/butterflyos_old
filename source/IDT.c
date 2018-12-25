@@ -326,7 +326,7 @@ IDT_HANDLERM(multitasking) {
 			");
 
 	// *((uint*)((uint)g_localApicAddr + 0xb0)) = 0;
-
+	//kprintf("1");
 	*sec100 = (*sec100) + 1;
 
 	__asm__("call _multiHandler");
@@ -561,6 +561,50 @@ void makeMouseHook(uint event, uint ev2)
 	hookEvent(event, &he);
 	free(he.data);
 }
+Window * sysConfig = 0;
+int cpos = 0, cmode = 0;
+char table1[256] = {
+	['0'] = 0,['1'] = 1,['2'] = 2,['3'] = 3,['4'] = 4,
+	['5'] = 5,['6'] = 6,['7'] = 7,['8'] = 8,['9'] = 9,
+	['A'] = 10,['B'] = 11,['C'] = 12,['D'] = 13,['E'] = 14,['F'] = 15
+};
+void shandler(WindowEvent * e)
+{
+	if (e->code == WINDOWS_KEY_DOWN)
+	{
+		unsigned short key = *(unsigned short*)e->data;
+		if (key < 0xff) {
+			if (key == 0x8 && cpos > 0) {
+				cpos--; printTextToWindow(3, sysConfig, "%c", 8);
+				cmode /= 16;
+			}
+			if (key == 13) {
+				if (cmode == 0)
+					cmode = prevmode;
+				if (cmode < 0x100)
+					return;
+				setVMode(cmode);
+				memset(sysConfig->video, 0, 3 * sysConfig->wwidth*sysConfig->wheight);
+				//BarVideo(0, 0, sysConfig->wwidth, sysConfig->wheight, 0, sysConfig->wwidth, sysConfig->wheight, sysConfig->video);
+				sysConfig->cursorX = 0;
+				sysConfig->cursorY = 0;
+				printTextToWindow(3, sysConfig, "Current video mode is %dx%dx%d\n", width, height, bpp * 8);
+				print_Avail_modes(sysConfig);
+				cmode = 0;
+				cpos = 0;
+			}
+			if (key >= 'a'&&key <= 'f')
+				key -= 32;
+			if ((key >= '0'&&key <= '9') || (key >= 'A'&&key <= 'F'))
+			{
+				cmode *= 16;
+				cmode += table1[key];
+				printTextToWindow(3, sysConfig, "%c", key);
+				cpos++;
+			}
+		}
+	}
+}
 void mouseHandler()
 {
 	if (mouseX < 0)
@@ -588,6 +632,14 @@ void mouseHandler()
 		CopyToVMemoryTransparent(mouseX, mouseY, (unsigned short)16, (unsigned short)16, mouse_cur);
 	}
 	if ((buttons < lastButtonState)) {
+		if (lastButtonState & 1 && !(buttons & 1))
+		{
+			if (pointIn(mouseX, mouseY, 0, height - 32, 30, height) && !sysConfig) {
+				sysConfig = openWindow(648, 400, 0, shandler, "System configuration");
+				printTextToWindow(3, sysConfig, "Current video mode is %dx%dx%d\n", width, height, bpp * 8);
+				print_Avail_modes(sysConfig);
+			}
+		}
 		if (dragging == 1) {
 			dragging = 0;
 		}
@@ -974,7 +1026,11 @@ void IoApicSetEntry(u8 *base, u8 index, u64 data)
 	IoApicOut(base, IOREDTBL + index * 2, (u32)data);
 	IoApicOut(base, IOREDTBL + index * 2 + 1, (u32)(data >> 32));
 }
-
+char GPF = 0x90;
+__asm__("push %esp; call _GPFF; iret");
+void GPFF(char * sp) {
+	for (;;);
+}
 // ------------------------------------------------------------------------------------------------
 void IoApicInit()
 {
@@ -1048,6 +1104,7 @@ void iint() {
 	inst(0x28, &irq_time8, 0x8e); //RTC - Real Time Clock
 	inst(0x21, &irq_keyboard, 0x8e); //Keyboard
 	inst(0x20 + 12, &irq_mouse, 0x8e); //PS/2 Mouse
+
 	//inst(0x20 + 14, & ATA1, 0x8e); //ATA Primary IRQ
 	//inst(0x20 + 15, & ATA2, 0x8e); //ATA Secondary IRQ
 	for (int i = 0; i < 32; i++) inst(i, &irq_ex, 0x8e);
@@ -1064,6 +1121,7 @@ void iint() {
 	IoApicInit();
 	IoApicSetEntry(g_ioApicAddr, AcpiRemapIrq(0), 0x20);
 	IoApicSetEntry(g_ioApicAddr, AcpiRemapIrq(2), 0x22);
+	inst(13, &GPF, 0x8e); //PS/2 Mouse
 	int_e(); //Enabling interrupts
 	//	unsigned short hz = 65536	;
 

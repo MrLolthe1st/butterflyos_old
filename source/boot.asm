@@ -1,6 +1,5 @@
 [org 0x8000]
-
-loadermain:
+some:
 lap:
 		jmp short bsp
 		xor ax,ax
@@ -35,11 +34,62 @@ lap:
 	mov ax,ds
 	stosw
 	
+	pusha
+	mov ax,0x4500
+	mov es,ax
+	mov ds,ax
+	mov si,0
+	mov di,0
+	mov ax,0x4F00
+	int 10h
+	mov si, 0xE
+
+	cld
+	lodsw
+	mov bx, ax
+	lodsw
+	mov ds, ax
+	mov si, bx
+	mov ax,0x4500
+	mov es,ax
+	;mov ds,ax
+	mov word [es:2],0
+	mov di, 0x200
+	lop1:
+		lodsw
+		cmp ax,0xFFFF
+		jz ex1
+		mov cx, ax
+		mov ax,0x4f01
+		int 10h
+		mov ax, 0x4500
+		mov es, ax
+		;add di,0x19
+		cmp byte [es:di+0x19],24
+		jl ou1
+		cmp word [es:di+0x12], 800
+		jl ou1
+		mov word [es:0], cx
+		ou1:
+		;sub di, 0x19
+		add di, 256
+		jmp lop1
+	ex1:
+	popa
+
 	mov ax,0x5000
 	mov es,ax
 	mov [es:0x0000],byte 1
 	mov di,0x0000
-	mov dx,0x11C
+	push es
+	push ax
+	mov ax,0x4500
+	mov es,ax
+	mov dx, word [es:0]
+	pop ax
+	pop es
+	mov dx, 0x110
+	;inc dx
 	retry1:
 	sub dx,1
 	cmp dx, 0x10F
@@ -138,7 +188,7 @@ FlushPipeline:
 	cmp eax,0
 	jnz bsp_ok
     mov esp, 0ffffh
-	mov ecx,0x40000
+	mov ecx,0x80000
 	mov edi,0x100000
 	mov esi,kernel
 	rep movsd
@@ -165,6 +215,7 @@ bsp_ok:
 	 push eax
 	 push eax
 	 mov edi,dword[0x9933]
+
 	 jmp edi
 ;times 1024-($-$$) db 0
 
@@ -188,11 +239,109 @@ DATASELECTOR    EQU             $ - GDT          ; 4GB Flat Data at 0x0 with max
                 DB              092h             ; Type: present,ring0,data/stack,read/write (10010010)
                 DB              0CFh             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
                 DB              0h               ; Base(1)
+				
+DATASELECTORR    EQU             $ - GDT          ; 4GB Flat Data at 0x0 with max 0xFFFFF limit
+                DW              0FFFFh           ; Limit(2):0xFFFF
+                DW              0h               ; Base(3)
+                DB              0h               ; Base(2)
+                DB              0b10011000            ; Type: present,ring0,data/stack,read/write (10010010)
+                DB              0b10001111             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
+                DB              0h               ; Base(1)
+DATASELECTOR2    EQU             $ - GDT          ; 4GB Flat Data at 0x0 with max 0xFFFFF limit
+                DW              0FFFFh           ; Limit(2):0xFFFF
+                DW              0h               ; Base(3)
+                DB              0h               ; Base(2)
+                DB              0b10010010            ; Type: present,ring0,data/stack,read/write (10010010)
+                DB              0b10001111             ; Limit(1):0xF | Flags:4Kb inc,32bit (11001111)
+                DB              0h               ; Base(1)
 GDTEND:
 
 GDTR:
 GDTsize DW GDTEND - GDT - 1
 GDTbase DD GDT
+times 1024-($-$$) db 0
+[BITS 32]
+cli
+;EBX - MODE
+;EAX - RETURN PTR
+cli
+mov [mode], bx
+mov [return], eax
+mov [stack], esp
+mov edx, real
+jmp DATASELECTORR:WF
+[BITS 16]
+WF:
+	mov ax, DATASELECTOR2        ;0x20 is 16-bit protected mode selector.
+    mov ss, ax  
+    mov ds, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    mov sp, 0x7c00+0x200    ;Stack hase base at 0x7c00+0x200    
+
+
+    mov eax, cr0
+    and eax, 0xfffffffe ;Clear protected enable bit in cr0
+
+    mov cr0, eax    
+
+    jmp 0x00:realMode   ;Load CS and IP
+
+
+realMode:
+;Load segment registers with 16-bit Values.
+    mov ax, 0x00
+    mov ds, ax
+    mov fs, ax
+    mov gs, ax
+    mov ax, 0
+    mov ss, ax
+    mov ax, 0
+    mov es, ax
+    mov sp, 0x7c00+0x200    
+
+    cli
+    lidt[.idtR]     ;Load real mode interrupt vector table
+    sti
+
+    push word 0x00       ;New CS
+    push dx         ;New IP (saved in edx)
+    retf            ;Load CS, IP and Start real mode
+;Real mode interrupt vector table
+.idtR:  dw 0xffff       ;Limit
+    dd 0            ;Base
+real:
+	mov ax,0x4f02
+	mov dx, [mode]
+	int 10h
+	cli
+	
+	mov eax, cr0
+	or al,1
+	mov cr0, eax
+	jmp 0x8:return_kernel
+[BITS 32]
+return_kernel:
+	 mov eax, DATASELECTOR
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+	mov esp, [stack]
+	mov eax, [return]
+	mov ebx,0x09800
+	lidt [ebx]
+	;sti
+	;hlt
+	jmp eax
+	jmp $;
+mode dw 0
+return dd 0
+stack dd 0
+jmp $
+times 2048-($-$$) db 0
 kernel incbin 'binaries\kernel.o'
 
 

@@ -272,7 +272,7 @@ void mm_init(uint32_t kernel_end) {
 	pheap_end = count_memory();
 	pheap_begin = pheap_end - (MAX_PAGE_ALIGNED_ALLOCS * 4096);
 	heap_end = pheap_end;
-	memset((char *)heap_begin, 0, heap_end - heap_begin);
+	//memset((char *)heap_begin, 0, heap_end - heap_begin);
 	//pheap_desc = (uint8_t *)malloc(MAX_PAGE_ALIGNED_ALLOCS);
 	unsigned int heapSize = heap_end - heap_begin;
 	avltree_insert(&allocationAvlTree, heapSize, heap_begin);

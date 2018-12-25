@@ -1,6 +1,5 @@
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-
 // ------------------------------------------------------------------------------------------------
 void smp_core(uint procId)
 {
@@ -76,9 +75,10 @@ void smp_core(uint procId)
 					currentActive->handler(&we);
 				}
 			}
-			drawed = 0;
 			//draw3D(640, 680, tttt, mywin->video);
+			drawed = 0;
 			while (locked);
+			drawed1 = 1;
 			updateWindows();
 			int a = mouseX, b = mouseY;
 			lastX = a; lastY = b;
@@ -94,6 +94,7 @@ void smp_core(uint procId)
 			unsigned int o = *sec100;
 			if (tttt % 10 == 0)
 				bb = o - x;
+			drawed1 = 0;
 			//Wait(1);
 		}
 	}
