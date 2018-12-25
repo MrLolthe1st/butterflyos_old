@@ -852,13 +852,21 @@ void do_v86()
 }
 void entering_v86(uint32_t ss) {
 	__asm__
-	("  pusha\n\
+	("  push %eax\n\
+		push %ebx\n\
+		push %edx\n\
+		push %ecx\n\
+		push %ebp\n\
 		mov $_lo, %eax\n\
 		mov 8(%ebp), %ebx\n\
 		mov $0x8400, %edx\n\
 		jmp %edx\n\
 		_lo:		\n\
-		popa\n\
+		pop %ebp\n\
+		pop %ecx\n\
+		pop %edx\n\
+		pop %ebx\n\
+		pop %eax\n\
 		\n\
 		");
 }
@@ -880,9 +888,11 @@ void entering_v861(uint32_t ss) {
 		popa\n\
 		");
 }
-void setVMode(unsigned short mode)
+int setVMode(unsigned short mode)
 {
 	entering_v86(mode);// iint(); Wait(1);
+	if (*((unsigned short*)0x8C00) != 0x004F)
+		return 0;
 	outportb(0x20, 0x11);
 	outportb(0xa0, 0x11);
 	outportb(0x21, 0x20);
@@ -893,8 +903,8 @@ void setVMode(unsigned short mode)
 	outportb(0xa1, 0x01);
 	outportb(0x21, 0x00);
 	outportb(0xa1, 0x00);
-	int_l(); 
-	int_e();
+	iint(); *((uchar*)0x3FF) = 1;
+	int_e(); Wait(1);
 	unsigned short * modes = *((unsigned short*)0x4500E) + *((unsigned short*)0x45010) * 16;
 	int i = 0;
 	BlockInfo * bl = 0x45200;
@@ -927,6 +937,7 @@ void setVMode(unsigned short mode)
 		bl = (uint)bl + 256;
 		i++;
 	}
+	return 1;
 	//entering_v86(0, 0, 0x8, &do_v86);
 }
 void print_Avail_modes(Window * mywin)
@@ -983,9 +994,10 @@ void initSVGA() {
 		if (bl->bpp >= 24) {
 			if (bl->Xres == 1024 && bl->Yres == 768)
 			{
-				prevmode = modes[i];
-				setVMode(modes[i]);
-				break;
+				if (setVMode(modes[i])) {
+					prevmode = modes[i];
+					break;
+				}
 			}
 		}
 		bl = (uint)bl + 256;
@@ -996,12 +1008,13 @@ void initSVGA() {
 		BlockInfo * bl = 0x45200;
 		prevmode = 0;
 		while (modes[i] != 0xFFFF) {
-			if (bl->bpp >= 24) {
-				if (bl->Xres == 800 && bl->Yres == 600)
+			if (bl->bpp >= 16) {
+				if ((bl->Xres == 800 && bl->Yres == 600)||(bl->Xres == 1024 && bl->Yres == 768))
 				{
-					prevmode = modes[i];
-					setVMode(modes[i]);
-					break;
+					if (setVMode(modes[i])) {
+						prevmode = modes[i];
+						break;
+					}
 				}
 			}
 			bl = (uint)bl + 256;
