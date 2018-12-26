@@ -379,7 +379,7 @@ void k_main()
 			NetPoll();
 			Wait(1);
 		}
-
+	printTextToWindow(7, mywin, "ButterflyOS started! %x %x Booted from %c, current time and date: %02d.%02d.%04d %02d:%02d\n", (uint)&procTable[0].eax, (uint)&procTable[0].sse[0], bootedFrom + 'A', dtt.day, dtt.month, dtt.year, dtt.hour, dtt.min);
 	WindowEvent we;
 	we.data = malloc(2);
 	if (!(*((uchar*)0x3FF)))

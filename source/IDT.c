@@ -358,7 +358,7 @@ void processEnd() {
 		if (procTable[i].runnedFrom == currentRunning)
 			procTable[i].runnedFrom = 0;
 	//Resume process
-	if (procTable[currentRunning].runnedFrom)
+	if (procTable[currentRunning].runnedFrom&&!(procTable[procTable[currentRunning].runnedFrom].state&1))
 		procTable[procTable[currentRunning].runnedFrom].state ^= 1;
 
 	memcpy((char*)&procTable[currentRunning], (char*)&procTable[procCount - 1], sizeof(Process));
@@ -551,6 +551,7 @@ int wox = 0, woy = 0, dragging = 0;
 //Calls hookEvent
 void makeMouseHook(uint event, uint ev2)
 {
+	return;
 	HookEvent he;
 	//Allocate data, 3 * int
 	he.data = (void*)malloc(12);
@@ -605,19 +606,19 @@ void shandler(WindowEvent * e)
 		}
 	}
 }
-void mouseHandler()
+void mouseHandler(int fr)
 {
 	if (mouseX < 0)
 		mouseX = 0;
 
 	if (mouseX >= width - 2)
 		mouseX = width - 2;
-
-	if ((1 << 5) & mouse_byte[0] != 0)
-		mouseY += mouse_byte[2];
-	else
-		mouseY -= mouse_byte[2];
-
+	if (fr) {
+		if ((1 << 5) & mouse_byte[0] != 0)
+			mouseY += mouse_byte[2];
+		else
+			mouseY -= mouse_byte[2];
+	}
 	if (mouseY < 1)
 		mouseY = 1;
 
@@ -634,7 +635,7 @@ void mouseHandler()
 	if ((buttons < lastButtonState)) {
 		if (lastButtonState & 1 && !(buttons & 1))
 		{
-			if (pointIn(mouseX, mouseY, 0, height - 32, 30, height) && !sysConfig) {
+			if (pointIn(mouseX, mouseY, 10, height - 32, 40, height) && !sysConfig) {
 				sysConfig = openWindow(648, 400, 0, shandler, "System configuration");
 				printTextToWindow(3, sysConfig, "Current video mode is %dx%dx%d\n", width, height, bpp * 8);
 				print_Avail_modes(sysConfig);
@@ -812,7 +813,7 @@ IRQ_HANDLER1(irq_mouse) {
 			mouseX -= mouse_byte[1];
 		else
 			mouseX += mouse_byte[1];
-		mouseHandler();
+		mouseHandler(1);
 		break;
 	}
 }

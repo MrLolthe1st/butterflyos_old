@@ -128,10 +128,10 @@ void waitRetrace() {
 //Copies video buffer to video memory
 void swapBuffer() {
 	//Waits retrace
-	while (inportb(0x3DA) & 0x8) {};
-	while (!(inportb(0x3DA) & 0x8)) {};
-	if(uubpp>2)
-	__asm__("\
+	while ((inportb(0x3DA) & 0x08));
+	while (!(inportb(0x3DA) & 0x08));
+	if (uubpp > 2)
+		__asm__("\
 		.byte 0x60						#Save registers in stack			\n\
 		mov %2,%%ecx 					#Repeat count to ecx				\n\
 		mov %0,%%edi 					#Video memory start to edi			\n\
@@ -156,7 +156,7 @@ void swapBuffer() {
 	{
 		for (int i = 0; i < width*height; i++)
 		{
-			Pixel * w = ((unsigned int)videoBuffer + i*3 );
+			Pixel * w = ((unsigned int)videoBuffer + i * 3);
 			*((unsigned short*)((unsigned int)videoMemory + i * 2)) = (w->b / 8) + ((w->g / 8) << 6) + ((w->r / 8) << 11);
 		}
 	}
@@ -172,7 +172,7 @@ void CopyToVMemoryD(int x1, int y1, int w, int h, unsigned char * b) {
 	int startY = max(0, y1);
 	int endY = min(height, y1 + h);
 	int mmw = min(x1 + w, width) - x1;
-	
+
 	if (bpp == 3)
 		for (j = startY; j < endY; j++)
 			__asm__("\
@@ -330,11 +330,11 @@ void CopyToVMemoryTransparent(int x1, int y1, int w, int h, char * b) {
 			if ((*((unsigned short *)(b + (j - y1) * w * 3 + (i - x1) * 3))) //Green and Blue не 0
 				|| (*((unsigned char *)(b + (j - y1) * w * 3 + (i - x1) * 3 + 2)))) //Red Не 0
 			{
-				if(uubpp>2)
-				*((Pixel *)(videoMemory + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
+				if (uubpp > 2)
+					*((Pixel *)(videoMemory + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
 				else {
 					Pixel * ww = ((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
-					*((unsigned short*)((unsigned int)videoMemory + (i+j*width) * 2)) = (ww->b / 8) + ((ww->g / 8) << 6) + ((ww->r / 8) << 11);
+					*((unsigned short*)((unsigned int)videoMemory + (i + j * width) * 2)) = (ww->b / 8) + ((ww->g / 8) << 6) + ((ww->r / 8) << 11);
 				}
 			}
 }
@@ -343,7 +343,7 @@ void CopyToVMemoryTransparent1(int x1, int y1, int w, int h, char * b) {
 
 	for (j = y1; j < min(height - 1, y1 + h); j++)
 		for (i = x1; i < x1 + w; i++)
-			if ((*((unsigned short *)(b + (j - y1) * w * 3 + (i - x1) * 3))!=0xFFFF) //Green and Blue не 0
+			if ((*((unsigned short *)(b + (j - y1) * w * 3 + (i - x1) * 3)) != 0xFFFF) //Green and Blue не 0
 				|| (!(*((unsigned char *)(b + (j - y1) * w * 3 + (i - x1) * 3 + 2))) == 0xFF)) //Red Не 0
 				* ((Pixel *)(videoBuffer + j * width * bpp + i * bpp)) = *((Pixel *)(b + (j - y1) * w * 3 + (i - x1) * 3));
 }
@@ -421,17 +421,40 @@ void BarL(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, un
 	pop %%eax\n\
 	"::"r" (color), "r" (videoBuffer), "r" (width), "r" (x2), "r" (x1));
 }
-
+void BarTransparent(int x1, int y1, int x2, int y2, int color, int trans)
+{
+	int abc;
+	Pixel * p = &abc;
+	p->r = color >> 16;
+	p->b = color & 0xFF;
+	p->g = (color >> 8) & 0xff;
+	float uy = trans / 255.0;
+	x1 = min(max(x1, 0), width - 1);
+	y1 = min(max(y1, 0), height - 1);
+	x2 = min(max(x2, 0), width - 1);
+	y2 = min(max(y2, 0), height - 1);
+	for (int i = x1; i <= x2; i++)
+		for (int j = y1; j <= y2; j++)
+		{
+			Pixel * u = (uint)videoBuffer + (i + j * width) * bpp;
+			int r = (uint)p->r + (uint)u->r;
+			int g = (uint)p->g + (uint)u->g;
+			int b = (uint)p->b + (uint)u->b;
+			u->r = r*uy;
+			u->g = g*uy;
+			u->b = b*uy;
+		}
+}
 
 // ------------------------------------------------------------------------------------------------
 void Bar(int x1, int y1, int x2, int y2, unsigned int color) {
 	if (x1 >= width || y1 >= height)
 		return;
 	short y;
-	x1 = min(max(x1, -1), width - 1);
-	y1 = min(max(y1, -1), height - 1);
-	x2 = min(max(x2, -1), width - 1);
-	y2 = min(max(y2, -1), height - 1);
+	x1 = min(max(x1, 0), width - 1);
+	y1 = min(max(y1, 0), height - 1);
+	x2 = min(max(x2, 0), width - 1);
+	y2 = min(max(y2, 0), height - 1);
 	void * bufStart = videoBuffer + width * bpp * y1 + x1 * bpp;
 	unsigned int cc = width * bpp;
 	if (bpp == 3)
@@ -778,6 +801,8 @@ void loadFontPointer() {
 	//
 	//return;
 	swapBuffer();
+	if (cat)
+		ffree(cat);
 	//cat = getBmpAndScaleIt("A:\\IMG\\WP.BMP", width, height);
 
 	//swapBuffer();
@@ -852,22 +877,13 @@ void do_v86()
 }
 void entering_v86(uint32_t ss) {
 	__asm__
-	("  push %eax\n\
-		push %ebx\n\
-		push %edx\n\
-		push %ecx\n\
-		push %ebp\n\
+	("  pusha\n\
 		mov $_lo, %eax\n\
 		mov 8(%ebp), %ebx\n\
 		mov $0x8400, %edx\n\
 		jmp %edx\n\
 		_lo:		\n\
-		pop %ebp\n\
-		pop %ecx\n\
-		pop %edx\n\
-		pop %ebx\n\
-		pop %eax\n\
-		\n\
+		popa	\n\
 		");
 }
 void entering_v861(uint32_t ss) {
@@ -891,8 +907,6 @@ void entering_v861(uint32_t ss) {
 int setVMode(unsigned short mode)
 {
 	entering_v86(mode);// iint(); Wait(1);
-	if (*((unsigned short*)0x8C00) != 0x004F)
-		return 0;
 	outportb(0x20, 0x11);
 	outportb(0xa0, 0x11);
 	outportb(0x21, 0x20);
@@ -903,21 +917,23 @@ int setVMode(unsigned short mode)
 	outportb(0xa1, 0x01);
 	outportb(0x21, 0x00);
 	outportb(0xa1, 0x00);
-	iint(); *((uchar*)0x3FF) = 1;
-	int_e(); Wait(1);
+	int_l(); 
+	int_e();
+	if (*((unsigned short*)0x8C00) != 0x4f)
+		return 0;
 	unsigned short * modes = *((unsigned short*)0x4500E) + *((unsigned short*)0x45010) * 16;
 	int i = 0;
 	BlockInfo * bl = 0x45200;
 	while (modes[i] != 0xFFFF) {
-		
-		if (modes[i] == mode )
+
+		if (modes[i] == mode)
 		{
 			width = bl->Xres;
 			height = bl->Yres;
-			bpp = bl->bpp/8;
-			
-			videoMemory = bl->physbase;
+			bpp = bl->bpp / 8;
 
+			videoMemory = bl->physbase;
+			*((uchar*)0x3FF) = 1;
 			if (videoBuffer)
 				ffree(videoBuffer);
 			videoBuffer = mmalloc(width * height * 4 + 32 + 4096 * 4);
@@ -937,9 +953,11 @@ int setVMode(unsigned short mode)
 		bl = (uint)bl + 256;
 		i++;
 	}
+	//loadFontPointer();
 	return 1;
 	//entering_v86(0, 0, 0x8, &do_v86);
 }
+
 void print_Avail_modes(Window * mywin)
 {
 	printTextToWindow(4, mywin, "Note: press enter for first mode\n");
@@ -964,7 +982,7 @@ void print_Avail_modes(Window * mywin)
 // ------------------------------------------------------------------------------------------------
 void initSVGA() {
 	//__asm__("movl $70999993,%eax\njmp %eax");
-	videoBuffer = 0;
+	videoBuffer = 0; cat = 0;
 	/*
 	bpp = (unsigned int) * (((unsigned char *)(0x50000 + 0x19))) / 8;
 	width = (unsigned int) * (((unsigned short *)(0x50000 + 18)));
@@ -1009,7 +1027,7 @@ void initSVGA() {
 		prevmode = 0;
 		while (modes[i] != 0xFFFF) {
 			if (bl->bpp >= 16) {
-				if ((bl->Xres == 800 && bl->Yres == 600)||(bl->Xres == 1024 && bl->Yres == 768))
+				if ((bl->Xres == 800 && bl->Yres == 600) || (bl->Xres == 1024 && bl->Yres == 768))
 				{
 					if (setVMode(modes[i])) {
 						prevmode = modes[i];

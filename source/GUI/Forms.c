@@ -456,8 +456,8 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	win->handler = (void*)handler;					//Event handler
 	win->wwidth = wwidth;							//Window width
 	win->wheight = wheight;							//Window height
-	win->video = mmalloc(wwidth * (wheight) * 3);	//Video memory
-	win->videoOk = mmalloc(wwidth * (wheight) * 3);	//Video memory
+	win->video = mmalloc(wwidth * (wheight+5) * 3);	//Video memory
+	win->videoOk = mmalloc(wwidth * (wheight+5) * 3);	//Video memory
 	win->type = (unsigned char)type & 0xFF;			//Type
 	win->lastx = startX;							//Starting X
 	win->lasty = startY;							//Starting Y
@@ -474,6 +474,10 @@ Window * openWindow(unsigned int wwidth, unsigned int wheight, unsigned int type
 	if (currentRunning && procTable[currentRunning].stdin->w == procTable[procTable[currentRunning].runnedFrom].stdin->w)
 	{
 		attachIoToWindow(win);
+		if (procTable[currentRunning].runnedFrom&&!(procTable[procTable[currentRunning].runnedFrom].state&1))
+		{
+			procTable[procTable[currentRunning].runnedFrom].state ^= 1;
+		}
 	}
 	win->updating = 0;
 	win->lastUpdate = *sec100;						//Last time window updated

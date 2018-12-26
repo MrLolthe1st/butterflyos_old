@@ -13,7 +13,7 @@ static void UsbMouseProcess(UsbMouse *mouse)
 	mouseX += (i8)data[1];
 	mouseY += (i8)data[2];
 
-	mouseHandler();
+	mouseHandler(0);
 
 }
 

@@ -315,7 +315,7 @@ real:
 	mov ax,0x4f02
 	mov dx, [mode]
 	int 10h
-	mov [0x8c00], ax
+	mov [0x8c00],ax
 	cli
 	
 	mov eax, cr0
@@ -333,7 +333,7 @@ return_kernel:
 	mov esp, [stack]
 	mov eax, [return]
 	mov ebx,0x09800
-	lidt [ebx]
+	;lidt [ebx]
 	;sti
 	;hlt
 	jmp eax
@@ -343,7 +343,6 @@ return dd 0
 stack dd 0
 jmp $
 times 2048-($-$$) db 0
-statys:
 kernel incbin 'binaries\kernel.o'
 
 
