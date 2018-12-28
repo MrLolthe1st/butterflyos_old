@@ -237,6 +237,7 @@ void k_main()
 	enableFPU();
 	printString("Counting memory...\n");
 	g_usbControllerList = 0; 
+	memset(0x400000, 0, sizeof(node_t)*AVL_TREE_ENTRIES_COUNT);
 	avltree_new1(&allocationAvlTree, allocationAvlTreeNodes, __cmp_address);
 
 	mm_init(0x500000 + (AVL_TREE_ENTRIES_COUNT*sizeof(node_t)));

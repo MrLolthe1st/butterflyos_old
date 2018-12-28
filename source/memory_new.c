@@ -97,6 +97,8 @@ void * memchr(const void * buf, int c, size_t n) {
 	return 0;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("Ofast")
 unsigned int count_memory(void) {
 	register unsigned int * mem;
 	unsigned  int  mem_count, a;
@@ -162,8 +164,7 @@ unsigned int count_memory(void) {
 	return mem_end;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("Ofast")
+
 char * mmalloc(size_t size) {
 	if (!size) {
 		return 0;
@@ -272,7 +273,7 @@ void mm_init(uint32_t kernel_end) {
 	//pheap_desc = (uint8_t *)malloc(MAX_PAGE_ALIGNED_ALLOCS);
 	unsigned int heapSize = heap_end - heap_begin;
 	avltree_insert(&allocationAvlTree, heapSize, heap_begin);
-	kprintf("Kernel heap starts at 0x%x\n", avltree_get1(&allocationAvlTree, heapSize, heap_begin));
+	kprintf("Kernel heap starts at 0x%x 0x%x\n", avltree_get1(&allocationAvlTree, heapSize, heap_begin), heap_end);
 	alloc_t * first = (size_t)kernel_end - sizeof(alloc_t);
 	first->status = 0;
 	first->a1 = 0xDEADBEEF;
