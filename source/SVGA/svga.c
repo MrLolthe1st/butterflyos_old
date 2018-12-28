@@ -724,7 +724,46 @@ void OutFixedTextXY(unsigned int x, unsigned int y, char * s, unsigned int color
 // ------------------------------------------------------------------------------------------------
 void * cat;
 
+char * scaleVideoMem(char * cat, unsigned short w, short h, int width, int height)
+{
+	char * cat2 = mmalloc(width*height*3);
+	void * mo = mmalloc(w * 3);
+	double pzz = w * 1.0 / width;
+	double pzy = h * 1.0 / height;
+	double ci = 0;
+	for (int cline = 0; cline < height; cline++, ci += pzy) {
+		int cx = 0;
+		for (double i = 0; cx < width; i += pzz)
+		{
+			int lpix = (int)i;
+			int cpix = max((int)(i + 0.5), lpix);
+			int lpiy = (int)ci;
+			int cpiy = (int)(ci + 0.5);
+			int sumr = 0, sumg = 0, sumb = 0;
+			for (int up = lpiy; up <= cpiy; up++)
+				for (int j = lpix; j <= cpix; j++)
+				{
+					sumr += *(unsigned char*)((uint)cat + up * w * 3 + j * 3);
+					sumg += *(unsigned char*)((uint)cat + up * w * 3 + j * 3 + 1);
+					sumb += *(unsigned char*)((uint)cat + up * w * 3 + j * 3 + 2);
+				}
 
+			sumr /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			sumg /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			sumb /= ((-lpix + cpix) + 1)*((cpiy - lpiy) + 1);
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width) = sumr;
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width + 1) = sumg;
+			*(unsigned char*)((uint)cat2 + cx * 3 + cline * 3 * width + 2) = sumb;
+			//putPixelD(cx, cline, (sumr)+(sumg << 8) + (sumb << 16));
+			cx++;
+		}
+	}
+	//Wait(1000);
+	cat = cat2; w = width; h = height;
+	
+	ffree(mo);
+	return cat;
+}
 // ------------------------------------------------------------------------------------------------
 char * getBmpAndScaleIt(char * path, int width, int height)
 {

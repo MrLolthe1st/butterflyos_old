@@ -213,6 +213,7 @@ char * mmalloc(size_t size) {
 				avltree_insert(&allocationAvlTree, next->size, (size_t)next + sizeof(alloc_t));
 			}
 			memset((size_t)block + sizeof(alloc_t), 0, block->size); 
+			block->a1 = 0xDEADBEEF;
 			unlockTaskSwitch();
 			return (size_t)block + sizeof(alloc_t);
 		}
@@ -274,6 +275,7 @@ void mm_init(uint32_t kernel_end) {
 	kprintf("Kernel heap starts at 0x%x\n", avltree_get1(&allocationAvlTree, heapSize, heap_begin));
 	alloc_t * first = (size_t)kernel_end - sizeof(alloc_t);
 	first->status = 0;
+	first->a1 = 0xDEADBEEF;
 	first->size = heapSize;
 	first->prev_size = 0;
 
@@ -294,6 +296,9 @@ void ffree(void * mem) {
 		return;
 	//Get current alloc
 	alloc_t * alloc = ((unsigned int)mem - sizeof(alloc_t));
+	//for (;;);
+	if (alloc->a1 != 0xDEADBEEF)
+		return;
 	alloc->status = 0;
 	/*alloc_t * left = ((unsigned int)alloc - sizeof(alloc_t) - alloc->prev_size);
 	printTextToWindow(3, mywin, "Free: %d %d\n", alloc->prev_size, left->size);

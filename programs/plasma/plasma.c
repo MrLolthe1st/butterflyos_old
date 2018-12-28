@@ -15,7 +15,7 @@ void main(int argc, char ** argv)
 	omain(argc, argv);
 }
 #pragma GCC push_options
-#pragma GCC optimize ("Ofast")
+#pragma GCC optimize ("O3")
 
 double sqrt(double x) {
 	double r;
@@ -92,6 +92,7 @@ double sin(double x) {
 double cos(double x) {
 	double r;
 	__asm__ __volatile__("fcos": "=t"(r) : "0"(x) : "memory");
+
 	return r;
 }
 float t[500*500]={0};

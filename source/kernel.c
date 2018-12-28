@@ -74,7 +74,7 @@ unsigned int usbPoll = 1;
 #include "video.c"
 #include "Devices/ports.c"
 #include "rb_tree\rb_tree.c"
-#include "memory.c"
+#include "memory_new.c"
 #include "hooks\hooks.c"
 #include "globalVariables.c"
 #include "kprin.c"
