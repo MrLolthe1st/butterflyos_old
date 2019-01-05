@@ -123,18 +123,9 @@ void omain(int argc, char ** argv)
 			Point * s = w->video; int j=0;
 			for (int x = 0; x < 500; ++x) {
 				for (int y = 0; y < 500; ++y) {
-					float aa = dist(x + time, y, 128.0, 128.0) / 8.0;
-					float ab = dist(x, y + time / 7, 192.0, 64) / 7.0;
-					__asm__("push %%ecx\n\
-							mov %0, %%ecx\n\
-							fld		(%%ecx) \n\
-							fsin			\n\
-							fst		(%%ecx) \n\
-							mov %1, %%ecx	\n\
-							fld		(%%ecx) \n\
-							fsin\n\
-							fst		(%%ecx) \n\
-							pop %%ecx" :: "r"(&aa),"r"(&ab));
+					float aa = sin(dist(x + time, y, 128.0, 128.0) / 8.0);
+					float ab = sin(dist(x, y + time / 7, 192.0, 64) / 7.0);
+					
 					float value = aa
 						+ t[j]
 						+ ab;
