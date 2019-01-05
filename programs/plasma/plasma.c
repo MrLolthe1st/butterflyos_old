@@ -3,6 +3,7 @@
 #include "..\includes\structs.h"
 #include "..\includes\forms.h"
 #include "..\includes\windowsEventsCodes.h"
+//#include "sse.h"
 #define buf_size 165536
 
 int key = 0;
@@ -15,7 +16,7 @@ void main(int argc, char ** argv)
 	omain(argc, argv);
 }
 #pragma GCC push_options
-#pragma GCC optimize ("O3")
+#pragma GCC optimize ("Ofast")
 
 double sqrt(double x) {
 	double r;
@@ -122,9 +123,21 @@ void omain(int argc, char ** argv)
 			Point * s = w->video; int j=0;
 			for (int x = 0; x < 500; ++x) {
 				for (int y = 0; y < 500; ++y) {
-					float value = sin(dist(x + time, y, 128.0, 128.0) / 8.0)
+					float aa = dist(x + time, y, 128.0, 128.0) / 8.0;
+					float ab = dist(x, y + time / 7, 192.0, 64) / 7.0;
+					__asm__("push %%ecx\n\
+							mov %0, %%ecx\n\
+							fld		(%%ecx) \n\
+							fsin			\n\
+							fst		(%%ecx) \n\
+							mov %1, %%ecx	\n\
+							fld		(%%ecx) \n\
+							fsin\n\
+							fst		(%%ecx) \n\
+							pop %%ecx" :: "r"(&aa),"r"(&ab));
+					float value = aa
 						+ t[j]
-						+ sin(dist(x, y + time / 7, 192.0, 64) / 7.0);
+						+ ab;
 					*s++ = *((Point*)&palette[(int)((value + 4) *32)]);j++;
 				}
 			}
@@ -141,6 +154,7 @@ void omain(int argc, char ** argv)
 			Point * s = w->video;
 			double sine=sin(t/10.0);
 			double cosine=cos(t/10.0);
+			Point * ppx = ((Point*)((uint)w->video));
 			for (i = 0; i < 500; i++) {
 				d2 = (i - 250.0) / 500.0;
 
@@ -150,15 +164,15 @@ void omain(int argc, char ** argv)
 					ceiling = 8.0 / d2;
 				else
 					ceiling = 100;
-				if(ceiling<100)
+				//if(ceiling<100)
 				for (j = 0; j < 500; j++) {
 					deltaX = (j - 250.0) / 500.0;
 					deltaX *= ceiling;
 					xx = (int)(deltaX * cosine + ceiling * sine) & 15;
 					yy = (int)(ceiling* cosine - deltaX * sine) & 15;
 					int pp= ((xx << 4) | ((yy << 4) << 8));
+					*ppx++=*((Point*)&pp);
 					
-					*((Point*)((uint)w->video + i*500*3 + j*3))=*((Point*)&pp);
 				}
 			}
 		}

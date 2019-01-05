@@ -119,6 +119,7 @@ typedef struct __attribute__((packed)) _E {
 	FILE *			stdout;
 	FILE *			stdin;
 	FILE *			stderr;
+	char			fpureg[108];
 } Process;
 
 

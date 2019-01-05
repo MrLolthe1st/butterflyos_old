@@ -253,8 +253,10 @@ void multiHandler() {
 		add		$16,	%%edi			\n\
 		movups	%%xmm7,	(%%edi)			\n\
 		add		$16,	%%edi			\n\
-		pop		%%esi					\n\
-		"::"r" (&procTable[currentRunning].sse));
+		mov		%1,		%%edi			\n\
+		fsave			(%%edi)			\n\
+		pop		%%edi					\n\
+		"::"r" (&procTable[currentRunning].sse), "r" (&procTable[currentRunning].fpureg));
 	//Save registers
 	stack = s2;
 	procTable[currentRunning].ebp = *((int *)(stack));
@@ -281,6 +283,8 @@ void multiHandler() {
 	}
 	//Just load current values from current process
 	__asm__("								\n\
+		mov		%2,		%%edi				\n\
+		frstor			(%%edi)				\n\
 		mov		%1,			%%esi			\n\
 		movups	(%%esi),	%%xmm0			\n\
 		add		$16,		%%esi			\n\
@@ -314,7 +318,7 @@ void multiHandler() {
 		mov		28(%%esi),	%%edi			\n\
 		mov		24(%%esi),	%%esi			\n\
 		iret								\n\
-		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning), "r" (&procTable[currentRunning].sse));
+		"::"r" ((unsigned int)procTable + sizeof(Process) * currentRunning), "r" (&procTable[currentRunning].sse), "r" (&procTable[currentRunning].fpureg));
 
 }
 
@@ -448,6 +452,13 @@ void runProcess(char * fileName, uint argc, char **argv, uint suspendIt, char * 
 	addProcessAlloc(entry, procTable[_procCount].stdout);
 	procTable[_procCount].stderr = (FILE*)mmalloc(sizeof(FILE));
 	addProcessAlloc(entry, procTable[_procCount].stderr);
+
+	__asm__("push %%edi					\n\
+		mov		%0,		%%edi			\n\
+		fsave			(%%edi)			\n\
+		pop		%%edi					\n\
+		":: "r" (&procTable[_procCount].fpureg));
+
 	//Preserve caller's std IO to that process
 	procTable[_procCount].stdin->w = procTable[currentRunning].stdin->w;
 	procTable[_procCount].stdout->w = procTable[currentRunning].stdout->w;
